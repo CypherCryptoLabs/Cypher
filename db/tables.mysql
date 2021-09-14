@@ -1,0 +1,10 @@
+CREATE TABLE `blockchain` (
+	`id` BIGINT unsigned NOT NULL AUTO_INCREMENT,
+	`timestamp` TIMESTAMP NOT NULL,
+	`hash_of_prev_block` VARCHAR(128),
+	`content_for_receiver` MEDIUMBLOB,
+	`content_for_sender` MEDIUMBLOB,
+	`receiver_address` VARCHAR(128),
+	`sender_address` VARCHAR(128) NOT NULL,
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
