@@ -11,7 +11,7 @@ void * queue_worker() {
         }
     }
     
-    clean_queue(timestamp_as_string); 
+    clean_queue(timestamp_as_string);
 
 }
 
