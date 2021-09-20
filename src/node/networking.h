@@ -23,23 +23,29 @@ void parse_packet(char *source_buffer,struct packet destination) {
     memcpy(destination.receiver_address, source_buffer + 139, 128);
     memcpy(destination.previous_block_hash, source_buffer + 267, 128);
 
-    int first_null_byte = 0;
+    int first_null_byte = -1;
 
     // figure out sender_content_length + receiver_content_length
-    for (int i = 20000; i > 20000 && first_null_byte == 0; i--) {
-        if(source_buffer[i + 395] != '\0') {
+    for (int i = 0; i < 10000 && first_null_byte == -1; i++) {
+        if(source_buffer[i + 395] == '\0' && source_buffer[i + 395 - 1] != '\\') {
             first_null_byte = i + 1;
         }
     }
 
+    memcpy(destination.sender_content, source_buffer + 395, first_null_byte -1 );
+
+    int second_null_byte = -1;
     // figuring sender_content_length out
-    for (int i = 0; i < first_null_byte - 1 && destination.sender_content_length == 0; i++) {
-        if(source_buffer[i + 395] == '\0' && source_buffer[i + 394] != '\\') {
-            destination.sender_content_length = i;
+    for (int i = 0; i < 10000 && second_null_byte == -1; i++) {
+        if(source_buffer[i + 395 + first_null_byte] == '\0' && source_buffer[i + 395 - 1 + first_null_byte] != '\\') {
+            second_null_byte = i + 1;
         }
     }
 
-    destination.receiver_content_length = first_null_byte - destination.sender_content_length;
+    memcpy(destination.receiver_content, source_buffer + 395 + first_null_byte, second_null_byte -1 );
+
+    destination.sender_content_length = first_null_byte;
+    destination.receiver_content_length = second_null_byte;
 
     // DEBUG
     printf("queue_id: %02x\n", destination.queue_id);
@@ -51,7 +57,7 @@ void parse_packet(char *source_buffer,struct packet destination) {
     printf("sender_content: ");
     
     for(int i = 0; i < destination.sender_content_length; i++) {
-        printf("%02x", destination.sender_address[i]);
+        printf("%02x", destination.sender_content[i]);
     }
     printf("\nsender_content_length: %d\n", destination.sender_content_length);
 
@@ -73,11 +79,11 @@ void parse_packet(char *source_buffer,struct packet destination) {
 
     read(socket, client_packet, 20268);
 
-    /*struct packet received_packet;
+    struct packet received_packet;
     memset(&received_packet, 0, sizeof(received_packet));
-    parse_packet(client_packet, received_packet);*/
+    parse_packet(client_packet, received_packet);
 
-    unsigned int query_id = client_packet[0]; // hopefully this will never be needed to be increased :P
+    /*unsigned int query_id = client_packet[0]; // hopefully this will never be needed to be increased :P
     char *client_packet_content = client_packet + 1;
 
     switch (query_id)
@@ -97,7 +103,7 @@ void parse_packet(char *source_buffer,struct packet destination) {
         */
 
         // add new blobk to blockchain
-        printf("[i] Client send request to create a new Block (query_id = '%X')\n", *client_packet);
+        /*printf("[i] Client send request to create a new Block (query_id = '%X')\n", *client_packet);
         add_block_to_queue(client_packet_content);
 
         break;
@@ -122,7 +128,7 @@ void parse_packet(char *source_buffer,struct packet destination) {
     default:
         printf("[!] query_id '%u' is invalid!\n", query_id);
         break;
-    }
+    }*/
 
 }
 

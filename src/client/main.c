@@ -42,100 +42,76 @@ int main(int argc, char const *argv[])
     printf("[i] Node answered '%s'\n",buffer );
 
     if(strcmp(blockchain_name, buffer) == 0) {
-        
-        printf("Select mode:\n[1] Send Message\n[2] Query Blockchain\n");
-        int mode_selection = 0;
-        scanf("%d", &mode_selection);
+
+        char packet[20268] = {0};
+        int offset = 0;
+        char input_buffer[10000] = {0};
+        int query_id = 0;
+
+        printf("Enter Query ID (1/2): ");
+        scanf("%d", &query_id);
         getchar();
+        packet[offset] = query_id;
+        offset++;
 
-        if(mode_selection == 1) {
-            char timestamp_as_string[10];// = "1628770578";
-            char message[1000] = {0};
+        printf("Enter timestamp (leave empty to use current timestamp): ");
+        fgets(input_buffer, 10, stdin);
 
-            printf("Enter message:\n");
-            char userinput[989] = {0};
-            char userinput2[989] = {0};
-            fgets(userinput, sizeof userinput, stdin);
-            sprintf(userinput2, "%s", userinput);
+        if(input_buffer[0] == '\n') {
+            char timestamp_as_string[11];
+            unsigned int timestamp = (unsigned int)time(NULL);
+            sprintf(timestamp_as_string, "%d", timestamp);
 
-            sprintf(timestamp_as_string, "%d", (unsigned int)time(NULL));
-            strcat(message, "\x01");
-            strcat(message, timestamp_as_string);
-
-            strcat(message, userinput2);
-            send(sock , message , strnlen(message, 10000) , 0 );
-        } else if(mode_selection == 2) {
-            
-            char query[20267] = {0};
-            char message[20268] = {0};
-            char timestamp[11] = {0};
-            char previous_hash[129] = {0};
-            char receiver_address[129] = {0};
-            char sender_address[129] = {0};
-            char receiver_content[10001] = {0};
-            char sender_content[10001] = {0};
-
-            printf("Enter timestamp in Unix format:\n");
-            fgets(timestamp, 11, stdin);
-            if(timestamp[0] == '\n' && timestamp[1] == '\0'){
-                timestamp[0] = 0x00;
-            }
-
-            printf("Enter previous Hash:\n");
-            fgets(previous_hash, 129, stdin);
-            if(previous_hash[0] == '\n' && previous_hash[1] == '\0'){
-                previous_hash[0] = 0x00;
-            }
-
-            printf("Enter receiver Address:\n");
-            fgets(receiver_address, 129, stdin);
-            if(receiver_address[0] == '\n' && receiver_address[1] == '\0'){
-                receiver_address[0] = 0x00;
-            }
-
-            printf("Enter sender Address:\n");
-            fgets(sender_address, 129, stdin);
-            if(sender_address[0] == '\n' && sender_address[1] == '\0'){
-                sender_address[0] = 0x00;
-            }
-
-            printf("Enter receiver content:\n");
-            fgets(receiver_content, 10001, stdin);
-            if(receiver_content[0] == '\n' && receiver_content[1] == '\0'){
-                receiver_content[0] = 0x00;
-            }
-
-            printf("Enter sender content:\n");
-            fgets(sender_content, 10001, stdin);
-            if(sender_content[0] == '\n' && sender_content[1] == '\0'){
-                sender_content[0] = 0x00;
-            }
-
-            strcat(message, "\x02");
-
-            int content_len = strnlen(receiver_content, 10001) - 1;
-
-            memcpy(query, timestamp, 10);
-            memcpy(query + 10, previous_hash, 128);
-            memcpy(query + 138, receiver_address, 128);
-            memcpy(query + 266, sender_address, 128);
-            if(content_len > 0) {
-                memcpy(query + 394, receiver_content, content_len);
-                memcpy(query + 394 + content_len, sender_content, content_len);
-                memcpy(message + 1, query, 394 + (content_len * 2));
-            } else {
-                memcpy(message + 1, query, 394);
-            }
-
-            send(sock , message , 394 + (content_len * 2) + 1 , 0 );
-            valread = read( sock , buffer, 1024);
-
-            for(int i = 0; i < 1024; i++) {
-                printf("%02x", buffer[i]);
-            }
-            printf("\n");
-
+            memcpy(packet + offset, timestamp_as_string, 10);
+            offset += 10;
+        } else {
+            memcpy(packet + offset, input_buffer, 10);
+            offset += 10;
         }
+
+        memset(input_buffer, 0, 10000);
+
+        printf("Enter Sender Address: ");
+        fgets(packet + offset, 132, stdin);
+        if(packet[offset] == '\n') {
+            packet[offset] = 0x00;
+        }
+        offset += 128;
+
+        printf("Enter Receiver Address: ");
+        fgets(packet + offset, 132, stdin);
+        if(packet[offset] == '\n') {
+            packet[offset] = 0x00;
+        }
+        offset += 128;
+
+        printf("Enter Previous Block Hash: ");
+        fgets(packet + offset, 132, stdin);
+        if(packet[offset] == '\n') {
+            packet[offset] = 0x00;
+        }
+        offset += 128;
+
+        printf("Enter Content for Sender: ");
+        fgets(packet + offset, 10000, stdin);
+        if(packet[offset] == '\n') {
+            packet[offset] = 0x00;
+        }
+        offset += strnlen(packet + offset, 10000) + 1;
+
+        printf("Enter Content for Receiver: ");
+        fgets(packet + offset, 10000, stdin);
+        if(packet[offset] == '\n') {
+            packet[offset] = 0x00;
+        }
+        offset += strnlen(packet + offset, 10000) + 1;
+
+        send(sock , packet , offset , 0 );
+
+        for(int i = 0; i < 20268; i++) {
+            printf("%02X", packet[i]);
+        }
+        printf("\n");
 
     } else {
 
