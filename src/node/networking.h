@@ -1,7 +1,7 @@
 #define PORT 50000
 
 struct packet{
-    int queue_id;
+    int query_id;
     char timestamp[11];
     char sender_address[129];
     char receiver_address[129];
@@ -17,7 +17,7 @@ void parse_packet(char *source_buffer,struct packet destination) {
     destination.sender_content_length = 0;
     destination.receiver_content_length = 0;
 
-    destination.queue_id = source_buffer[0];
+    destination.query_id = source_buffer[0];
     memcpy(destination.timestamp, source_buffer + 1, 10);
     memcpy(destination.sender_address, source_buffer + 11, 128);
     memcpy(destination.receiver_address, source_buffer + 139, 128);
@@ -48,7 +48,7 @@ void parse_packet(char *source_buffer,struct packet destination) {
     destination.receiver_content_length = second_null_byte;
 
     // DEBUG
-    printf("queue_id: %02x\n", destination.queue_id);
+    printf("queue_id: %02x\n", destination.query_id);
     printf("timestamp: %s\n", destination.timestamp);
     printf("sender_address: %s\n", destination.sender_address);
     printf("receiver_address: %s\n", destination.receiver_address);
@@ -74,23 +74,23 @@ void parse_packet(char *source_buffer,struct packet destination) {
     printf("[i] Started new Thread...\n");
 
     int socket = *((int *) p_socket);
-    char *client_packet = malloc(sizeof(char) + 20268);
+    char client_packet[20269];
     memset(client_packet, 0, sizeof(char) + 20268);
 
     read(socket, client_packet, 20268);
 
-    struct packet received_packet;
+    struct packet *received_packet = malloc(sizeof(struct packet));
     memset(&received_packet, 0, sizeof(received_packet));
-    parse_packet(client_packet, received_packet);
+    parse_packet(client_packet, *received_packet);
 
-    /*unsigned int query_id = client_packet[0]; // hopefully this will never be needed to be increased :P
+    unsigned int query_id = received_packet->query_id; // hopefully this will never be needed to be increased :P
     char *client_packet_content = client_packet + 1;
 
     switch (query_id)
     {
     case 1:
 
-        /* 
+        /*
         *       1 Byte for query ID
         * +    10 bytes for timestamp string
         * +   128 Bytes for SHA512 hashed reciever key
@@ -103,7 +103,7 @@ void parse_packet(char *source_buffer,struct packet destination) {
         */
 
         // add new blobk to blockchain
-        /*printf("[i] Client send request to create a new Block (query_id = '%X')\n", *client_packet);
+        printf("[i] Client send request to create a new Block (query_id = '%X')\n", *client_packet);
         add_block_to_queue(client_packet_content);
 
         break;
@@ -128,7 +128,7 @@ void parse_packet(char *source_buffer,struct packet destination) {
     default:
         printf("[!] query_id '%u' is invalid!\n", query_id);
         break;
-    }*/
+    }
 
 }
 

@@ -463,7 +463,7 @@ struct block_cluster search_blockchain( char content[20396]) {
 
 }
 
-int add_block_to_queue(char content[20267]) {
+int add_block_to_queue(struct packet *source_packet) {
 
     int i = 0;
     bool block_added = false;
@@ -472,7 +472,7 @@ int add_block_to_queue(char content[20267]) {
         if(!block_queue[i]) {
             block_added = true;
 
-            block_queue[i] = content;
+            block_queue[i] = source_packet;
 
             printf("[i] Added block to queue!\n[i] block_queue_current_index: %d\n", i);
 

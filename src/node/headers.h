@@ -25,16 +25,15 @@
 #include <stdbool.h>
 #include <mysql/mysql.h>
 
-#include "networking.h"
-
-//struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};
-char *block_queue[BLOCK_QUEUE_LENGTH] = {0};
+struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};
+//char *block_queue[BLOCK_QUEUE_LENGTH] = {0};
 int block_queue_current_index = 0;
 
 #include "mysql_wrapper.h"
 //#include "io.h"
 #include "crypto.h"
 #include "base64.h"
-#include "blockchain_query.h"
 #include "blockchain_queue.h"
 #include "blockchain_queue_worker.h"
+#include "blockchain_query.h"
+#include "networking.h"
