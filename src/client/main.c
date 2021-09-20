@@ -53,21 +53,7 @@ int main(int argc, char const *argv[])
         getchar();
         packet[offset] = query_id;
         offset++;
-
-        printf("Enter timestamp (leave empty to use current timestamp): ");
-        fgets(input_buffer, 10, stdin);
-
-        if(input_buffer[0] == '\n') {
-            char timestamp_as_string[11];
-            unsigned int timestamp = (unsigned int)time(NULL);
-            sprintf(timestamp_as_string, "%d", timestamp);
-
-            memcpy(packet + offset, timestamp_as_string, 10);
-            offset += 10;
-        } else {
-            memcpy(packet + offset, input_buffer, 10);
-            offset += 10;
-        }
+        offset += 10;
 
         memset(input_buffer, 0, 10000);
 
@@ -105,6 +91,19 @@ int main(int argc, char const *argv[])
             packet[offset] = 0x00;
         }
         offset += strnlen(packet + offset, 10000) + 1;
+
+        printf("Enter timestamp (leave empty to use current timestamp): ");
+        fgets(input_buffer, 10, stdin);
+
+        if(input_buffer[0] == '\n') {
+            char timestamp_as_string[11];
+            unsigned int timestamp = (unsigned int)time(NULL);
+            sprintf(timestamp_as_string, "%d", timestamp);
+
+            memcpy(packet + 1, timestamp_as_string, 10);
+        } else {
+            memcpy(packet + 1, input_buffer, 10);
+        }
 
         send(sock , packet , offset , 0 );
 

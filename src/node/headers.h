@@ -25,6 +25,18 @@
 #include <stdbool.h>
 #include <mysql/mysql.h>
 
+struct packet{
+    int query_id;
+    char timestamp[11];
+    char sender_address[129];
+    char receiver_address[129];
+    char previous_block_hash[129];
+    char sender_content[10001];
+    int sender_content_length ;
+    char receiver_content[10001];
+    int receiver_content_length;
+};
+
 struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};
 //char *block_queue[BLOCK_QUEUE_LENGTH] = {0};
 int block_queue_current_index = 0;
