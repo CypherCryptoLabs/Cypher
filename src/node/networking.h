@@ -1,6 +1,6 @@
 #define PORT 50000
 
-struct packet *parse_packet(char *source_buffer) {
+struct packet parse_packet(char *source_buffer) {
 
     struct packet *destination = malloc(sizeof(struct packet));
     memset(destination, 0, sizeof(destination));
@@ -38,28 +38,7 @@ struct packet *parse_packet(char *source_buffer) {
     destination->sender_content_length = first_null_byte;
     destination->receiver_content_length = second_null_byte;
 
-    // DEBUG
-    /*printf("queue_id: %02x\n", destination->query_id);
-    printf("timestamp: %s\n", destination->timestamp);
-    printf("sender_address: %s\n", destination->sender_address);
-    printf("receiver_address: %s\n", destination->receiver_address);
-    printf("previous_block_hash: %s\n", destination->previous_block_hash);
-
-    printf("sender_content: ");
-    
-    for(int i = 0; i < destination->sender_content_length; i++) {
-        printf("%02x", destination->sender_content[i]);
-    }
-    printf("\nsender_content_length: %d\n", destination->sender_content_length);
-
-    printf("receiver_content: ");
-    
-    for(int i = 0; i < destination->receiver_content_length; i++) {
-        printf("%02x", destination->receiver_content[i]);
-    }
-    printf("\nreceiver_content_length: %d\n", destination->receiver_content_length);*/
-
-    return destination;
+    return *destination;
 }
 
 void * handle_request( void* p_socket ) {
@@ -71,29 +50,15 @@ void * handle_request( void* p_socket ) {
     memset(client_packet, 0, sizeof(char) + 20268);
 
     read(socket, client_packet, 20268);
-    struct packet *parsed_packet = parse_packet(client_packet);
+    struct packet parsed_packet = parse_packet(client_packet);
 
-    //unsigned int query_id = received_packet.query_id; // hopefully this will never be needed to be increased :P
-
-    switch (parsed_packet->query_id)
+    switch (parsed_packet.query_id)
     {
     case 1:
 
-        /*
-        *       1 Byte for query ID
-        * +    10 bytes for timestamp string
-        * +   128 Bytes for SHA512 hashed reciever key
-        * +   128 Bytes for SHA512 hashed sender key
-        * + 10000 Bytes for message for receiver
-        * + 10000 Bytes for message for sender to be decrypted and reloaded
-        * +     1 Byte 0 terminator
-        * -------
-        *   20268 Bytes toal
-        */
-
         // add new blobk to blockchain
-        printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
-        add_block_to_queue(*parsed_packet);
+        printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet.query_id);
+        add_block_to_queue(&parsed_packet);
 
         break;
 
@@ -115,7 +80,7 @@ void * handle_request( void* p_socket ) {
         break;*/
     
     default:
-        printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
+        printf("[!] query_id '%u' is invalid!\n", parsed_packet.query_id);
         break;
     }
 
