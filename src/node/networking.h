@@ -50,15 +50,19 @@ void * handle_request( void* p_socket ) {
     memset(client_packet, 0, sizeof(char) + 20268);
 
     read(socket, client_packet, 20268);
-    struct packet parsed_packet = parse_packet(client_packet);
 
-    switch (parsed_packet.query_id)
+    struct packet *parsed_packet = malloc(sizeof(struct packet));
+    memset(parsed_packet, 0, sizeof(parsed_packet));
+
+    *parsed_packet = parse_packet(client_packet);
+
+    switch (parsed_packet->query_id)
     {
     case 1:
 
         // add new blobk to blockchain
-        printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet.query_id);
-        add_block_to_queue(&parsed_packet);
+        printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
+        add_block_to_queue(parsed_packet);
 
         break;
 
@@ -80,7 +84,7 @@ void * handle_request( void* p_socket ) {
         break;*/
     
     default:
-        printf("[!] query_id '%u' is invalid!\n", parsed_packet.query_id);
+        printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
         break;
     }
 
