@@ -88,19 +88,27 @@ int create_new_block( struct packet *block) {
 
     mysql_stmt_fetch(prev_block_stmt);
          
-    char prev_block[20414] = "";
+    char prev_block[20269] = "";
 
-    strcat(prev_block, result_id);
+    /*strcat(prev_block, result_id);
     strcat(prev_block, result_timestamp);
     strcat(prev_block, result_hash);
     strcat(prev_block, result_content_for_receiver);
     strcat(prev_block, result_content_for_sender);
     strcat(prev_block, result_receiver_address);
-    strcat(prev_block, result_sender_address);
+    strcat(prev_block, result_sender_address);*/
+
+    memcpy(prev_block, result_id, result_len[0]);
+    memcpy(prev_block + result_len[0], result_timestamp, 10);
+    memcpy(prev_block + result_len[0] + 10, result_hash, 128);
+    memcpy(prev_block + result_len[0] + 138, result_content_for_receiver, result_len[2]);
+    memcpy(prev_block + result_len[0] + result_len[2] + 138, result_content_for_sender, result_len[3]);
+    memcpy(prev_block + result_len[0] + result_len[2] + result_len[3] + 138, result_receiver_address, 128);
+    memcpy(prev_block + result_len[0] + result_len[2] + result_len[3] + 2666, result_sender_address, 128);
 
     printf("%s\n", prev_block);
 
-    char *prev_block_hash = get_sha512_string(prev_block);
+    char *prev_block_hash = get_sha512_string(prev_block, result_len[2] + result_len[3] + 2666);
 
     char* query_string = "INSERT INTO blockchain(timestamp, content_for_receiver, content_for_sender, receiver_address, sender_address, hash_of_prev_block) VALUES(FROM_UNIXTIME(?), ?, ?, ?, ?, ?);";
     
