@@ -3,7 +3,7 @@ struct block_cluster {
     int cluster_length;
 };
 
-int create_new_block( char content[20268]) {
+int create_new_block( struct packet *block) {
 
     MYSQL_BIND result_param[1];
     MYSQL_STMT* prev_block_stmt = mysql_prepared_query("SELECT id, hash_of_prev_block, content_for_receiver, content_for_sender, receiver_address, sender_address, UNIX_TIMESTAMP(timestamp) FROM blockchain ORDER BY id DESC LIMIT 1;", result_param);
@@ -104,49 +104,40 @@ int create_new_block( char content[20268]) {
 
     char* query_string = "INSERT INTO blockchain(timestamp, content_for_receiver, content_for_sender, receiver_address, sender_address, hash_of_prev_block) VALUES(FROM_UNIXTIME(?), ?, ?, ?, ?, ?);";
     
-    char timestamp[11], content_for_receiver[10001], content_for_sender[10001], receiver_address[129], sender_address[129];
-    int content_len = (strnlen(content, 20268) - 266) / 2;
-
-    strncpy(timestamp, content, 10);
-    strncpy(receiver_address, content + 10, 128);
-    strncpy(sender_address, content + 138, 128);
-    strncpy(content_for_receiver, content + 266, content_len);
-    strncpy(content_for_sender, content + 266 + content_len, content_len);
-
     long timestamp_length = 10;
-    long content_for_receiver_length = content_len;
-    long content_for_sender_length = content_len;
+    long content_for_receiver_length = block->receiver_content_length;
+    long content_for_sender_length = block->sender_content_length;
     long receiver_address_length = 128;
     long sender_address_length = 128;
     long prev_block_hash_length = 128;
 
     MYSQL_BIND param[6];
     param[0].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[0].buffer = timestamp;
+    param[0].buffer = block->timestamp;
     param[0].is_unsigned = 0;
     param[0].is_null = 0;
     param[0].length = &timestamp_length;
 
     param[1].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[1].buffer = content_for_receiver;
+    param[1].buffer = block->receiver_content;
     param[1].is_unsigned = 0;
     param[1].is_null = 0;
     param[1].length = &content_for_receiver_length;
 
     param[2].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[2].buffer = content_for_sender;
+    param[2].buffer = block->sender_content;
     param[2].is_unsigned = 0;
     param[2].is_null = 0;
     param[2].length = &content_for_sender_length;
 
     param[3].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[3].buffer = receiver_address;
+    param[3].buffer = block->receiver_address;
     param[3].is_unsigned = 0;
     param[3].is_null = 0;
     param[3].length = &receiver_address_length;
 
     param[4].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[4].buffer = sender_address;
+    param[4].buffer = block->sender_address;
     param[4].is_unsigned = 0;
     param[4].is_null = 0;
     param[4].length = &sender_address_length;
@@ -158,7 +149,6 @@ int create_new_block( char content[20268]) {
     param[5].length = &prev_block_hash_length;
 
     mysql_prepared_query( query_string, param);
-
 
     return 0;
 

@@ -46,6 +46,6 @@ int block_queue_current_index = 0;
 #include "crypto.h"
 #include "base64.h"
 #include "blockchain_queue.h"
-#include "blockchain_queue_worker.h"
 #include "blockchain_query.h"
+#include "blockchain_queue_worker.h"
 #include "networking.h"

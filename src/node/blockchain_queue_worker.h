@@ -9,13 +9,13 @@ void * queue_worker() {
         printf("%s\n", queue->queue[0]->sender_address);
     }
 
-    /*for(int i = 0; i < queue.queue_length; i++) {
-        if(queue.queue[i]) {
-            create_new_block(queue.queue[i]);
+    for(int i = 0; i < queue->queue_length; i++) {
+        if(queue->queue[i]) {
+            create_new_block(queue->queue[i]);
         }
     }
     
-    clean_queue(timestamp_as_string);*/
+    clean_queue(timestamp_as_string);
 
 }
 

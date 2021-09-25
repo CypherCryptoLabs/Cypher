@@ -65,10 +65,11 @@ struct filtered_queue *sort_queue_by_timestamp( char *timestamp ) {
 
 void clean_queue(char *timestamp) {
 
-    /*for (int i = 0; i < BLOCK_QUEUE_LENGTH; i++){
-        if(block_queue[i] && strncmp(block_queue[i], timestamp, 10) <= 0) {
+    for (int i = 0; i < BLOCK_QUEUE_LENGTH; i++){
+        if(block_queue[i] && strncmp(block_queue[i]->timestamp, timestamp, 10) <= 0) {
+            free(block_queue[i]);
             block_queue[i] = NULL;
         }
-    } */
+    }
     
 }

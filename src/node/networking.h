@@ -39,6 +39,8 @@ struct packet parse_packet(char *source_buffer) {
     destination->receiver_content_length = second_null_byte;
 
     return *destination;
+
+    // TODO: verify that all fields in packet are actual valid data
 }
 
 void * handle_request( void* p_socket ) {
