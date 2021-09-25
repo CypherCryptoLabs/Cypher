@@ -93,7 +93,7 @@ int main(int argc, char const *argv[])
         offset += strnlen(packet + offset, 10000) + 1;
 
         printf("Enter timestamp (leave empty to use current timestamp): ");
-        fgets(input_buffer, 10, stdin);
+        fgets(input_buffer, 13, stdin);
 
         if(input_buffer[0] == '\n') {
             char timestamp_as_string[11];
