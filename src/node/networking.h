@@ -85,7 +85,7 @@ void * handle_request( void* p_socket ) {
         send(socket , test.cluster , test.cluster_length , 0 );
 
         break;
-    
+        
     default:
         printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
         break;
