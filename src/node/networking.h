@@ -71,19 +71,20 @@ void * handle_request( void* p_socket ) {
     case 2:
     
         // search for block matching metadata
-        /*printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
-        struct block_cluster test = search_blockchain(client_packet_content);
+        printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
+        struct block_cluster test = search_blockchain(parsed_packet);
 
-        for(int i = 0; i < test.cluster_length; i++) {
+        //DEBUG
+        /*for(int i = 0; i < test.cluster_length; i++) {
             printf("%02x", test.cluster[i]);
         }
         printf("\n");
 
-        printf("%d\n", test.cluster_length);
+        printf("%d\n", test.cluster_length);*/
 
         send(socket , test.cluster , test.cluster_length , 0 );
 
-        break;*/
+        break;
     
     default:
         printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);

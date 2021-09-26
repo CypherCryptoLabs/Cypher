@@ -32,9 +32,9 @@ struct packet{
     char receiver_address[129];
     char previous_block_hash[129];
     char sender_content[10001];
-    int sender_content_length ;
+    long unsigned int sender_content_length ;
     char receiver_content[10001];
-    int receiver_content_length;
+    long unsigned int receiver_content_length;
 };
 
 struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};

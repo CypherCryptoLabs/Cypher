@@ -13,8 +13,6 @@ static MYSQL* connecto_to_db() {
         exit(1);
     }
 
-    printf("[i] MySQL Connection successfu!\n");
-
     return con;
 
 }

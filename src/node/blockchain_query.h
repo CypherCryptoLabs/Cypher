@@ -90,14 +90,6 @@ int create_new_block( struct packet *block) {
          
     char prev_block[20269] = "";
 
-    /*strcat(prev_block, result_id);
-    strcat(prev_block, result_timestamp);
-    strcat(prev_block, result_hash);
-    strcat(prev_block, result_content_for_receiver);
-    strcat(prev_block, result_content_for_sender);
-    strcat(prev_block, result_receiver_address);
-    strcat(prev_block, result_sender_address);*/
-
     memcpy(prev_block, result_id, result_len[0]);
     memcpy(prev_block + result_len[0], result_timestamp, 10);
     memcpy(prev_block + result_len[0] + 10, result_hash, 128);
@@ -162,32 +154,25 @@ int create_new_block( struct packet *block) {
 
 }
 
-struct block_cluster search_blockchain( char content[20396]) {
+struct block_cluster search_blockchain( struct packet *needle) {
  
-    char timestamp[11], content_for_receiver[10001], content_for_sender[10001], receiver_address[129], sender_address[129], prev_block_hash[129];
-    unsigned long content_len = strnlen(content + 394, 20000) / 2;
+    //char timestamp[11], content_for_receiver[10001], content_for_sender[10001], receiver_address[129], sender_address[129], prev_block_hash[129];
+    //unsigned long content_len = strnlen(content + 394, 20000) / 2;
     char zero_buffer[128] = {0};
     int num_of_parameters = 0;
     long prev_block_hash_length = 128;
-
-    memcpy(timestamp, content, 10);
-    memcpy(prev_block_hash, content + 10, 128);
-    memcpy(receiver_address, content + 138, 128);
-    memcpy(sender_address, content + 266, 128);
-    memcpy(content_for_receiver, content + 394, content_len);
-    memcpy(content_for_sender, content + 394 + content_len, content_len);
 
     unsigned long timestamp_length = 10;
 
     char query_string[500] = "SELECT id, UNIX_TIMESTAMP(timestamp), hash_of_prev_block, content_for_receiver, content_for_sender, receiver_address, sender_address, LENGTH(content_for_receiver), LENGTH(content_for_sender) FROM blockchain";
     MYSQL_BIND param[6];
 
-    if(memcmp(zero_buffer, timestamp, 10) != 0) {
+    if(memcmp(zero_buffer, needle->timestamp, 10) != 0) {
 
         strcat(query_string, " WHERE timestamp = FROM_UNIXTIME(?)");
 
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = timestamp;
+        param[num_of_parameters].buffer = needle->timestamp;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &timestamp_length;
@@ -196,7 +181,7 @@ struct block_cluster search_blockchain( char content[20396]) {
 
     }
 
-    if(memcmp(zero_buffer, prev_block_hash, 128) != 0) {
+    if(memcmp(zero_buffer, needle->previous_block_hash, 128) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -209,7 +194,7 @@ struct block_cluster search_blockchain( char content[20396]) {
         unsigned long  prev_block_hash_length = 128;
         
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = prev_block_hash;
+        param[num_of_parameters].buffer = needle->previous_block_hash;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &prev_block_hash_length;
@@ -218,7 +203,7 @@ struct block_cluster search_blockchain( char content[20396]) {
 
     }
 
-    if(memcmp(zero_buffer, receiver_address, 128) != 0) {
+    if(memcmp(zero_buffer, needle->receiver_address, 128) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -231,7 +216,7 @@ struct block_cluster search_blockchain( char content[20396]) {
         unsigned long  receiver_address_length = 128;
         
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = receiver_address;
+        param[num_of_parameters].buffer = needle->receiver_address;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &receiver_address_length;
@@ -240,7 +225,7 @@ struct block_cluster search_blockchain( char content[20396]) {
 
     }
 
-    if(memcmp(zero_buffer, sender_address, 128) != 0) {
+    if(memcmp(zero_buffer, needle->sender_address, 128) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -253,7 +238,7 @@ struct block_cluster search_blockchain( char content[20396]) {
         unsigned long  sender_address_length = 128;
         
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = sender_address;
+        param[num_of_parameters].buffer = needle->sender_address;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &sender_address_length;
@@ -262,7 +247,7 @@ struct block_cluster search_blockchain( char content[20396]) {
 
     }
     
-    if(memcmp(zero_buffer, content_for_receiver, content_len) != 0) {
+    if(memcmp(zero_buffer, needle->receiver_content, needle->receiver_content_length) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -271,18 +256,19 @@ struct block_cluster search_blockchain( char content[20396]) {
         }
         
         strcat(query_string, " content_for_receiver = ?");
+        //long unsigned int* receiver_content_len = (long unsigned int* )needle->receiver_content_length;
         
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = content_for_receiver;
+        param[num_of_parameters].buffer = needle->receiver_content;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
-        param[num_of_parameters].length = &content_len;
+        param[num_of_parameters].length = &needle->receiver_content_length;
 
         num_of_parameters++;
 
     }
 
-    if(memcmp(zero_buffer, content_for_sender, content_len) != 0) {
+    if(memcmp(zero_buffer, needle->sender_content, needle->sender_content_length) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -293,17 +279,16 @@ struct block_cluster search_blockchain( char content[20396]) {
         strcat(query_string, " content_for_sender = ?");
                 
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = content_for_sender;
+        param[num_of_parameters].buffer = needle->sender_content;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
-        param[num_of_parameters].length = &content_len;
+        param[num_of_parameters].length = &needle->sender_content_length;
 
         num_of_parameters++;
 
     }
 
     strcat(query_string, ";");
-    printf("%s\n", query_string);
 
     // use bind structure and query_string to get data from query
     MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param);
