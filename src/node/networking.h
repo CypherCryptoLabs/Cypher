@@ -86,6 +86,13 @@ void * handle_request( void* p_socket ) {
 
         break;
         
+    case 3:
+    
+        printf("[i] Client send request to create a live ticker (query_id = '%X')\n", *client_packet);
+
+        subscribe_to_live_ticker(parsed_packet->sender_address, socket);
+        break;
+    
     default:
         printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
         break;

@@ -1,6 +1,7 @@
 #define BLOCK_QUEUE_LENGTH 30
 #define BLOCK_QUEUE_WORKER_INTERVAL 1
 #define BLOCK_QUEUE_DELAY 5
+#define LIVE_TICKER_SUBSCRIBER_COUNT 30
 #define RELEASE 1
 #define PATCH 0
 #define FIX 0
@@ -37,8 +38,14 @@ struct packet{
     long unsigned int receiver_content_length;
 };
 
+struct live_ticker_subscriber {
+    char *ticker_address;
+    int socket;
+};
+
 struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};
-int block_queue_current_index = 0;
+
+struct live_ticker_subscriber *live_ticker_subscriber_list[LIVE_TICKER_SUBSCRIBER_COUNT] = {0};
 
 #include "mysql_wrapper.h"
 #include "crypto.h"

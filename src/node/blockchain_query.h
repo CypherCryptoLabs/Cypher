@@ -474,3 +474,19 @@ int add_block_to_queue(struct packet *source_packet) {
     return 0;
 
 }
+
+void subscribe_to_live_ticker(char* subscriber_address, int communication_socket) {
+
+    struct live_ticker_subscriber *new_subscriber = malloc(sizeof(struct live_ticker_subscriber));
+    new_subscriber->socket = communication_socket;
+    new_subscriber->ticker_address = subscriber_address;
+    bool is_subscribed = false;
+
+    for(int i = 0; i < LIVE_TICKER_SUBSCRIBER_COUNT && !is_subscribed; i++) {
+        if(!live_ticker_subscriber_list[i]) {
+            live_ticker_subscriber_list[i] = new_subscriber;
+            is_subscribed = true;
+        }
+    }
+
+}
