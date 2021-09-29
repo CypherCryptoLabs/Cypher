@@ -180,7 +180,7 @@ void notify_ticker_subscriber(char* subscriber_address) {
             // sending notification to subscriber
             send(live_ticker_subscriber_list[i]->socket, message, sizeof(message), 0);
 
-            free(live_ticker_subscriber_list[i]->ticker_address);
+            //free(live_ticker_subscriber_list[i]->ticker_address);
             free(live_ticker_subscriber_list[i]);
         }
     }
