@@ -3,6 +3,9 @@ struct block_cluster {
     int cluster_length;
 };
 
+char *compile_to_packet_buffer(struct packet *block);
+void notify_ticker_subscriber(char* subscriber_address, char *packet);
+
 int create_new_block( struct packet *block) {
 
     MYSQL_BIND result_param[1];
@@ -149,6 +152,9 @@ int create_new_block( struct packet *block) {
     param[5].length = &prev_block_hash_length;
 
     mysql_prepared_query( query_string, param);
+
+    char *block_as_packet = compile_to_packet_buffer(block);
+    notify_ticker_subscriber(block->receiver_address, block_as_packet);
 
     return 0;
 

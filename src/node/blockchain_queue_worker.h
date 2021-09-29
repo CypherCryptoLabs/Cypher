@@ -1,5 +1,3 @@
-void notify_ticker_subscriber(char* subscriber_address);
-
 void * queue_worker() {    
 
     char timestamp_as_string[10];
@@ -10,7 +8,6 @@ void * queue_worker() {
     for(int i = 0; i < queue->queue_length; i++) {
         if(queue->queue[i]) {
             create_new_block(queue->queue[i]);
-            notify_ticker_subscriber(queue->queue[i]->receiver_address);
         }
     }
     

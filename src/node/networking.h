@@ -169,21 +169,35 @@ void * connection_handler()
     
 }
 
-void notify_ticker_subscriber(char* subscriber_address) {
+void notify_ticker_subscriber(char* subscriber_address, char *packet) {
     // check if address is subscribed to live ticker
     bool address_is_subscribed = false;
-    char message[10] = "TEST";
 
     for(int i = 0; i < LIVE_TICKER_SUBSCRIBER_COUNT && !address_is_subscribed; i++) {
         if(live_ticker_subscriber_list[i] && strcmp(live_ticker_subscriber_list[i]->ticker_address, subscriber_address) == 0) {
             address_is_subscribed == true;
             // sending notification to subscriber
-            send(live_ticker_subscriber_list[i]->socket, message, sizeof(message), 0);
+            send(live_ticker_subscriber_list[i]->socket, packet, sizeof(packet), 0);
 
-            //free(live_ticker_subscriber_list[i]->ticker_address);
             free(live_ticker_subscriber_list[i]);
         }
     }
 
     return;
+}
+
+char *compile_to_packet_buffer(struct packet *block) {
+
+    char *packet = malloc(20269);
+    memset(packet, 0, 20269);
+
+    memcpy(packet + 1, block->timestamp, 10);
+    memcpy(packet + 11, block->sender_address, 128);
+    memcpy(packet + 139, block->receiver_address, 128);
+    memcpy(packet + 267, block->previous_block_hash, 128);
+    memcpy(packet + 395, block->sender_content, block->sender_content_length);
+    memcpy(packet + 395 + 1 + block->sender_content_length, block->receiver_content, block->receiver_content_length);
+
+    return packet;
+
 }

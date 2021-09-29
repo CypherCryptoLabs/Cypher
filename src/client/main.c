@@ -14,7 +14,7 @@ int main(int argc, char const *argv[])
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char *blockchain_name = "Cypher Blockchain";
-    char buffer[1024] = {0};
+    char buffer[20269] = {0};
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("[!] Socket creation error \n");
@@ -118,9 +118,13 @@ int main(int argc, char const *argv[])
 
     }
 
-    memset(buffer, 0, 1024);
-    read(sock, buffer, 1024);
-    printf("%s\n", buffer);
+    memset(buffer, 0, 20269);
+    read(sock, buffer, 20269);
+    
+    for(int i = 0; i < 20269; i++) {
+        printf("%02x", buffer[i]);
+    }
+    printf("\n");
 
     return 0;
 }
