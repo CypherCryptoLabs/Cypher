@@ -168,3 +168,22 @@ void * connection_handler()
     }
     
 }
+
+void notify_ticker_subscriber(char* subscriber_address) {
+    // check if address is subscribed to live ticker
+    bool address_is_subscribed = false;
+    char message[10] = "TEST";
+
+    for(int i = 0; i < LIVE_TICKER_SUBSCRIBER_COUNT && !address_is_subscribed; i++) {
+        if(live_ticker_subscriber_list[i] && strcmp(live_ticker_subscriber_list[i]->ticker_address, subscriber_address) == 0) {
+            address_is_subscribed == true;
+            // sending notification to subscriber
+            send(live_ticker_subscriber_list[i]->socket, message, sizeof(message), 0);
+
+            free(live_ticker_subscriber_list[i]->ticker_address);
+            free(live_ticker_subscriber_list[i]);
+        }
+    }
+
+    return;
+}

@@ -1,3 +1,5 @@
+void notify_ticker_subscriber(char* subscriber_address);
+
 void * queue_worker() {    
 
     char timestamp_as_string[10];
@@ -5,13 +7,10 @@ void * queue_worker() {
     sprintf(timestamp_as_string, "%d", timestamp);
     struct filtered_queue *queue = sort_queue_by_timestamp(timestamp_as_string);
 
-    if(queue->queue_length > 0) {
-        printf("%s\n", queue->queue[0]->sender_address);
-    }
-
     for(int i = 0; i < queue->queue_length; i++) {
         if(queue->queue[i]) {
             create_new_block(queue->queue[i]);
+            notify_ticker_subscriber(queue->queue[i]->receiver_address);
         }
     }
     
