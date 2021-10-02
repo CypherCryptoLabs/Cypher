@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <openssl/sha.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -47,8 +49,10 @@ struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};
 
 struct live_ticker_subscriber *live_ticker_subscriber_list[LIVE_TICKER_SUBSCRIBER_COUNT] = {0};
 
-#include "mysql_wrapper.h"
 #include "crypto.h"
+#include "init_node.h"
+#include "mysql_wrapper.h"
+#include "sha512.h"
 #include "blockchain_queue.h"
 #include "blockchain_query.h"
 #include "blockchain_queue_worker.h"

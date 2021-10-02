@@ -1,20 +1,44 @@
-char * get_sha512_string( char content[20269], int len) {
+void generate_keypair()
+{
+	int ret = 0;
+	RSA *r = NULL;
+	BIGNUM *bne = NULL;
+	BIO *bp_public = NULL, *bp_private = NULL;
 
-    SHA512_CTX ctx;
-    unsigned char buffer[20269] = {0};
-    char *hash_as_string = (char *)malloc(SHA512_DIGEST_LENGTH * 2);
-    //int len = strnlen(content, 20269);
+	int				bits = 4096;
+	unsigned long	e = RSA_F4;
 
-    strcpy(buffer,content);
+	// 1. generate rsa key
+	bne = BN_new();
+	ret = BN_set_word(bne,e);
+	if(ret != 1){
+		goto free_all;
+	}
 
-    SHA512_Init(&ctx);
-    SHA512_Update(&ctx, buffer, len);
-    SHA512_Final(buffer, &ctx);
+	r = RSA_new();
+	ret = RSA_generate_key_ex(r, bits, bne, NULL);
+	if(ret != 1){
+		goto free_all;
+	}
 
-    for (int i = 0; i < SHA512_DIGEST_LENGTH; i++) {
-        sprintf(&hash_as_string[2 * i], "%02x", buffer[i]);
-    }
+	// 2. save public key
+	bp_public = BIO_new_file("public.pem", "w+");
+	ret = PEM_write_bio_RSAPublicKey(bp_public, r);
+	if(ret != 1){
+		goto free_all;
+	}
 
-    return hash_as_string;
+	// 3. save private key
+	bp_private = BIO_new_file("private.pem", "w+");
+	ret = PEM_write_bio_RSAPrivateKey(bp_private, r, NULL, NULL, 0, NULL, NULL);
 
+	// 4. free
+free_all:
+
+	BIO_free_all(bp_public);
+	BIO_free_all(bp_private);
+	RSA_free(r);
+	BN_free(bne);
+
+	return;
 }

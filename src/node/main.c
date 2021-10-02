@@ -4,6 +4,7 @@ int main(int argc, char const *argv[]) {
 
     printf("CYPHER NODE V%d.%d.%d%s\n", RELEASE, PATCH, FIX, EXTRAVERSION);
     printf("MySQL client version: %s\n\n", mysql_get_client_info());
+    init_node();
     printf("[i] Starting node... \n");
 
     printf("[i] Starting queue_worker...\n");
