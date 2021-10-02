@@ -38,9 +38,42 @@ struct packet parse_packet(char *source_buffer) {
     destination->sender_content_length = first_null_byte;
     destination->receiver_content_length = second_null_byte;
 
+    bool packet_contains_invalid_data = false;
+    char timestamp_as_string[11];
+    unsigned int timestamp = (unsigned int)time(NULL) - BLOCK_QUEUE_DELAY;
+    sprintf(timestamp_as_string, "%d", timestamp);
+
+    if(memcmp(timestamp_as_string, destination->timestamp, 10) > 0) {
+        packet_contains_invalid_data = !packet_contains_invalid_data;
+    }
+
+    for(int i = 0; i < 128 && !packet_contains_invalid_data; i++) {
+        if(!isxdigit(destination->sender_address[i])) {
+            packet_contains_invalid_data = !packet_contains_invalid_data;
+        }
+    }
+
+    for(int i = 0; i < 128 && !packet_contains_invalid_data; i++) {
+        if(!isxdigit(destination->receiver_address[i])) {
+            packet_contains_invalid_data = !packet_contains_invalid_data;
+        }
+    }
+
+    for(int i = 0; i < 128 && !packet_contains_invalid_data; i++) {
+        if(!isxdigit(destination->previous_block_hash[i])) {
+            packet_contains_invalid_data = !packet_contains_invalid_data;
+        }
+    }
+
+    if(destination->receiver_content_length > 0 && destination->sender_content_length > 0 && destination->query_id > 0 && !packet_contains_invalid_data) {
+        return *destination;
+    } else {
+        destination->query_id = -1;
+        return *destination;
+    }
+
     return *destination;
 
-    // TODO: verify that all fields in packet are actual valid data
 }
 
 void * handle_request( void* p_socket ) {
@@ -58,44 +91,50 @@ void * handle_request( void* p_socket ) {
 
     *parsed_packet = parse_packet(client_packet);
 
-    switch (parsed_packet->query_id)
-    {
-    case 1:
+    if(parsed_packet->query_id != -1) {
+        printf("TEST\n");
+        switch (parsed_packet->query_id)
+        {
+        case 1:
 
-        // add new blobk to blockchain
-        printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
-        add_block_to_queue(parsed_packet);
+            // add new blobk to blockchain
+            printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
+            add_block_to_queue(parsed_packet);
 
-        break;
+            break;
 
-    case 2:
-    
-        // search for block matching metadata
-        printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
-        struct block_cluster test = search_blockchain(parsed_packet);
-
-        //DEBUG
-        /*for(int i = 0; i < test.cluster_length; i++) {
-            printf("%02x", test.cluster[i]);
-        }
-        printf("\n");
-
-        printf("%d\n", test.cluster_length);*/
-
-        send(socket , test.cluster , test.cluster_length , 0 );
-
-        break;
+        case 2:
         
-    case 3:
-    
-        printf("[i] Client send request to create a live ticker (query_id = '%X')\n", *client_packet);
+            // search for block matching metadata
+            printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
+            struct block_cluster test = search_blockchain(parsed_packet);
 
-        subscribe_to_live_ticker(parsed_packet->sender_address, socket);
-        break;
-    
-    default:
-        printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
-        break;
+            //DEBUG
+            /*for(int i = 0; i < test.cluster_length; i++) {
+                printf("%02x", test.cluster[i]);
+            }
+            printf("\n");
+
+            printf("%d\n", test.cluster_length);*/
+
+            send(socket , test.cluster , test.cluster_length , 0 );
+
+            break;
+            
+        case 3:
+        
+            printf("[i] Client send request to create a live ticker (query_id = '%X')\n", *client_packet);
+
+            subscribe_to_live_ticker(parsed_packet->sender_address, socket);
+            break;
+        
+        default:
+            printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
+            break;
+        }
+    } else {
+        char *status = "\xff";
+        send(socket , status , sizeof(status) , 0 );
     }
 
 }

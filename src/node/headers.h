@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <mysql/mysql.h>
+#include <ctype.h>
 
 struct packet{
     int query_id;
