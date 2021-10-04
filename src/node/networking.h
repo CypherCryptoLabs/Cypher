@@ -1,5 +1,10 @@
 #define PORT 50000
 
+struct handle_request_arg{
+    int socket;
+    struct sockaddr_in address;
+};
+
 struct packet parse_packet(char *source_buffer) {
 
     struct packet *destination = malloc(sizeof(struct packet));
@@ -76,11 +81,13 @@ struct packet parse_packet(char *source_buffer) {
 
 }
 
-void * handle_request( void* p_socket ) {
+void * handle_request( void* args ) {
 
     printf("[i] Started new Thread...\n");
 
-    int socket = *((int *) p_socket);
+    struct handle_request_arg arguments = *(struct handle_request_arg*)args;
+
+    int socket = arguments.socket;
     char client_packet[20269];
     memset(client_packet, 0, sizeof(char) + 20268);
 
@@ -92,7 +99,6 @@ void * handle_request( void* p_socket ) {
     *parsed_packet = parse_packet(client_packet);
 
     if(parsed_packet->query_id != -1) {
-        printf("TEST\n");
         switch (parsed_packet->query_id)
         {
         case 1:
@@ -107,25 +113,23 @@ void * handle_request( void* p_socket ) {
         
             // search for block matching metadata
             printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
-            struct block_cluster test = search_blockchain(parsed_packet);
-
-            //DEBUG
-            /*for(int i = 0; i < test.cluster_length; i++) {
-                printf("%02x", test.cluster[i]);
-            }
-            printf("\n");
-
-            printf("%d\n", test.cluster_length);*/
-
-            send(socket , test.cluster , test.cluster_length , 0 );
+            struct block_cluster block_cluster = search_blockchain(parsed_packet);
+            send(socket , block_cluster.cluster , block_cluster.cluster_length , 0 );
 
             break;
             
         case 3:
         
             printf("[i] Client send request to create a live ticker (query_id = '%X')\n", *client_packet);
-
             subscribe_to_live_ticker(parsed_packet->sender_address, socket);
+
+            break;
+
+        case 4:
+
+            printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
+            //register_new_node(inet_ntoa(arguments.address.sin_addr));
+            
             break;
         
         default:
@@ -198,8 +202,9 @@ void * connection_handler()
             pthread_t ptid;
   
             // Creating a new thread
-            int *arg = malloc(sizeof(new_socket));
-            *arg = new_socket;
+            struct handle_request_arg* arg = malloc(sizeof(struct handle_request_arg));
+            arg->socket = new_socket;
+            arg->address = address;
             pthread_create(&ptid, 0, handle_request, arg);
             
         }
