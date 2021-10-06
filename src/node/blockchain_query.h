@@ -496,3 +496,20 @@ void subscribe_to_live_ticker(char* subscriber_address, int communication_socket
     }
 
 }
+
+void register_new_node(char *ip_address, char * encrypted_public_key, int encrypted_public_key_len,  char *clear_text_public_key, int clear_text_public_key_len) {
+    // 1. decrypt encrypted_public_key with clear_text_public_key
+    // 2. verify that the decrypted encrypted_public_key == clear_text_public_key
+    // 3. insert node information into MySQL Database
+
+    unsigned char decrypted_key[10000]={};
+
+    int decrypted_length = public_decrypt(encrypted_public_key,encrypted_public_key_len, clear_text_public_key, decrypted_key);
+    if(decrypted_length == -1)
+    {
+        //print_error("Public Decrypt failed");
+        exit(0);
+    }
+    printf("Decrypted Text:\n%s\n",decrypted_key);
+    printf("Decrypted Length: %d\n",decrypted_length);
+}
