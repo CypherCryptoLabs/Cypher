@@ -9,7 +9,7 @@ void notify_ticker_subscriber(char* subscriber_address, char *packet);
 int create_new_block( struct packet *block) {
 
     MYSQL_BIND result_param[1];
-    MYSQL_STMT* prev_block_stmt = mysql_prepared_query("SELECT id, hash_of_prev_block, content_for_receiver, content_for_sender, receiver_address, sender_address, UNIX_TIMESTAMP(timestamp) FROM blockchain ORDER BY id DESC LIMIT 1;", result_param);
+    MYSQL_STMT* prev_block_stmt = mysql_prepared_query("SELECT id, hash_of_prev_block, data_blob, receiver_address, sender_address, UNIX_TIMESTAMP(timestamp) FROM blockchain ORDER BY id DESC LIMIT 1;", result_param);
 
     /* Fetch result set meta information */
     MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(prev_block_stmt);
@@ -35,8 +35,7 @@ int create_new_block( struct packet *block) {
     char result_id[21];
     bool result_is_null[7];
     unsigned long result_len[7] = {0};
-    char result_content_for_sender[10001];
-    char result_content_for_receiver[10001];
+    char result_data_blob[10241];
     char result_receiver_address[129];
     char result_sender_address[129];
     char result_hash[129];
@@ -55,34 +54,28 @@ int create_new_block( struct packet *block) {
     result_bind[1].is_null = &result_is_null[1];
 
     result_bind[2].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
-    result_bind[2].buffer = &result_content_for_receiver;
-    result_bind[2].buffer_length = sizeof(result_content_for_receiver);
+    result_bind[2].buffer = &result_data_blob;
+    result_bind[2].buffer_length = sizeof(result_data_blob);
     result_bind[2].length = &result_len[2];
     result_bind[2].is_null = &result_is_null[2];
-
-    result_bind[3].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
-    result_bind[3].buffer = &result_content_for_sender;
-    result_bind[3].buffer_length = sizeof(result_content_for_sender);
-    result_bind[3].length = &result_len[3];
-    result_bind[3].is_null = &result_is_null[3];
 
     result_bind[4].buffer_type = MYSQL_TYPE_VAR_STRING;
     result_bind[4].buffer = &result_receiver_address;
     result_bind[4].buffer_length = sizeof(result_receiver_address);
-    result_bind[4].length = &result_len[4];
-    result_bind[4].is_null = &result_is_null[4];
+    result_bind[4].length = &result_len[3];
+    result_bind[4].is_null = &result_is_null[3];
 
     result_bind[5].buffer_type = MYSQL_TYPE_VAR_STRING;
     result_bind[5].buffer = &result_sender_address;
     result_bind[5].buffer_length = sizeof(result_sender_address);
-    result_bind[5].length = &result_len[5];
-    result_bind[5].is_null = &result_is_null[5];
+    result_bind[5].length = &result_len[4];
+    result_bind[5].is_null = &result_is_null[4];
 
     result_bind[6].buffer_type = MYSQL_TYPE_VAR_STRING;
     result_bind[6].buffer = &result_timestamp;
     result_bind[6].buffer_length = sizeof(result_timestamp);
-    result_bind[6].length = &result_len[6];
-    result_bind[6].is_null = &result_is_null[6];
+    result_bind[6].length = &result_len[5];
+    result_bind[6].is_null = &result_is_null[5];
 
     if (mysql_stmt_bind_result(prev_block_stmt, result_bind)) {
         fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(prev_block_stmt));
@@ -91,30 +84,28 @@ int create_new_block( struct packet *block) {
 
     mysql_stmt_fetch(prev_block_stmt);
          
-    char prev_block[20269] = "";
+    char prev_block[10521] = "";
 
-    memcpy(prev_block, result_id, result_len[0]);
-    memcpy(prev_block + result_len[0], result_timestamp, 10);
-    memcpy(prev_block + result_len[0] + 10, result_hash, 128);
-    memcpy(prev_block + result_len[0] + 138, result_content_for_receiver, result_len[2]);
-    memcpy(prev_block + result_len[0] + result_len[2] + 138, result_content_for_sender, result_len[3]);
-    memcpy(prev_block + result_len[0] + result_len[2] + result_len[3] + 138, result_receiver_address, 128);
-    memcpy(prev_block + result_len[0] + result_len[2] + result_len[3] + 2666, result_sender_address, 128);
+    memcpy(prev_block, result_id, 21);
+    memcpy(prev_block + 21, result_timestamp, 10);
+    memcpy(prev_block + 31, result_hash, 128);
+    memcpy(prev_block + 159, result_sender_address, 128);
+    memcpy(prev_block + 287, result_receiver_address, 128);
+    memcpy(prev_block + 415, result_data_blob, result_len[2]);
 
     printf("%s\n", prev_block);
 
-    char *prev_block_hash = get_sha512_string(prev_block, result_len[2] + result_len[3] + 2666);
+    char *prev_block_hash = get_sha512_string(prev_block, 415 + result_len[2]);
 
-    char* query_string = "INSERT INTO blockchain(timestamp, content_for_receiver, content_for_sender, receiver_address, sender_address, hash_of_prev_block) VALUES(FROM_UNIXTIME(?), ?, ?, ?, ?, ?);";
+    char* query_string = "INSERT INTO blockchain(timestamp, data_blob, receiver_address, sender_address, hash_of_prev_block) VALUES(FROM_UNIXTIME(?), ?, ?, ?, ?);";
     
     long timestamp_length = 10;
-    long content_for_receiver_length = block->receiver_content_length;
-    long content_for_sender_length = block->sender_content_length;
+    long data_blob_length = block->data_blob_length;
     long receiver_address_length = 128;
     long sender_address_length = 128;
     long prev_block_hash_length = 128;
 
-    MYSQL_BIND param[6];
+    MYSQL_BIND param[5];
     param[0].buffer_type = MYSQL_TYPE_VARCHAR;
     param[0].buffer = block->timestamp;
     param[0].is_unsigned = 0;
@@ -122,34 +113,28 @@ int create_new_block( struct packet *block) {
     param[0].length = &timestamp_length;
 
     param[1].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[1].buffer = block->receiver_content;
+    param[1].buffer = block->data_blob;
     param[1].is_unsigned = 0;
     param[1].is_null = 0;
-    param[1].length = &content_for_receiver_length;
+    param[1].length = &data_blob_length;
 
     param[2].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[2].buffer = block->sender_content;
+    param[2].buffer = block->receiver_address;
     param[2].is_unsigned = 0;
     param[2].is_null = 0;
-    param[2].length = &content_for_sender_length;
+    param[2].length = &receiver_address_length;
 
     param[3].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[3].buffer = block->receiver_address;
+    param[3].buffer = block->sender_address;
     param[3].is_unsigned = 0;
     param[3].is_null = 0;
-    param[3].length = &receiver_address_length;
+    param[3].length = &sender_address_length;
 
     param[4].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[4].buffer = block->sender_address;
+    param[4].buffer = prev_block_hash;
     param[4].is_unsigned = 0;
     param[4].is_null = 0;
-    param[4].length = &sender_address_length;
-
-    param[5].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[5].buffer = prev_block_hash;
-    param[5].is_unsigned = 0;
-    param[5].is_null = 0;
-    param[5].length = &prev_block_hash_length;
+    param[4].length = &prev_block_hash_length;
 
     mysql_prepared_query( query_string, param);
 
@@ -160,7 +145,7 @@ int create_new_block( struct packet *block) {
 
 }
 
-struct block_cluster search_blockchain( struct packet *needle) {
+/*struct block_cluster search_blockchain( struct packet *needle) {
  
     //char timestamp[11], content_for_receiver[10001], content_for_sender[10001], receiver_address[129], sender_address[129], prev_block_hash[129];
     //unsigned long content_len = strnlen(content + 394, 20000) / 2;
@@ -299,24 +284,22 @@ struct block_cluster search_blockchain( struct packet *needle) {
     // use bind structure and query_string to get data from query
     MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param);
 
-    /* Fetch result set meta information */
     MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(prev_block_stmt);
     if (!prepare_meta_result)
     {
         fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
         fprintf(stderr, " %s\n", mysql_stmt_error(prev_block_stmt));
         exit(1);
+    // use bind structure and query_string to get data from query
     }
 
-    /* Get total columns in the query */
     int column_count= mysql_num_fields(prepare_meta_result);
-    if (column_count != 9) /* validate column count */
+    if (column_count != 9)
     {
         fprintf(stderr, " invalid column count returned by MySQL\n");
         exit(1);
     }
 
-    /* Bind single result column, expected to be a double. */
     MYSQL_BIND result_bind[9];
     memset(result_bind, 0, sizeof(result_bind));
 
@@ -402,9 +385,7 @@ struct block_cluster search_blockchain( struct packet *needle) {
 
         mysql_stmt_fetch(prev_block_stmt);
 
-        char result_content_for_receiver_escaped[content_for_receiver_length * 2];
-        char result_content_for_sender_escaped[content_for_sender_length * 2];
-        int result_content_for_receiver_escaped_offset = 0;
+    // use bind structure and query_string to get data from query
         int result_content_for_sender_escaped_offset = 0;
 
         memset(result_content_for_receiver_escaped, 0, content_for_receiver_length * 2);
@@ -450,7 +431,7 @@ struct block_cluster search_blockchain( struct packet *needle) {
 
     return cluster;
 
-}
+}*/
 
 int add_block_to_queue(struct packet *source_packet) {
 

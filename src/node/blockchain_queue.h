@@ -13,10 +13,7 @@ static int packetcmp(struct packet *packet_1, struct packet *packet_2) {
         return_value = strcmp(packet_1->receiver_address, packet_2->receiver_address);
     
     if(return_value == 0)
-        return_value = strcmp(packet_1->sender_content, packet_2->sender_content);
-    
-    if(return_value == 0)
-        return_value = strcmp(packet_1->receiver_content, packet_2->receiver_content);
+        return_value = strcmp(packet_1->data_blob, packet_2->data_blob);
 
     return return_value;    
 

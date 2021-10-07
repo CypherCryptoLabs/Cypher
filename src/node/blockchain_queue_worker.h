@@ -7,7 +7,8 @@ void * queue_worker() {
 
     for(int i = 0; i < queue->queue_length; i++) {
         if(queue->queue[i]) {
-            create_new_block(queue->queue[i]);
+            printf("%s\n", queue->queue[i]->timestamp);
+            //create_new_block(queue->queue[i]);
         }
     }
     

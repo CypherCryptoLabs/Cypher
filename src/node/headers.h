@@ -38,11 +38,8 @@ struct packet{
     char timestamp[11];
     char sender_address[129];
     char receiver_address[129];
-    char previous_block_hash[129];
-    char sender_content[10001];
-    long unsigned int sender_content_length ;
-    char receiver_content[10001];
-    long unsigned int receiver_content_length;
+    char data_blob[10241];
+    int data_blob_length;
 };
 
 struct live_ticker_subscriber {

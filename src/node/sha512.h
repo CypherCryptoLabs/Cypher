@@ -1,7 +1,7 @@
-char * get_sha512_string( char content[20269], int len) {
+char * get_sha512_string( char content[10520], int len) {
 
     SHA512_CTX ctx;
-    unsigned char buffer[20269] = {0};
+    unsigned char buffer[10520] = {0};
     char *hash_as_string = (char *)malloc(SHA512_DIGEST_LENGTH * 2);
     //int len = strnlen(content, 20269);
 
