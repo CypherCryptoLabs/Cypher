@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 #define PORT 50000
    
 int main(int argc, char const *argv[])
@@ -73,9 +74,15 @@ int main(int argc, char const *argv[])
 
         printf("Enter Content for data_blob: ");
         fgets(packet + offset, 10240, stdin);
-        if(packet[offset] == '\n') {
-            packet[offset] = 0x00;
+        
+        bool new_line_byte_replaced = false;
+        for (int i = 0; i < 10240 && !new_line_byte_replaced; i++) {
+            if(packet[offset + i] == '\x0A') {
+                packet[offset + i] = '\x0';
+                new_line_byte_replaced = true;
+            }
         }
+
         offset += strnlen(packet + offset, 10240) + 1;
 
         printf("Enter timestamp (leave empty to use current timestamp): ");

@@ -145,25 +145,30 @@ int create_new_block( struct packet *block) {
 
 }
 
-/*struct block_cluster search_blockchain( struct packet *needle) {
+struct block_cluster search_blockchain( struct packet *needle) {
  
     //char timestamp[11], content_for_receiver[10001], content_for_sender[10001], receiver_address[129], sender_address[129], prev_block_hash[129];
     //unsigned long content_len = strnlen(content + 394, 20000) / 2;
     char zero_buffer[128] = {0};
     int num_of_parameters = 0;
     long prev_block_hash_length = 128;
-
     unsigned long timestamp_length = 10;
+    char timestamp_needle[11], hash_of_prev_blobk_needle[129], receiver_address_needle[129], sender_address_needle[129];
 
-    char query_string[500] = "SELECT id, UNIX_TIMESTAMP(timestamp), hash_of_prev_block, content_for_receiver, content_for_sender, receiver_address, sender_address, LENGTH(content_for_receiver), LENGTH(content_for_sender) FROM blockchain";
-    MYSQL_BIND param[6];
+    memcpy(timestamp_needle, needle->data_blob, 10);
+    memcpy(hash_of_prev_blobk_needle, needle->data_blob + 10, 128);
+    memcpy(receiver_address_needle, needle->data_blob + 138, 128);
+    memcpy(sender_address_needle, needle->data_blob + 266, 128);
 
-    if(memcmp(zero_buffer, needle->timestamp, 10) != 0) {
+    char query_string[500] = "SELECT UNIX_TIMESTAMP(timestamp), hash_of_prev_block, data_blob, receiver_address, sender_address, LENGTH(data_blob) FROM blockchain";
+    MYSQL_BIND param[4];
+
+    if(memcmp(zero_buffer, timestamp_needle, 10) != 0) {
 
         strcat(query_string, " WHERE timestamp = FROM_UNIXTIME(?)");
 
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = needle->timestamp;
+        param[num_of_parameters].buffer = timestamp_needle;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &timestamp_length;
@@ -172,7 +177,7 @@ int create_new_block( struct packet *block) {
 
     }
 
-    if(memcmp(zero_buffer, needle->previous_block_hash, 128) != 0) {
+    if(memcmp(zero_buffer, hash_of_prev_blobk_needle, 128) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -185,7 +190,7 @@ int create_new_block( struct packet *block) {
         unsigned long  prev_block_hash_length = 128;
         
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = needle->previous_block_hash;
+        param[num_of_parameters].buffer = hash_of_prev_blobk_needle;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &prev_block_hash_length;
@@ -194,7 +199,7 @@ int create_new_block( struct packet *block) {
 
     }
 
-    if(memcmp(zero_buffer, needle->receiver_address, 128) != 0) {
+    if(memcmp(zero_buffer, receiver_address_needle, 128) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -207,7 +212,7 @@ int create_new_block( struct packet *block) {
         unsigned long  receiver_address_length = 128;
         
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = needle->receiver_address;
+        param[num_of_parameters].buffer = receiver_address_needle;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &receiver_address_length;
@@ -216,7 +221,7 @@ int create_new_block( struct packet *block) {
 
     }
 
-    if(memcmp(zero_buffer, needle->sender_address, 128) != 0) {
+    if(memcmp(zero_buffer, sender_address_needle, 128) != 0) {
 
         if(num_of_parameters > 0) {
             strcat(query_string, " AND");
@@ -229,51 +234,10 @@ int create_new_block( struct packet *block) {
         unsigned long  sender_address_length = 128;
         
         param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = needle->sender_address;
+        param[num_of_parameters].buffer = sender_address_needle;
         param[num_of_parameters].is_unsigned = 0;
         param[num_of_parameters].is_null = 0;
         param[num_of_parameters].length = &sender_address_length;
-
-        num_of_parameters++;
-
-    }
-    
-    if(memcmp(zero_buffer, needle->receiver_content, needle->receiver_content_length) != 0) {
-
-        if(num_of_parameters > 0) {
-            strcat(query_string, " AND");
-        } else {
-            strcat(query_string, " WHERE");
-        }
-        
-        strcat(query_string, " content_for_receiver = ?");
-        //long unsigned int* receiver_content_len = (long unsigned int* )needle->receiver_content_length;
-        
-        param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = needle->receiver_content;
-        param[num_of_parameters].is_unsigned = 0;
-        param[num_of_parameters].is_null = 0;
-        param[num_of_parameters].length = &needle->receiver_content_length;
-
-        num_of_parameters++;
-
-    }
-
-    if(memcmp(zero_buffer, needle->sender_content, needle->sender_content_length) != 0) {
-
-        if(num_of_parameters > 0) {
-            strcat(query_string, " AND");
-        } else {
-            strcat(query_string, " WHERE");
-        }
-        
-        strcat(query_string, " content_for_sender = ?");
-                
-        param[num_of_parameters].buffer_type = MYSQL_TYPE_VARCHAR;
-        param[num_of_parameters].buffer = needle->sender_content;
-        param[num_of_parameters].is_unsigned = 0;
-        param[num_of_parameters].is_null = 0;
-        param[num_of_parameters].length = &needle->sender_content_length;
 
         num_of_parameters++;
 
@@ -294,7 +258,7 @@ int create_new_block( struct packet *block) {
     }
 
     int column_count= mysql_num_fields(prepare_meta_result);
-    if (column_count != 9)
+    if (column_count != 6)
     {
         fprintf(stderr, " invalid column count returned by MySQL\n");
         exit(1);
@@ -303,23 +267,14 @@ int create_new_block( struct packet *block) {
     MYSQL_BIND result_bind[9];
     memset(result_bind, 0, sizeof(result_bind));
 
-    char result_id[21] = {0};
     bool result_is_null[8];
     unsigned long result_len[8] = {0};
-    char result_content_for_sender[10001] = {0};
-    char result_content_for_receiver[10001] = {0};
     char result_receiver_address[129] = {0};
     char result_sender_address[129] = {0};
+    char result_data_blob[129] = {0};
     char result_hash[129] = {0};
     char result_timestamp[11] = {0};
-    int content_for_receiver_length;
-    int content_for_sender_length;
-
-    result_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING;
-    result_bind[0].buffer = &result_id;
-    result_bind[0].buffer_length = sizeof(result_id);
-    result_bind[0].length = &result_len[0];
-    result_bind[0].is_null = &result_is_null[0];
+    int result_data_blob_length;
 
     result_bind[1].buffer_type = MYSQL_TYPE_VAR_STRING;
     result_bind[1].buffer = &result_timestamp;
@@ -334,40 +289,28 @@ int create_new_block( struct packet *block) {
     result_bind[2].is_null = &result_is_null[1];
 
     result_bind[3].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
-    result_bind[3].buffer = &result_content_for_receiver;
-    result_bind[3].buffer_length = sizeof(result_content_for_receiver);
+    result_bind[3].buffer = &result_data_blob;
+    result_bind[3].buffer_length = sizeof(result_data_blob);
     result_bind[3].length = &result_len[2];
     result_bind[3].is_null = &result_is_null[2];
 
-    result_bind[4].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
-    result_bind[4].buffer = &result_content_for_sender;
-    result_bind[4].buffer_length = sizeof(result_content_for_sender);
-    result_bind[4].length = &result_len[3];
-    result_bind[4].is_null = &result_is_null[3];
+    result_bind[4].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[4].buffer = &result_receiver_address;
+    result_bind[4].buffer_length = sizeof(result_receiver_address);
+    result_bind[4].length = &result_len[4];
+    result_bind[4].is_null = &result_is_null[4];
 
     result_bind[5].buffer_type = MYSQL_TYPE_VAR_STRING;
-    result_bind[5].buffer = &result_receiver_address;
-    result_bind[5].buffer_length = sizeof(result_receiver_address);
-    result_bind[5].length = &result_len[4];
-    result_bind[5].is_null = &result_is_null[4];
+    result_bind[5].buffer = &result_sender_address;
+    result_bind[5].buffer_length = sizeof(result_sender_address);
+    result_bind[5].length = &result_len[5];
+    result_bind[5].is_null = &result_is_null[5];
 
-    result_bind[6].buffer_type = MYSQL_TYPE_VAR_STRING;
-    result_bind[6].buffer = &result_sender_address;
-    result_bind[6].buffer_length = sizeof(result_sender_address);
-    result_bind[6].length = &result_len[5];
-    result_bind[6].is_null = &result_is_null[5];
-
-    result_bind[7].buffer_type = MYSQL_TYPE_LONG;
-    result_bind[7].buffer = &content_for_receiver_length;
-    result_bind[7].buffer_length = sizeof(content_for_receiver_length);
-    result_bind[7].length = &result_len[6];
-    result_bind[7].is_null = &result_is_null[6];
-
-    result_bind[8].buffer_type = MYSQL_TYPE_LONG;
-    result_bind[8].buffer = &content_for_sender_length;
-    result_bind[8].buffer_length = sizeof(content_for_sender_length);
-    result_bind[8].length = &result_len[7];
-    result_bind[8].is_null = &result_is_null[7];
+    result_bind[6].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[6].buffer = &result_data_blob_length;
+    result_bind[6].buffer_length = sizeof(result_data_blob_length);
+    result_bind[6].length = &result_len[7];
+    result_bind[6].is_null = &result_is_null[7];
 
     if (mysql_stmt_bind_result(prev_block_stmt, result_bind)) {
         fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(prev_block_stmt));
@@ -377,48 +320,24 @@ int create_new_block( struct packet *block) {
     mysql_stmt_store_result(prev_block_stmt);
     int num_rows = mysql_stmt_num_rows(prev_block_stmt);
 
-    char *block_cluster = malloc(sizeof(char) * 40414 * num_rows);
-    memset(block_cluster, 0, sizeof(char) * 20414 * num_rows);
+    char *block_cluster = malloc(396 * num_rows);
+    memset(block_cluster, 0, 396 * num_rows);
     int cluster_length = 0;
 
     for(int i = 0; i < num_rows; i++) {
 
         mysql_stmt_fetch(prev_block_stmt);
 
-    // use bind structure and query_string to get data from query
-        int result_content_for_sender_escaped_offset = 0;
-
-        memset(result_content_for_receiver_escaped, 0, content_for_receiver_length * 2);
-        memset(result_content_for_sender_escaped, 0, content_for_sender_length * 2);
-
-        for(int j = 0; j < content_for_receiver_length; j++) {
-            if(result_content_for_receiver[j] != 0) {
-                result_content_for_receiver_escaped[j + result_content_for_receiver_escaped_offset] = result_content_for_receiver[j];
-            } else {
-                result_content_for_receiver_escaped[j + result_content_for_receiver_escaped_offset] = 92;
-                result_content_for_receiver_escaped_offset++;
-                result_content_for_receiver_escaped[j + result_content_for_receiver_escaped_offset] = result_content_for_receiver[j];
-            }
-        }
-
-        for(int j = 0; j < content_for_sender_length; j++) {
-            if(result_content_for_sender[j] != 0) {
-                result_content_for_sender_escaped[j + result_content_for_sender_escaped_offset] = result_content_for_sender[j];
-            } else {
-                result_content_for_sender_escaped[j + result_content_for_sender_escaped_offset] = 92;
-                result_content_for_sender_escaped_offset++;
-                result_content_for_sender_escaped[j + result_content_for_sender_escaped_offset] = result_content_for_sender[j];
-            }
-        }
-
         memcpy(block_cluster + cluster_length, result_timestamp, 10);
-        memcpy(block_cluster + cluster_length + 11, result_hash, 128);
-        memcpy(block_cluster + cluster_length + 140, result_receiver_address, 128);
-        memcpy(block_cluster + cluster_length + 269, result_receiver_address, 128);
-        memcpy(block_cluster + cluster_length + 398, result_content_for_receiver_escaped, content_for_receiver_length + result_content_for_receiver_escaped_offset);
-        memcpy(block_cluster + cluster_length + 399 + content_for_receiver_length + result_content_for_receiver_escaped_offset, result_content_for_sender_escaped, content_for_sender_length + result_content_for_sender_escaped_offset);
-
-        cluster_length += 400 + content_for_receiver_length + result_content_for_receiver_escaped_offset + content_for_sender_length + result_content_for_sender_escaped_offset;
+        cluster_length += 10;
+        memcpy(block_cluster + cluster_length, result_hash, 128);
+        cluster_length += 128;
+        memcpy(block_cluster + cluster_length, result_sender_address, 128);
+        cluster_length += 128;
+        memcpy(block_cluster + cluster_length, result_receiver_address, 128);
+        cluster_length += 128;
+        memcpy(block_cluster + cluster_length, result_data_blob, result_data_blob_length);
+        cluster_length += result_data_blob_length + 1;
         
     }
 
@@ -431,7 +350,7 @@ int create_new_block( struct packet *block) {
 
     return cluster;
 
-}*/
+}
 
 int add_block_to_queue(struct packet *source_packet) {
 

@@ -49,7 +49,7 @@ struct packet parse_packet(char *source_buffer) {
             packet_contains_invalid_data = !packet_contains_invalid_data;
         }
     }
-    
+
     if(!packet_contains_invalid_data && destination->data_blob_length > 0) {
         return *destination;
     } else {
@@ -94,9 +94,11 @@ void * handle_request( void* args ) {
         case 2:
         
             // search for block matching metadata
-            /*printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
+            printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
             struct block_cluster block_cluster = search_blockchain(parsed_packet);
-            send(socket , block_cluster.cluster , block_cluster.cluster_length , 0 );*/
+            send(socket , block_cluster.cluster , block_cluster.cluster_length , 0 );
+
+            printf("%d\n", block_cluster.cluster_length);
 
             break;
             
