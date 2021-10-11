@@ -22,7 +22,7 @@ int create_new_block( struct packet *block) {
 
     /* Get total columns in the query */
     int column_count= mysql_num_fields(prepare_meta_result);
-    if (column_count != 7) /* validate column count */
+    if (column_count != 6) /* validate column count */
     {
         fprintf(stderr, " invalid column count returned by MySQL\n");
         exit(1);
@@ -93,7 +93,7 @@ int create_new_block( struct packet *block) {
     memcpy(prev_block + 287, result_receiver_address, 128);
     memcpy(prev_block + 415, result_data_blob, result_len[2]);
 
-    printf("%s\n", prev_block);
+    //printf("%s\n", prev_block);
 
     char *prev_block_hash = get_sha512_string(prev_block, 415 + result_len[2]);
 

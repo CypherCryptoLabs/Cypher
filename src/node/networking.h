@@ -27,6 +27,8 @@ struct packet parse_packet(char *source_buffer) {
         }
     }
 
+    memcpy(destination->data_blob, source_buffer + 267, destination->data_blob_length);
+
     bool packet_contains_invalid_data = false;
     char timestamp_as_string[11];
     unsigned int timestamp = (unsigned int)time(NULL) - BLOCK_QUEUE_DELAY;
@@ -47,7 +49,7 @@ struct packet parse_packet(char *source_buffer) {
             packet_contains_invalid_data = !packet_contains_invalid_data;
         }
     }
-
+    
     if(!packet_contains_invalid_data && destination->data_blob_length > 0) {
         return *destination;
     } else {
@@ -63,7 +65,7 @@ void * handle_request( void* args ) {
 
     struct handle_request_arg arguments = *(struct handle_request_arg*)args;
     int packet_size = sizeof(struct packet);
-    printf("%d\n", packet_size);
+    //printf("%d\n", packet_size);
 
     int socket = arguments.socket;
     char client_packet[packet_size];

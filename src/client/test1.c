@@ -71,26 +71,12 @@ int main(int argc, char const *argv[])
         }
         offset += 128;
 
-        printf("Enter Previous Block Hash: ");
-        fgets(packet + offset, 132, stdin);
+        printf("Enter Content for data_blob: ");
+        fgets(packet + offset, 10240, stdin);
         if(packet[offset] == '\n') {
             packet[offset] = 0x00;
         }
-        offset += 128;
-
-        printf("Enter Content for Sender: ");
-        fgets(packet + offset, 10000, stdin);
-        if(packet[offset] == '\n') {
-            packet[offset] = 0x00;
-        }
-        offset += strnlen(packet + offset, 10000) + 1;
-
-        printf("Enter Content for Receiver: ");
-        fgets(packet + offset, 10000, stdin);
-        if(packet[offset] == '\n') {
-            packet[offset] = 0x00;
-        }
-        offset += strnlen(packet + offset, 10000) + 1;
+        offset += strnlen(packet + offset, 10240) + 1;
 
         printf("Enter timestamp (leave empty to use current timestamp): ");
         fgets(input_buffer, 13, stdin);
