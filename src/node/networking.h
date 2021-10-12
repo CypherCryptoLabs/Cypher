@@ -199,12 +199,12 @@ void notify_ticker_subscriber(char* subscriber_address, char *packet) {
     // check if address is subscribed to live ticker
     bool address_is_subscribed = false;
 
-    for(int i = 0; i < LIVE_TICKER_SUBSCRIBER_COUNT && !address_is_subscribed; i++) {
-        if(live_ticker_subscriber_list[i] && strcmp(live_ticker_subscriber_list[i]->ticker_address, subscriber_address) == 0) {
+    for(int i = 0; i < LIVE_TICKER_SUBSCRIBER_COUNT; i++) {
+        if(!address_is_subscribed && live_ticker_subscriber_list[i] && strcmp(live_ticker_subscriber_list[i]->ticker_address, subscriber_address) == 0) {
             address_is_subscribed == true;
             // sending notification to subscriber
             send(live_ticker_subscriber_list[i]->socket, packet, sizeof(struct packet), 0);
-
+            live_ticker_subscriber_list[i] = 0;
             free(live_ticker_subscriber_list[i]);
         }
     }
