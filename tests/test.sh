@@ -1,10 +1,10 @@
 #!/bin/bash
-BLOCK_QUEUE_LENGTH=5
+BLOCK_QUEUE_LENGTH=30
 
 echo "running Test script"
 printf "generating and sending %d packages...\n" $BLOCK_QUEUE_LENGTH
 
-for i in $(eval echo "{0..$BLOCK_QUEUE_LENGTH}")
+for i in $(eval echo "{1..$BLOCK_QUEUE_LENGTH}")
 do
     printf "generating packet %d...\n" $i
     touch ./.testpackage$i
