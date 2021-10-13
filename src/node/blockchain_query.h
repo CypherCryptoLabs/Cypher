@@ -360,13 +360,8 @@ int add_block_to_queue(struct packet *source_packet) {
     while(i < BLOCK_QUEUE_LENGTH && !block_added){
         if(!block_queue[i]) {
             block_added = true;
-
             block_queue[i] = source_packet;
-
-            printf("[i] Added block to queue!\n[i] block_queue_current_index: %d\n", i);
-
         }
-
         i++;
     }
 

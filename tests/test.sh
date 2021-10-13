@@ -1,5 +1,5 @@
 #!/bin/bash
-BLOCK_QUEUE_LENGTH=29
+BLOCK_QUEUE_LENGTH=5
 
 echo "running Test script"
 printf "generating and sending %d packages...\n" $BLOCK_QUEUE_LENGTH
