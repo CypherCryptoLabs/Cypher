@@ -24,7 +24,6 @@ struct filtered_queue *sort_queue_by_timestamp( char *timestamp ) {
     // filtering block_queue for all blocks with specified timestamp
 
     struct packet *filtered_block_queue[BLOCK_QUEUE_LENGTH] = {0};
-    //memset(filtered_block_queue, 0, sizeof(*filtered_block_queue));
     int filtered_block_queue_index = 0;
     char block_queue_timestamp[10] = {0};
 
@@ -54,7 +53,10 @@ struct filtered_queue *sort_queue_by_timestamp( char *timestamp ) {
     memset(queue, 0, sizeof(queue));
 
     queue->queue_length = filtered_block_queue_index;
-    *queue->queue = *filtered_block_queue;
+
+    for(int i = 0; i < filtered_block_queue_index; i++) {
+        queue->queue[i] = filtered_block_queue[i];
+    }
 
     return queue;
 
