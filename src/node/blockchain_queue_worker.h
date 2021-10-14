@@ -5,9 +5,11 @@ void * queue_worker() {
     sprintf(timestamp_as_string, "%d", timestamp);
     struct filtered_queue *queue = sort_queue_by_timestamp(timestamp_as_string);
 
+    MYSQL *dbc = connecto_to_db();
+
     for(int i = 0; i < queue->queue_length; i++) {
         if(queue->queue[i]) {
-            create_new_block(queue->queue[i]);
+            create_new_block(queue->queue[i], dbc);
         }
     }
     
