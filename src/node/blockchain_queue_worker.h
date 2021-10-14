@@ -12,6 +12,8 @@ void * queue_worker() {
             create_new_block(queue->queue[i], dbc);
         }
     }
+
+    mysql_close(dbc);
     
     clean_queue(timestamp_as_string);
 
