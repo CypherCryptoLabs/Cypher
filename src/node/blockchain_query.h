@@ -6,10 +6,10 @@ struct block_cluster {
 char *compile_to_packet_buffer(struct packet *block);
 void notify_ticker_subscriber(char* subscriber_address, char *packet);
 
-int create_new_block( struct packet *block) {
+int create_new_block( struct packet *block, MYSQL *dbc) {
 
     MYSQL_BIND result_param[1];
-    MYSQL_STMT* prev_block_stmt = mysql_prepared_query("SELECT id, hash_of_prev_block, data_blob, receiver_address, sender_address, UNIX_TIMESTAMP(timestamp) FROM blockchain ORDER BY id DESC LIMIT 1;", result_param);
+    MYSQL_STMT* prev_block_stmt = mysql_prepared_query("SELECT id, hash_of_prev_block, data_blob, receiver_address, sender_address, UNIX_TIMESTAMP(timestamp) FROM blockchain ORDER BY id DESC LIMIT 1;", result_param, dbc);
 
     /* Fetch result set meta information */
     MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(prev_block_stmt);
@@ -94,6 +94,7 @@ int create_new_block( struct packet *block) {
     memcpy(prev_block + 415, result_data_blob, result_len[2]);
 
     //printf("%s\n", prev_block);
+    mysql_stmt_close(prev_block_stmt);
 
     char *prev_block_hash = get_sha512_string(prev_block, 415 + result_len[2]);
 
@@ -136,7 +137,7 @@ int create_new_block( struct packet *block) {
     param[4].is_null = 0;
     param[4].length = &prev_block_hash_length;
 
-    mysql_prepared_query( query_string, param);
+    mysql_prepared_query( query_string, param, dbc);
 
     char *block_as_packet = compile_to_packet_buffer(block);
     notify_ticker_subscriber(block->receiver_address, block_as_packet);
@@ -246,7 +247,8 @@ struct block_cluster search_blockchain( struct packet *needle) {
     strcat(query_string, ";");
 
     // use bind structure and query_string to get data from query
-    MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param);
+    MYSQL *dbc = connecto_to_db();
+    MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param, dbc);
 
     MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(prev_block_stmt);
     if (!prepare_meta_result)

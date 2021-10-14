@@ -1,6 +1,7 @@
 static MYSQL* connecto_to_db() {
 
-    MYSQL *con = mysql_init(NULL);
+    MYSQL *con = malloc(sizeof(MYSQL));
+    con = mysql_init(NULL);
 
     if (con == NULL){
         printf("%s\n", mysql_error(con));
@@ -17,9 +18,8 @@ static MYSQL* connecto_to_db() {
 
 }
 
-MYSQL_STMT* mysql_prepared_query(char *query_string, MYSQL_BIND* param) {
+MYSQL_STMT* mysql_prepared_query(char *query_string, MYSQL_BIND* param, MYSQL *dbc) {
 
-    MYSQL *dbc = connecto_to_db();
     MYSQL_STMT *stmt;
 
     // Allocate a statement handle
@@ -30,6 +30,7 @@ MYSQL_STMT* mysql_prepared_query(char *query_string, MYSQL_BIND* param) {
 
     // Init
     if(mysql_stmt_prepare(stmt, query_string, strlen(query_string)) != 0) {
+        printf("%s\n", mysql_error(dbc));
         printf("Unable to create new session: Could not prepare statement\n");
     }
 
