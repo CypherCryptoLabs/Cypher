@@ -18,6 +18,38 @@
 #include <mysql/mysql.h>
 #include <ctype.h>
 
+#define PORT 50000
+
+void printLastError(char *msg)
+{
+    char * err = malloc(130);;
+    ERR_load_crypto_strings();
+    ERR_error_string(ERR_get_error(), err);
+    printf("%s ERROR: %s\n",msg, err);
+    free(err);
+}
+
+char * get_sha512_string( char content[10520], int len) {
+
+    SHA512_CTX ctx;
+    unsigned char buffer[10520] = {0};
+    char *hash_as_string = (char *)malloc(SHA512_DIGEST_LENGTH * 2);
+    //int len = strnlen(content, 20269);
+
+    strcpy(buffer,content);
+
+    SHA512_Init(&ctx);
+    SHA512_Update(&ctx, buffer, len);
+    SHA512_Final(buffer, &ctx);
+
+    for (int i = 0; i < SHA512_DIGEST_LENGTH; i++) {
+        sprintf(&hash_as_string[2 * i], "%02x", buffer[i]);
+    }
+
+    return hash_as_string;
+
+}
+
 int padding = RSA_PKCS1_PADDING;
  
 RSA * create_RSA(unsigned char * key,int public)
@@ -27,20 +59,21 @@ RSA * create_RSA(unsigned char * key,int public)
     keybio = BIO_new_mem_buf(key, -1);
     if (keybio==NULL)
     {
-        printf( "Failed to create key BIO");
+        printf( "Failed to create key BIO\n");
         return 0;
     }
     if(public)
     {
-        rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa,NULL, NULL);
+        rsa = PEM_read_bio_RSAPublicKey(keybio, &rsa,NULL, NULL);
     }
     else
     {
         rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa,NULL, NULL);
     }
+
     if(rsa == NULL)
     {
-        printf( "Failed to create RSA");
+        printLastError( "Failed to create RSA\n");
     }
  
     return rsa;
@@ -73,21 +106,12 @@ int public_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, un
     return result;
 }
 
-void printLastError(char *msg)
-{
-    char * err = malloc(130);;
-    ERR_load_crypto_strings();
-    ERR_error_string(ERR_get_error(), err);
-    printf("%s ERROR: %s\n",msg, err);
-    free(err);
-}
-
 int main(int argc, char* argv[]) {
 
     FILE    *pubkey_infile;
     FILE    *privkey_infile;
-    char    *pubkey_buffer;
-    char    *privkey_buffer;
+    unsigned char    *pubkey_buffer;
+    unsigned char    *privkey_buffer;
     long    pubkey_numbytes;
     long    privkey_numbytes;
 
@@ -123,23 +147,83 @@ int main(int argc, char* argv[]) {
     fread(privkey_buffer, sizeof(char), privkey_numbytes, privkey_infile);
     fclose(privkey_infile);
 
-    printf("The file called public.pem contains this text\n\n%s\n", pubkey_buffer);
-    printf("The file called private.pem contains this text\n\n%s\n", privkey_buffer);
+    char *pub_key_hash = get_sha512_string(pubkey_buffer, pubkey_numbytes);
+    int pub_key_hash_num_bytes = 128;
 
-    char *encrypted_file;
-    int encrypted_buffer_size = private_encrypt(pubkey_buffer, pubkey_numbytes, privkey_buffer, encrypted_file);
+    unsigned char *encrypted_file = malloc(1024);
+    int encrypted_buffer_size = private_encrypt(pub_key_hash, pub_key_hash_num_bytes, privkey_buffer, encrypted_file);
 
     if(encrypted_buffer_size == -1){
         printLastError("Private Decrypt failed ");
         exit(0);
     }
 
-    for(int i = 0; i < encrypted_buffer_size; i++) {
-        printf("%x", encrypted_file[i]);
-    }
-    printf("\n");
+    unsigned char *decrypted_file = malloc(encrypted_buffer_size);
+    int decrypted_buffer_size = public_decrypt(encrypted_file, encrypted_buffer_size, pubkey_buffer, decrypted_file);
 
-    printf("%d\n", encrypted_buffer_size);
+    if(decrypted_buffer_size == -1){
+        printLastError("Private Decrypt failed ");
+        exit(0);
+    }
+
+    if(strcmp(decrypted_file, pub_key_hash) == 0) {
+        printf("encryption and decryption successful!\n");
+    } else {
+        printf("ERROR: Something went wrong! decrypted_file != encrypted_file\n");
+    }
+
+    unsigned char packet_buffer[775 + 512 + 267] = {0};
+
+    packet_buffer[0] = 4;
+    char timestamp_as_string[11];
+    unsigned int timestamp = (unsigned int)time(NULL);
+    sprintf(timestamp_as_string, "%d", timestamp);
+    memcpy(packet_buffer + 1, timestamp_as_string, 10);
+    memcpy(packet_buffer + 11, pub_key_hash, 128);
+    memcpy(packet_buffer + 139, pub_key_hash, 128);
+    memcpy(packet_buffer + 267, pubkey_buffer, pubkey_numbytes);
+    memcpy(packet_buffer + 267 + pubkey_numbytes, encrypted_file, encrypted_buffer_size);
+
+    for (int i = 0; i < 268 + pubkey_numbytes + encrypted_buffer_size; i++) {
+        printf("%02X", packet_buffer[i]);
+    }
+    printf("\n\n");
+
+    printf("[i] connecting to node...\n");
+
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *blockchain_name = "Cypher Blockchain";
+    char buffer[20269] = {0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("[!] Socket creation error \n");
+        return -1;
+    }
+   
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+       
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+    {
+        printf("[!] Invalid address/ Address not supported \n");
+        return -1;
+    }
+   
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("[!] Connection Failed \n");
+        return -1;
+    }
+    send(sock , blockchain_name , strlen(blockchain_name) , 0 );
+    printf("[i] Blockchain Name sent\n");
+    valread = read( sock , buffer, 1024);
+    printf("[i] Node answered '%s'\n",buffer );
+
+    if(strcmp(blockchain_name, buffer) == 0) {
+        send(sock , packet_buffer , 268 + pubkey_numbytes + encrypted_buffer_size , 0 );
+    }
 
     free(pubkey_buffer);
     free(privkey_buffer);
