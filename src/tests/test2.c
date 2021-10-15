@@ -158,6 +158,25 @@ int main(int argc, char* argv[]) {
         exit(0);
     }
 
+    int num_of_null_bytes = 0;
+    for(int i = 0; i < encrypted_buffer_size; i++) {
+        if(encrypted_file[i] == '\x00') {
+            num_of_null_bytes++;
+        }
+    }
+
+    int offset = 0;
+    unsigned char *encrypted_file_escaped = malloc(encrypted_buffer_size + num_of_null_bytes);
+    for(int i = 1; i < encrypted_buffer_size + num_of_null_bytes; i++) {
+        if(encrypted_file[i + offset] == '\x00') {
+            encrypted_file_escaped[i + offset] = '\\';
+            offset++;
+            encrypted_file_escaped[i + offset] = '\x00';
+        } else {
+            encrypted_file_escaped[i + offset] = encrypted_file[i + offset];
+        }
+    }
+
     unsigned char *decrypted_file = malloc(encrypted_buffer_size);
     int decrypted_buffer_size = public_decrypt(encrypted_file, encrypted_buffer_size, pubkey_buffer, decrypted_file);
 
@@ -182,7 +201,7 @@ int main(int argc, char* argv[]) {
     memcpy(packet_buffer + 11, pub_key_hash, 128);
     memcpy(packet_buffer + 139, pub_key_hash, 128);
     memcpy(packet_buffer + 267, pubkey_buffer, pubkey_numbytes);
-    memcpy(packet_buffer + 267 + pubkey_numbytes, encrypted_file, encrypted_buffer_size);
+    memcpy(packet_buffer + 267 + pubkey_numbytes, encrypted_file_escaped, encrypted_buffer_size + offset);
 
     for (int i = 0; i < 268 + pubkey_numbytes + encrypted_buffer_size; i++) {
         printf("%02X", packet_buffer[i]);
@@ -222,7 +241,7 @@ int main(int argc, char* argv[]) {
     printf("[i] Node answered '%s'\n",buffer );
 
     if(strcmp(blockchain_name, buffer) == 0) {
-        send(sock , packet_buffer , 268 + pubkey_numbytes + encrypted_buffer_size , 0 );
+        send(sock , packet_buffer , 268 + pubkey_numbytes + encrypted_buffer_size + offset , 0 );
     }
 
     free(pubkey_buffer);
