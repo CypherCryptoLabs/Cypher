@@ -394,9 +394,39 @@ void subscribe_to_live_ticker(char* subscriber_address, int communication_socket
 
 }
 
-void register_new_node(char *ip_address, char * encrypted_public_key, int encrypted_public_key_len,  char *clear_text_public_key, int clear_text_public_key_len) {
+int register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
     // 1. hash clear text public key
     // 2. decrypt signature with provided public key
     // 3. compare decrypted hash with the newly calculated hash
     // 4. if everything checks out, save hash, key and IP-Address in database
+
+    char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
+    if(end_of_pub_key != NULL) {
+        end_of_pub_key += 29;
+    } else {
+        return 1;
+    }
+
+    int pub_key_len = end_of_pub_key - data_blob;
+    char *hashed_pub_key =  get_sha512_string(data_blob, pub_key_len);
+    char *pub_key = malloc(pub_key_len + 1);
+    memcpy(pub_key, data_blob, pub_key_len);
+    unsigned char decrypted_hash[129];
+    unsigned char *signature_unescaped = malloc(data_blob_length - pub_key_len);
+    int offset = 0;
+
+    for(int i = 0; i < data_blob_length - pub_key_len; i++) {
+        if(data_blob[i + pub_key_len] == '\0' && data_blob[i + pub_key_len - 1] == '\\') {
+            signature_unescaped[i - 1] = '\0';
+            offset++;
+        }
+        
+        signature_unescaped[i - offset] = data_blob[i + pub_key_len];
+    }
+
+    int decrypted_size = public_decrypt(signature_unescaped, data_blob_length - pub_key_len - offset, pub_key, decrypted_hash);
+    if(decrypted_size == -1){
+        return 1;
+    }
+
 }
