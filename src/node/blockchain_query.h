@@ -394,9 +394,109 @@ void subscribe_to_live_ticker(char* subscriber_address, int communication_socket
 
 }
 
-void register_new_node(char *ip_address, char * encrypted_public_key, int encrypted_public_key_len,  char *clear_text_public_key, int clear_text_public_key_len) {
+int register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
     // 1. hash clear text public key
     // 2. decrypt signature with provided public key
     // 3. compare decrypted hash with the newly calculated hash
     // 4. if everything checks out, save hash, key and IP-Address in database
+    long unsigned int ip_address_len = strlen(ip_address);
+
+    char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
+    if(end_of_pub_key != NULL) {
+        end_of_pub_key += 29;
+    } else {
+        return 1;
+    }
+
+    long unsigned int pub_key_len = end_of_pub_key - data_blob;
+    char *hashed_pub_key =  get_sha512_string(data_blob, pub_key_len);
+    char *pub_key = malloc(pub_key_len + 1);
+    memcpy(pub_key, data_blob, pub_key_len);
+    unsigned char decrypted_hash[129];
+    unsigned char *signature_unescaped = malloc(data_blob_length - pub_key_len);
+    int offset = 0;
+
+    for(int i = 0; i < data_blob_length - pub_key_len; i++) {
+        if(data_blob[i + pub_key_len] == '\0' && data_blob[i + pub_key_len - 1] == '\\') {
+            signature_unescaped[i - 1] = '\0';
+            offset++;
+        }
+        
+        signature_unescaped[i - offset] = data_blob[i + pub_key_len];
+    }
+
+    long unsigned int decrypted_size = public_decrypt(signature_unescaped, data_blob_length - pub_key_len - offset, pub_key, decrypted_hash);
+    if(decrypted_size == -1){
+        return 1;
+    }
+
+    char *search_query_string = "SELECT id FROM node WHERE id = ?;";
+    MYSQL_BIND param[1];
+
+    param[0].buffer_type = MYSQL_TYPE_VARCHAR;
+    param[0].buffer = decrypted_hash;
+    param[0].is_unsigned = 0;
+    param[0].is_null = 0;
+    param[0].length = &decrypted_size;
+
+    MYSQL *dbc = connecto_to_db();
+    MYSQL_STMT* search_stmt = mysql_prepared_query(search_query_string, param, dbc);
+
+    MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(search_stmt);
+    if (!prepare_meta_result)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(search_stmt));
+        return 1;
+    // use bind structure and query_string to get data from query
+    }
+
+    int column_count= mysql_num_fields(prepare_meta_result);
+    if (column_count != 1)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        return 1;
+    }
+
+    mysql_stmt_store_result(search_stmt);
+    int num_rows = mysql_stmt_num_rows(search_stmt);
+    mysql_stmt_close(search_stmt);
+
+    char *query_string;
+
+    if(num_rows < 1) {
+
+        query_string = "INSERT INTO node(id, ip_address, public_key) VALUES(?, ?, ?);";
+
+    } else {
+
+        query_string = "UPDATE node SET id = ?, ip_address = ?, public_key = ?;";
+
+    }
+
+    MYSQL_BIND param_uoi[3];
+
+    param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[0].buffer = decrypted_hash;
+    param_uoi[0].is_unsigned = 0;
+    param_uoi[0].is_null = 0;
+    param_uoi[0].length = &decrypted_size;
+
+    param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[1].buffer = ip_address;
+    param_uoi[1].is_unsigned = 0;
+    param_uoi[1].is_null = 0;
+    param_uoi[1].length = &ip_address_len;
+
+    param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[2].buffer = pub_key;
+    param_uoi[2].is_unsigned = 0;
+    param_uoi[2].is_null = 0;
+    param_uoi[2].length = &pub_key_len;
+
+    MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
+
+    mysql_stmt_close(update_or_insert_stmt);
+    mysql_close(dbc);
+
 }

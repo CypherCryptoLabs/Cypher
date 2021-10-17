@@ -167,13 +167,13 @@ int main(int argc, char* argv[]) {
 
     int offset = 0;
     unsigned char *encrypted_file_escaped = malloc(encrypted_buffer_size + num_of_null_bytes);
-    for(int i = 1; i < encrypted_buffer_size + num_of_null_bytes; i++) {
-        if(encrypted_file[i + offset] == '\x00') {
+    for(int i = 0; i < encrypted_buffer_size + num_of_null_bytes; i++) {
+        if(encrypted_file[i] == '\x00') {
             encrypted_file_escaped[i + offset] = '\\';
             offset++;
             encrypted_file_escaped[i + offset] = '\x00';
         } else {
-            encrypted_file_escaped[i + offset] = encrypted_file[i + offset];
+            encrypted_file_escaped[i + offset] = encrypted_file[i];
         }
     }
 
