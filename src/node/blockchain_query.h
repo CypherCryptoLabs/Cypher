@@ -378,7 +378,7 @@ int add_block_to_queue(struct packet *source_packet) {
 
 }
 
-void subscribe_to_live_ticker(char* subscriber_address, int communication_socket) {
+int subscribe_to_live_ticker(char* subscriber_address, int communication_socket) {
 
     struct live_ticker_subscriber *new_subscriber = malloc(sizeof(struct live_ticker_subscriber));
     new_subscriber->socket = communication_socket;
@@ -391,6 +391,8 @@ void subscribe_to_live_ticker(char* subscriber_address, int communication_socket
             is_subscribed = true;
         }
     }
+
+    return !is_subscribed;
 
 }
 
