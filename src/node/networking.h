@@ -77,6 +77,8 @@ void * handle_request( void* args ) {
     *parsed_packet = parse_packet(client_packet);
 
     //TODO: tell the client in coherent way the result of the query
+    unsigned char status = 0;
+    struct block_cluster data_to_send;
 
     if(parsed_packet->query_id != -1) {
         switch (parsed_packet->query_id)
@@ -85,7 +87,7 @@ void * handle_request( void* args ) {
 
             // add new blobk to blockchain
             printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
-            add_block_to_queue(parsed_packet);
+            status = add_block_to_queue(parsed_packet);
 
             break;
 
@@ -93,35 +95,34 @@ void * handle_request( void* args ) {
         
             // search for block matching metadata
             printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
-            struct block_cluster block_cluster = search_blockchain(parsed_packet);
-            send(socket , block_cluster.cluster , block_cluster.cluster_length , 0 );
-
-            printf("%d\n", block_cluster.cluster_length);
+            data_to_send = search_blockchain(parsed_packet);
 
             break;
             
         case 3:
         
             printf("[i] Client send request to create a live ticker (query_id = '%X')\n", *client_packet);
-            subscribe_to_live_ticker(parsed_packet->sender_address, socket);
+            status = subscribe_to_live_ticker(parsed_packet->sender_address, socket);
 
             break;
 
         case 4:
 
             printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
-            register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
+            status = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
             
             break;
         
         default:
             printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
+            status = '\x64';
             break;
         }
     } else {
         unsigned char status = '\x64';
-        send(socket , &status , 1 , 0 );
     }
+    send(socket , &status , 1 , 0 );
+    send(socket , data_to_send.cluster , data_to_send.cluster_length , 0 );
 
 }
 
