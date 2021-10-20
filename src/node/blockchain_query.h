@@ -33,7 +33,7 @@ int create_new_block( struct packet *block, MYSQL *dbc) {
     memset(result_bind, 0, sizeof(result_bind));
 
     char result_id[21];
-    bool result_is_null[7];
+    char result_is_null[7];
     unsigned long result_len[7] = {0};
     char result_data_blob[10241];
     char result_receiver_address[129];
@@ -269,7 +269,7 @@ struct block_cluster search_blockchain( struct packet *needle) {
     MYSQL_BIND result_bind[9];
     memset(result_bind, 0, sizeof(result_bind));
 
-    bool result_is_null[8];
+    char result_is_null[8];
     unsigned long result_len[8] = {0};
     char result_receiver_address[129] = {0};
     char result_sender_address[129] = {0};
