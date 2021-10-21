@@ -25,24 +25,30 @@ MYSQL_STMT* mysql_prepared_query(char *query_string, MYSQL_BIND* param, MYSQL *d
     // Allocate a statement handle
     stmt = mysql_stmt_init(dbc);
     if(stmt == NULL) {
+        printf("%s\n", mysql_error(dbc));
+        printf("1%s\n", mysql_stmt_error(stmt));
         printf("Unable to create new session: Could not init statement handle\n");
     }
 
     // Init
     if(mysql_stmt_prepare(stmt, query_string, strlen(query_string)) != 0) {
         printf("%s\n", mysql_error(dbc));
+        printf("2%s\n", mysql_stmt_error(stmt));
         printf("Unable to create new session: Could not prepare statement\n");
     }
 
     // Bind param structure to statement
     if(mysql_stmt_bind_param(stmt, param) != 0) {
+        printf("%s\n", mysql_error(dbc));
+        printf("3%s\n", mysql_stmt_error(stmt));
         printf("Unable to create new session: Could not bind parameters\n");
     }
 
     // Execute prepared statement
     if(mysql_stmt_execute(stmt) != 0) {
+        printf("%s\n", mysql_error(dbc));
         printf("Unable to create new session: Could not execute statement\n");
-        printf("%s\n", mysql_stmt_error(stmt));
+        printf("4%s\n", mysql_stmt_error(stmt));
     }
 
     //mysql_stmt_close(stmt);
