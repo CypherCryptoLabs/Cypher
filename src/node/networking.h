@@ -174,9 +174,7 @@ void * connection_handler()
 
 
         char buffer[1024] = {0};
-
         valread = read( new_socket , buffer, 1024);
-
         if(strcmp(blockchain_name, buffer) == 0) {
 
             send(new_socket , blockchain_name , strlen(blockchain_name) , 0 );

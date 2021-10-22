@@ -53,10 +53,10 @@ struct live_ticker_subscriber *live_ticker_subscriber_list[LIVE_TICKER_SUBSCRIBE
 
 #include "rsa_wrapper.h"
 #include "crypto.h"
-#include "init_node.h"
 #include "mysql_wrapper.h"
 #include "sha512.h"
 #include "blockchain_queue.h"
 #include "blockchain_query.h"
 #include "blockchain_queue_worker.h"
 #include "networking.h"
+#include "init_node.h"
