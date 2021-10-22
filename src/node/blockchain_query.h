@@ -33,7 +33,7 @@ int create_new_block( struct packet *block, MYSQL *dbc) {
     memset(result_bind, 0, sizeof(result_bind));
 
     char result_id[21];
-    char result_is_null[7];
+    bool result_is_null[7];
     unsigned long result_len[7] = {0};
     char result_data_blob[10241];
     char result_receiver_address[129];
@@ -110,36 +110,34 @@ int create_new_block( struct packet *block, MYSQL *dbc) {
     param[0].buffer_type = MYSQL_TYPE_STRING;
     param[0].buffer = block->timestamp;
     param[0].is_unsigned = 0;
-    param[0].is_null = (my_bool)0;
+    param[0].is_null = 0;
     param[0].length = &timestamp_length;
 
     param[1].buffer_type = MYSQL_TYPE_STRING;
     param[1].buffer = block->data_blob;
     param[1].is_unsigned = 0;
-    param[1].is_null = (my_bool)0;
+    param[1].is_null = 0;
     param[1].length = &data_blob_length;
 
     param[2].buffer_type = MYSQL_TYPE_STRING;
     param[2].buffer = block->receiver_address;
     param[2].is_unsigned = 0;
-    param[2].is_null = (my_bool)0;
+    param[2].is_null = 0;
     param[2].length = &receiver_address_length;
 
     param[3].buffer_type = MYSQL_TYPE_STRING;
     param[3].buffer = block->sender_address;
     param[3].is_unsigned = 0;
-    param[3].is_null = (my_bool)0;
+    param[3].is_null = 0;
     param[3].length = &sender_address_length;
 
     param[4].buffer_type = MYSQL_TYPE_STRING;
     param[4].buffer = prev_block_hash;
     param[4].is_unsigned = 0;
-    param[4].is_null = (my_bool)0;
+    param[4].is_null = 0;
     param[4].length = &prev_block_hash_length;
 
-    printf("TEST\n");
     mysql_prepared_query( query_string, param, dbc);
-    printf("TEST\n");
     char *block_as_packet = compile_to_packet_buffer(block);
     notify_ticker_subscriber(block->receiver_address, block_as_packet);
 
@@ -270,7 +268,7 @@ struct block_cluster search_blockchain( struct packet *needle) {
     MYSQL_BIND result_bind[9];
     memset(result_bind, 0, sizeof(result_bind));
 
-    char result_is_null[8];
+    bool result_is_null[8];
     unsigned long result_len[8] = {0};
     char result_receiver_address[129] = {0};
     char result_sender_address[129] = {0};
