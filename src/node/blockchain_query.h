@@ -396,10 +396,6 @@ int subscribe_to_live_ticker(char* subscriber_address, int communication_socket)
 }
 
 int register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
-    // 1. hash clear text public key
-    // 2. decrypt signature with provided public key
-    // 3. compare decrypted hash with the newly calculated hash
-    // 4. if everything checks out, save hash, key and IP-Address in database
     long unsigned int ip_address_len = strlen(ip_address);
 
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
