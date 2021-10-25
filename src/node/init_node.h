@@ -148,8 +148,7 @@ int register_to_network() {
         send(sock , packet_buffer , 268 + pubkey_numbytes + encrypted_buffer_size + offset , 0 );
     }
 
-    free(pubkey_buffer);
-    free(privkey_buffer);
+    return 0;
 }
 
 void init_node() {
