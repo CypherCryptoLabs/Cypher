@@ -109,7 +109,7 @@ void * handle_request( void* args ) {
         case 4:
 
             printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
-            status = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
+            register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length, socket);
             
             break;
         

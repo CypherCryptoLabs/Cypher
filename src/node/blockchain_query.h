@@ -395,7 +395,7 @@ int subscribe_to_live_ticker(char* subscriber_address, int communication_socket)
 
 }
 
-int register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
+int register_new_node(char *ip_address, char *data_blob, int data_blob_length, int communication_socket) {
     long unsigned int ip_address_len = strlen(ip_address);
 
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
@@ -495,5 +495,12 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
 
     mysql_stmt_close(update_or_insert_stmt);
     mysql_close(dbc);
+
+    // Node is now registered. The new node needs information about all other exisitng nodes in the network.
+    // The "node" table in the database needs to be send to the newly registered Node, so it has data abt
+    // the whole network.
+
+    // determine db size
+
 
 }
