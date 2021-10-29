@@ -395,7 +395,7 @@ int subscribe_to_live_ticker(char* subscriber_address, int communication_socket)
 
 }
 
-int register_new_node(char *ip_address, char *data_blob, int data_blob_length, int communication_socket) {
+int register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
     long unsigned int ip_address_len = strlen(ip_address);
 
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
@@ -460,45 +460,103 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length, i
     mysql_stmt_close(search_stmt);
 
     char *query_string;
+    MYSQL_BIND param_uoi[3];
 
     if(num_rows < 1) {
 
         query_string = "INSERT INTO node(id, ip_address, public_key) VALUES(?, ?, ?);";
 
+        param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[0].buffer = decrypted_hash;
+        param_uoi[0].is_unsigned = 0;
+        param_uoi[0].is_null = 0;
+        param_uoi[0].length = &decrypted_size;
+
+        param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[1].buffer = ip_address;
+        param_uoi[1].is_unsigned = 0;
+        param_uoi[1].is_null = 0;
+        param_uoi[1].length = &ip_address_len;
+
+        param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[2].buffer = pub_key;
+        param_uoi[2].is_unsigned = 0;
+        param_uoi[2].is_null = 0;
+        param_uoi[2].length = &pub_key_len;
+
     } else {
 
-        query_string = "UPDATE node SET id = ?, ip_address = ?, public_key = ?;";
+        query_string = "UPDATE node SET ip_address = ?, public_key = ?;";
+
+        param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[0].buffer = ip_address;
+        param_uoi[0].is_unsigned = 0;
+        param_uoi[0].is_null = 0;
+        param_uoi[0].length = &ip_address_len;
+
+        param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[1].buffer = pub_key;
+        param_uoi[1].is_unsigned = 0;
+        param_uoi[1].is_null = 0;
+        param_uoi[1].length = &pub_key_len;
 
     }
-
-    MYSQL_BIND param_uoi[3];
-
-    param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
-    param_uoi[0].buffer = decrypted_hash;
-    param_uoi[0].is_unsigned = 0;
-    param_uoi[0].is_null = 0;
-    param_uoi[0].length = &decrypted_size;
-
-    param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
-    param_uoi[1].buffer = ip_address;
-    param_uoi[1].is_unsigned = 0;
-    param_uoi[1].is_null = 0;
-    param_uoi[1].length = &ip_address_len;
-
-    param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
-    param_uoi[2].buffer = pub_key;
-    param_uoi[2].is_unsigned = 0;
-    param_uoi[2].is_null = 0;
-    param_uoi[2].length = &pub_key_len;
 
     MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
 
     mysql_stmt_close(update_or_insert_stmt);
-    mysql_close(dbc);
 
     // Node is now registered. The new node needs information about all other exisitng nodes in the network.
     // The "node" table in the database needs to be send to the newly registered Node, so it has data abt
     // the whole network.
 
-    // determine db size
+    // determine table size
+    // SELECT TABLE_NAME AS `Table`, (DATA_LENGTH + INDEX_LENGTH - DATA_FREE) AS `Size` FROM information_schema.TABLES WHERE TABLE_SCHEMA = "cypher" AND TABLE_NAME = "node";
+    // this does not really work for some reason, so I will implement it in C.
+
+    // SELECT SUM(LENGTH(id) + LENGTH(public_key) + LENGTH(ip_address) + 3) AS table_size FROM node;
+    // this works, it takes the size of the fields, adds them together and adds 3 Bytes spacing for delimiter 
+    // reasons. Luckily there cant be any Null Bytes that I dont want :P
+
+    MYSQL_BIND result_param[1];
+    MYSQL_STMT* node_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(id) + LENGTH(public_key) + LENGTH(ip_address) + 3) AS table_size FROM node;", result_param, dbc);
+
+    MYSQL_RES* prepare_meta_result_node_len = mysql_stmt_result_metadata(node_table_size_stmt);
+    if (!prepare_meta_result_node_len)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(node_table_size_stmt));
+        exit(1);
+    }
+
+    int column_count_node_len= mysql_num_fields(prepare_meta_result_node_len);
+    if (column_count_node_len != 1)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        exit(1);
+    }
+
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    bool result_is_null;
+    unsigned long result_len;
+    unsigned long long result_node_len;
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+    result_bind[0].buffer = &result_node_len;
+    result_bind[0].buffer_length = sizeof(result_node_len);
+    result_bind[0].length = &result_len;
+    result_bind[0].is_null = &result_is_null;
+
+    if (mysql_stmt_bind_result(node_table_size_stmt, result_bind)) {
+        fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(node_table_size_stmt));
+        exit(1);
+    }
+
+    mysql_stmt_fetch(node_table_size_stmt);
+    printf("%lld\n", result_node_len);
+    mysql_stmt_close(node_table_size_stmt);
+
+    mysql_close(dbc);
 }
