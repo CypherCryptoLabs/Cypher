@@ -116,6 +116,7 @@ void * handle_request( void* args ) {
         default:
             printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
             status = '\x64';
+            
             break;
         }
     } else {

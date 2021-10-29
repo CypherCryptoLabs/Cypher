@@ -161,7 +161,6 @@ void init_node() {
         generate_keypair();
     }
 
-    // registering node to network
     register_to_network();
 
 }

@@ -501,6 +501,4 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length, i
     // the whole network.
 
     // determine db size
-
-
 }
