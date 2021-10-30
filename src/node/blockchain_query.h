@@ -3,6 +3,12 @@ struct block_cluster {
     int cluster_length;
 };
 
+struct return_data {
+    int return_code;
+    unsigned long data_num_of_bytes;
+    char *data;
+};
+
 char *compile_to_packet_buffer(struct packet *block);
 void notify_ticker_subscriber(char* subscriber_address, char *packet);
 
@@ -145,7 +151,9 @@ int create_new_block( struct packet *block, MYSQL *dbc) {
 
 }
 
-struct block_cluster search_blockchain( struct packet *needle) {
+struct return_data search_blockchain( struct packet *needle) {
+
+    struct return_data return_data_struct;
  
     //char timestamp[11], content_for_receiver[10001], content_for_sender[10001], receiver_address[129], sender_address[129], prev_block_hash[129];
     //unsigned long content_len = strnlen(content + 394, 20000) / 2;
@@ -254,7 +262,8 @@ struct block_cluster search_blockchain( struct packet *needle) {
     {
         fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
         fprintf(stderr, " %s\n", mysql_stmt_error(prev_block_stmt));
-        exit(1);
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     // use bind structure and query_string to get data from query
     }
 
@@ -262,7 +271,8 @@ struct block_cluster search_blockchain( struct packet *needle) {
     if (column_count != 6)
     {
         fprintf(stderr, " invalid column count returned by MySQL\n");
-        exit(1);
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     }
 
     MYSQL_BIND result_bind[9];
@@ -342,18 +352,19 @@ struct block_cluster search_blockchain( struct packet *needle) {
         
     }
 
-    struct block_cluster cluster;
-
-    cluster.cluster = block_cluster;
-    cluster.cluster_length = cluster_length;
+    return_data_struct.data = block_cluster;
+    return_data_struct.data_num_of_bytes = cluster_length;
+    return_data_struct.return_code = 0;
 
     free(block_cluster);
 
-    return cluster;
+    return return_data_struct;
 
 }
 
-int add_block_to_queue(struct packet *source_packet) {
+struct return_data add_block_to_queue(struct packet *source_packet) {
+
+    struct return_data return_data_struct;
 
     int i = 0;
     bool block_added = false;
@@ -369,15 +380,20 @@ int add_block_to_queue(struct packet *source_packet) {
     if(!block_added) {
         
         printf("[!] Queue is full!\n");
-        return -1;
+        return_data_struct.return_code = 1;
+        return return_data_struct;
 
     }
 
-    return 0;
+    return_data_struct.return_code = 0;
+    return_data_struct.data_num_of_bytes = 0;
+    return return_data_struct;
 
 }
 
-int subscribe_to_live_ticker(char* subscriber_address, int communication_socket) {
+struct return_data subscribe_to_live_ticker(char* subscriber_address, int communication_socket) {
+
+    struct return_data return_data_struct;
 
     struct live_ticker_subscriber *new_subscriber = malloc(sizeof(struct live_ticker_subscriber));
     new_subscriber->socket = communication_socket;
@@ -391,7 +407,9 @@ int subscribe_to_live_ticker(char* subscriber_address, int communication_socket)
         }
     }
 
-    return !is_subscribed;
+    return_data_struct.data_num_of_bytes = 0;
+    return_data_struct.return_code = !is_subscribed;
+    return return_data_struct;
 
 }
 
@@ -559,4 +577,6 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
     mysql_stmt_close(node_table_size_stmt);
 
     mysql_close(dbc);
+
+
 }
