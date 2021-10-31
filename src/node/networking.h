@@ -108,7 +108,7 @@ void * handle_request( void* args ) {
         case 4:
 
             printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
-            //return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
+            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
             
             break;
         
@@ -124,10 +124,22 @@ void * handle_request( void* args ) {
 
     char status_message[sizeof(int) + sizeof(unsigned long)];
     memcpy(status_message, &return_data_struct.return_code, sizeof(int));
-    memcpy(status_message, &return_data_struct.data_num_of_bytes, sizeof(unsigned long));
+    memcpy(status_message + sizeof(int), &return_data_struct.data_num_of_bytes, sizeof(unsigned long));
 
     send(socket , &status_message , sizeof(int) + sizeof(unsigned long) , 0 );
     send(socket , return_data_struct.data , return_data_struct.data_num_of_bytes , 0 );
+
+    // DEBUG
+    /*
+    for(int i = 0; i < (sizeof(int) + sizeof(unsigned long)); i++) {
+        printf("%02x", status_message[i]);
+    }
+    printf("\n");
+
+    for(int i = 0; i < return_data_struct.data_num_of_bytes; i++) {
+        printf("%02x", return_data_struct.data[i]);
+    }
+    printf("\n");*/
 
 }
 
