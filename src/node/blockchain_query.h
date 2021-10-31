@@ -598,15 +598,15 @@ struct return_data register_new_node(char *ip_address, char *data_blob, int data
     unsigned long node_fields_len[3];
     char node_fields_id[129];
     char node_fields_ip_addr[16];
-    char *node_fields_pub_key = malloc(16777215);
+    char node_fields_pub_key[129];
 
-    node_fields_bind[0].buffer_type = MYSQL_TYPE_VARCHAR;
+    node_fields_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING;
     node_fields_bind[0].buffer = &node_fields_id;
     node_fields_bind[0].buffer_length = sizeof(node_fields_id);
     node_fields_bind[0].length = &node_fields_len[0];
     node_fields_bind[0].is_null = &node_fields_is_null[0];
 
-    node_fields_bind[1].buffer_type = MYSQL_TYPE_VARCHAR;
+    node_fields_bind[1].buffer_type = MYSQL_TYPE_VAR_STRING;
     node_fields_bind[1].buffer = &node_fields_ip_addr;
     node_fields_bind[1].buffer_length = sizeof(node_fields_ip_addr);
     node_fields_bind[1].length = &node_fields_len[1];
@@ -614,7 +614,7 @@ struct return_data register_new_node(char *ip_address, char *data_blob, int data
 
     node_fields_bind[2].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
     node_fields_bind[2].buffer = &node_fields_pub_key;
-    node_fields_bind[2].buffer_length = 16777215;
+    node_fields_bind[2].buffer_length = sizeof(node_fields_pub_key);
     node_fields_bind[2].length = &node_fields_len[2];
     node_fields_bind[2].is_null = &node_fields_is_null[2];
 
