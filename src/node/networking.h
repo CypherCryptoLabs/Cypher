@@ -122,14 +122,22 @@ void * handle_request( void* args ) {
         return_data_struct.return_code = 256;
     }
 
+    char client_status;
     char status_message[sizeof(int) + sizeof(unsigned long)];
+
     memcpy(status_message, &return_data_struct.return_code, sizeof(int));
     memcpy(status_message + sizeof(int), &return_data_struct.data_num_of_bytes, sizeof(unsigned long));
 
-    send(socket , &status_message , sizeof(int) + sizeof(unsigned long) , 0 );
-    send(socket , return_data_struct.data , return_data_struct.data_num_of_bytes , 0 );
+    send(socket, &status_message, sizeof(int) + sizeof(unsigned long), 0 );
+    read(socket, &client_status, 1);
+
+    if(client_status == 0) {
+        send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0 );
+    }
 
     // DEBUG
+
+    /*printf("%d %ld\n", return_data_struct.return_code, return_data_struct.data_num_of_bytes);
     
     for(int i = 0; i < (sizeof(int) + sizeof(unsigned long)); i++) {
         printf("%02x", status_message[i]);
@@ -139,7 +147,7 @@ void * handle_request( void* args ) {
     for(int i = 0; i < return_data_struct.data_num_of_bytes; i++) {
         printf("%02x", return_data_struct.data[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
 }
 
