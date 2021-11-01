@@ -181,7 +181,6 @@ int register_to_network() {
                 if(num_of_null_bytes == 1) {
                     memcpy(node_id, db_buffer + null_byte_index + 1, i - null_byte_index);
                     node_field_length[0] = i - null_byte_index - 1;
-                    printf("%ld\n", node_field_length[0]);
                 }
 
                 if(num_of_null_bytes == 2) {
@@ -192,8 +191,6 @@ int register_to_network() {
                 if(num_of_null_bytes == 3) {
                     memcpy(node_public_key, db_buffer + null_byte_index + 1, i - null_byte_index);
                     node_field_length[2] = i - null_byte_index;
-
-                    printf("%s\n%s\n%s\n", node_id, node_ip_address, node_public_key);
                     num_of_null_bytes = 0;
 
                     char *query_string = "INSERT INTO node(id, ip_address, public_key) VALUES(?, ?, ?);";
