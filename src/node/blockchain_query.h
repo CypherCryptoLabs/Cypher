@@ -6,7 +6,7 @@ struct block_cluster {
 struct return_data {
     int return_code;
     unsigned long data_num_of_bytes;
-    char *data;
+    unsigned char *data;
 };
 
 char *compile_to_packet_buffer(struct packet *block);
@@ -598,7 +598,7 @@ struct return_data register_new_node(char *ip_address, char *data_blob, int data
     unsigned long node_fields_len[3];
     char node_fields_id[129];
     char node_fields_ip_addr[16];
-    char node_fields_pub_key[129];
+    char node_fields_pub_key[10000];
 
     node_fields_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING;
     node_fields_bind[0].buffer = &node_fields_id;
