@@ -510,7 +510,7 @@ struct return_data register_new_node(char *ip_address, char *data_blob, int data
 
     } else {
 
-        query_string = "UPDATE node SET ip_address = ?, public_key = ?;";
+        query_string = "UPDATE node SET ip_address = ?, public_key = ? WHERE id = ?;";
 
         param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
         param_uoi[0].buffer = ip_address;
@@ -523,6 +523,12 @@ struct return_data register_new_node(char *ip_address, char *data_blob, int data
         param_uoi[1].is_unsigned = 0;
         param_uoi[1].is_null = 0;
         param_uoi[1].length = &pub_key_len;
+
+        param_uoi[3].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[3].buffer = decrypted_hash;
+        param_uoi[3].is_unsigned = 0;
+        param_uoi[3].is_null = 0;
+        param_uoi[3].length = &decrypted_size;
 
     }
 
