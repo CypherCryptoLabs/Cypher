@@ -3,6 +3,12 @@ struct block_cluster {
     int cluster_length;
 };
 
+struct return_data {
+    int return_code;
+    unsigned long data_num_of_bytes;
+    unsigned char *data;
+};
+
 char *compile_to_packet_buffer(struct packet *block);
 void notify_ticker_subscriber(char* subscriber_address, char *packet);
 
@@ -145,7 +151,9 @@ int create_new_block( struct packet *block, MYSQL *dbc) {
 
 }
 
-struct block_cluster search_blockchain( struct packet *needle) {
+struct return_data search_blockchain( struct packet *needle) {
+
+    struct return_data return_data_struct;
  
     //char timestamp[11], content_for_receiver[10001], content_for_sender[10001], receiver_address[129], sender_address[129], prev_block_hash[129];
     //unsigned long content_len = strnlen(content + 394, 20000) / 2;
@@ -254,7 +262,8 @@ struct block_cluster search_blockchain( struct packet *needle) {
     {
         fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
         fprintf(stderr, " %s\n", mysql_stmt_error(prev_block_stmt));
-        exit(1);
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     // use bind structure and query_string to get data from query
     }
 
@@ -262,7 +271,8 @@ struct block_cluster search_blockchain( struct packet *needle) {
     if (column_count != 6)
     {
         fprintf(stderr, " invalid column count returned by MySQL\n");
-        exit(1);
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     }
 
     MYSQL_BIND result_bind[9];
@@ -342,18 +352,19 @@ struct block_cluster search_blockchain( struct packet *needle) {
         
     }
 
-    struct block_cluster cluster;
-
-    cluster.cluster = block_cluster;
-    cluster.cluster_length = cluster_length;
+    return_data_struct.data = block_cluster;
+    return_data_struct.data_num_of_bytes = cluster_length;
+    return_data_struct.return_code = 0;
 
     free(block_cluster);
 
-    return cluster;
+    return return_data_struct;
 
 }
 
-int add_block_to_queue(struct packet *source_packet) {
+struct return_data add_block_to_queue(struct packet *source_packet) {
+
+    struct return_data return_data_struct;
 
     int i = 0;
     bool block_added = false;
@@ -369,15 +380,20 @@ int add_block_to_queue(struct packet *source_packet) {
     if(!block_added) {
         
         printf("[!] Queue is full!\n");
-        return -1;
+        return_data_struct.return_code = 1;
+        return return_data_struct;
 
     }
 
-    return 0;
+    return_data_struct.return_code = 0;
+    return_data_struct.data_num_of_bytes = 0;
+    return return_data_struct;
 
 }
 
-int subscribe_to_live_ticker(char* subscriber_address, int communication_socket) {
+struct return_data subscribe_to_live_ticker(char* subscriber_address, int communication_socket) {
+
+    struct return_data return_data_struct;
 
     struct live_ticker_subscriber *new_subscriber = malloc(sizeof(struct live_ticker_subscriber));
     new_subscriber->socket = communication_socket;
@@ -391,18 +407,23 @@ int subscribe_to_live_ticker(char* subscriber_address, int communication_socket)
         }
     }
 
-    return !is_subscribed;
+    return_data_struct.data_num_of_bytes = 0;
+    return_data_struct.return_code = !is_subscribed;
+    return return_data_struct;
 
 }
 
-int register_new_node(char *ip_address, char *data_blob, int data_blob_length, int communication_socket) {
+struct return_data register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
+
+    struct return_data return_data_struct;
     long unsigned int ip_address_len = strlen(ip_address);
 
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
     if(end_of_pub_key != NULL) {
         end_of_pub_key += 29;
     } else {
-        return 1;
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     }
 
     long unsigned int pub_key_len = end_of_pub_key - data_blob;
@@ -424,7 +445,8 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length, i
 
     long unsigned int decrypted_size = public_decrypt(signature_unescaped, data_blob_length - pub_key_len - offset, pub_key, decrypted_hash);
     if(decrypted_size == -1){
-        return 1;
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     }
 
     char *search_query_string = "SELECT id FROM node WHERE id = ?;";
@@ -444,7 +466,8 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length, i
     {
         fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
         fprintf(stderr, " %s\n", mysql_stmt_error(search_stmt));
-        return 1;
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     // use bind structure and query_string to get data from query
     }
 
@@ -452,7 +475,8 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length, i
     if (column_count != 1)
     {
         fprintf(stderr, " invalid column count returned by MySQL\n");
-        return 1;
+        return_data_struct.return_code = 1;
+        return return_data_struct;
     }
 
     mysql_stmt_store_result(search_stmt);
@@ -460,45 +484,180 @@ int register_new_node(char *ip_address, char *data_blob, int data_blob_length, i
     mysql_stmt_close(search_stmt);
 
     char *query_string;
+    MYSQL_BIND param_uoi[3];
 
     if(num_rows < 1) {
 
         query_string = "INSERT INTO node(id, ip_address, public_key) VALUES(?, ?, ?);";
 
+        param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[0].buffer = decrypted_hash;
+        param_uoi[0].is_unsigned = 0;
+        param_uoi[0].is_null = 0;
+        param_uoi[0].length = &decrypted_size;
+
+        param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[1].buffer = ip_address;
+        param_uoi[1].is_unsigned = 0;
+        param_uoi[1].is_null = 0;
+        param_uoi[1].length = &ip_address_len;
+
+        param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[2].buffer = pub_key;
+        param_uoi[2].is_unsigned = 0;
+        param_uoi[2].is_null = 0;
+        param_uoi[2].length = &pub_key_len;
+
     } else {
 
-        query_string = "UPDATE node SET id = ?, ip_address = ?, public_key = ?;";
+        query_string = "UPDATE node SET ip_address = ?, public_key = ? WHERE id = ?;";
+
+        param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[0].buffer = ip_address;
+        param_uoi[0].is_unsigned = 0;
+        param_uoi[0].is_null = 0;
+        param_uoi[0].length = &ip_address_len;
+
+        param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[1].buffer = pub_key;
+        param_uoi[1].is_unsigned = 0;
+        param_uoi[1].is_null = 0;
+        param_uoi[1].length = &pub_key_len;
+
+        param_uoi[3].buffer_type = MYSQL_TYPE_VARCHAR;
+        param_uoi[3].buffer = decrypted_hash;
+        param_uoi[3].is_unsigned = 0;
+        param_uoi[3].is_null = 0;
+        param_uoi[3].length = &decrypted_size;
 
     }
 
-    MYSQL_BIND param_uoi[3];
-
-    param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
-    param_uoi[0].buffer = decrypted_hash;
-    param_uoi[0].is_unsigned = 0;
-    param_uoi[0].is_null = 0;
-    param_uoi[0].length = &decrypted_size;
-
-    param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
-    param_uoi[1].buffer = ip_address;
-    param_uoi[1].is_unsigned = 0;
-    param_uoi[1].is_null = 0;
-    param_uoi[1].length = &ip_address_len;
-
-    param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
-    param_uoi[2].buffer = pub_key;
-    param_uoi[2].is_unsigned = 0;
-    param_uoi[2].is_null = 0;
-    param_uoi[2].length = &pub_key_len;
-
     MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
-
     mysql_stmt_close(update_or_insert_stmt);
+
+    MYSQL_BIND result_param[1];
+    MYSQL_STMT* node_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(id) + LENGTH(public_key) + LENGTH(ip_address) + 3) AS table_size FROM node;", result_param, dbc);
+
+    MYSQL_RES* prepare_meta_result_node_len = mysql_stmt_result_metadata(node_table_size_stmt);
+    if (!prepare_meta_result_node_len)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(node_table_size_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    int column_count_node_len= mysql_num_fields(prepare_meta_result_node_len);
+    if (column_count_node_len != 1)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    bool result_is_null;
+    unsigned long result_len;
+    unsigned long long result_node_len;
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+    result_bind[0].buffer = &result_node_len;
+    result_bind[0].buffer_length = sizeof(result_node_len);
+    result_bind[0].length = &result_len;
+    result_bind[0].is_null = &result_is_null;
+
+    if (mysql_stmt_bind_result(node_table_size_stmt, result_bind)) {
+        fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(node_table_size_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    mysql_stmt_fetch(node_table_size_stmt);
+    mysql_stmt_close(node_table_size_stmt);
+
+    MYSQL_BIND node_table_fields_param[1];
+    MYSQL_STMT* node_table_fields_stmt = mysql_prepared_query("SELECT * FROM node;", node_table_fields_param, dbc);
+
+    MYSQL_RES* prepare_meta_result_node_fields = mysql_stmt_result_metadata(node_table_fields_stmt);
+    if (!prepare_meta_result_node_fields)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(node_table_fields_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    int column_count_node_fields= mysql_num_fields(prepare_meta_result_node_fields);
+    if (column_count_node_fields != 3)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    MYSQL_BIND node_fields_bind[3];
+    memset(node_fields_bind, 0, sizeof(node_fields_bind));
+
+    bool node_fields_is_null[3];
+    unsigned long node_fields_len[3];
+    char node_fields_id[129];
+    char node_fields_ip_addr[16];
+    char node_fields_pub_key[10000];
+
+    node_fields_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING;
+    node_fields_bind[0].buffer = &node_fields_id;
+    node_fields_bind[0].buffer_length = sizeof(node_fields_id);
+    node_fields_bind[0].length = &node_fields_len[0];
+    node_fields_bind[0].is_null = &node_fields_is_null[0];
+
+    node_fields_bind[1].buffer_type = MYSQL_TYPE_VAR_STRING;
+    node_fields_bind[1].buffer = &node_fields_ip_addr;
+    node_fields_bind[1].buffer_length = sizeof(node_fields_ip_addr);
+    node_fields_bind[1].length = &node_fields_len[1];
+    node_fields_bind[1].is_null = &node_fields_is_null[1];
+
+    node_fields_bind[2].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
+    node_fields_bind[2].buffer = &node_fields_pub_key;
+    node_fields_bind[2].buffer_length = sizeof(node_fields_pub_key);
+    node_fields_bind[2].length = &node_fields_len[2];
+    node_fields_bind[2].is_null = &node_fields_is_null[2];
+
+    if (mysql_stmt_bind_result(node_table_fields_stmt, node_fields_bind)) {
+        fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(node_table_fields_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    mysql_stmt_store_result(node_table_fields_stmt);
+    int num_rows_node_fields = mysql_stmt_num_rows(node_table_fields_stmt);
+
+    char *block_cluster = malloc(result_node_len);
+    memset(block_cluster, 0, result_node_len);
+    int cluster_length = 0;
+
+    for(int i = 0; i < num_rows_node_fields; i++) {
+
+        mysql_stmt_fetch(node_table_fields_stmt);
+
+        memcpy(block_cluster + cluster_length, node_fields_id, node_fields_len[0]);
+        cluster_length += node_fields_len[0] + 1;
+        memcpy(block_cluster + cluster_length, node_fields_ip_addr, node_fields_len[1]);
+        cluster_length += node_fields_len[1] + 1;
+        memcpy(block_cluster + cluster_length, node_fields_pub_key, node_fields_len[2]);
+        cluster_length += node_fields_len[2] + 1;
+        
+    }
+
+    mysql_stmt_fetch(node_table_fields_stmt);
+    mysql_stmt_close(node_table_fields_stmt);
+
     mysql_close(dbc);
 
-    // Node is now registered. The new node needs information about all other exisitng nodes in the network.
-    // The "node" table in the database needs to be send to the newly registered Node, so it has data abt
-    // the whole network.
+    return_data_struct.return_code = 0;
+    return_data_struct.data_num_of_bytes = result_node_len;
+    return_data_struct.data = block_cluster;
+    return return_data_struct;
 
-    // determine db size
 }

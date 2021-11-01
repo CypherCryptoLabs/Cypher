@@ -77,8 +77,7 @@ void * handle_request( void* args ) {
     *parsed_packet = parse_packet(client_packet);
 
     //TODO: tell the client in coherent way the result of the query
-    unsigned char status = 0;
-    struct block_cluster data_to_send;
+    struct return_data return_data_struct;
 
     if(parsed_packet->query_id != -1) {
         switch (parsed_packet->query_id)
@@ -87,7 +86,7 @@ void * handle_request( void* args ) {
 
             // add new blobk to blockchain
             printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
-            status = add_block_to_queue(parsed_packet);
+            return_data_struct = add_block_to_queue(parsed_packet);
 
             break;
 
@@ -95,35 +94,60 @@ void * handle_request( void* args ) {
         
             // search for block matching metadata
             printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
-            data_to_send = search_blockchain(parsed_packet);
+            return_data_struct = search_blockchain(parsed_packet);
 
             break;
             
         case 3:
         
             printf("[i] Client send request to create a live ticker (query_id = '%X')\n", *client_packet);
-            status = subscribe_to_live_ticker(parsed_packet->sender_address, socket);
+            return_data_struct = subscribe_to_live_ticker(parsed_packet->sender_address, socket);
 
             break;
 
         case 4:
 
             printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
-            register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length, socket);
+            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
             
             break;
         
         default:
             printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
-            status = '\x64';
+            return_data_struct.return_code = 255;
             
             break;
         }
     } else {
-        unsigned char status = '\x64';
+        return_data_struct.return_code = 256;
     }
-    send(socket , &status , 1 , 0 );
-    send(socket , data_to_send.cluster , data_to_send.cluster_length , 0 );
+
+    char client_status;
+    char status_message[sizeof(int) + sizeof(unsigned long)];
+
+    memcpy(status_message, &return_data_struct.return_code, sizeof(int));
+    memcpy(status_message + sizeof(int), &return_data_struct.data_num_of_bytes, sizeof(unsigned long));
+
+    send(socket, &status_message, sizeof(int) + sizeof(unsigned long), 0 );
+    read(socket, &client_status, 1);
+
+    if(client_status == 0) {
+        send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0 );
+    }
+
+    // DEBUG
+
+    /*printf("%d %ld\n", return_data_struct.return_code, return_data_struct.data_num_of_bytes);
+    
+    for(int i = 0; i < (sizeof(int) + sizeof(unsigned long)); i++) {
+        printf("%02x", status_message[i]);
+    }
+    printf("\n");
+
+    for(int i = 0; i < return_data_struct.data_num_of_bytes; i++) {
+        printf("%02x", return_data_struct.data[i]);
+    }
+    printf("\n");*/
 
 }
 
