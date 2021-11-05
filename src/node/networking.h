@@ -197,7 +197,6 @@ void * connection_handler()
             exit(EXIT_FAILURE);
         }
 
-
         char buffer[1024] = {0};
         valread = read( new_socket , buffer, 1024);
         if(strcmp(blockchain_name, buffer) == 0) {
@@ -248,4 +247,50 @@ char *compile_to_packet_buffer(struct packet *block) {
 
     return packet;
 
+}
+
+int forward_query(char *ip_address, struct packet *source_packet) {
+
+    printf("[i] connecting to node...\n");
+
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *blockchain_name = "Cypher Blockchain";
+    char buffer[20269] = {0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("[!] Socket creation error \n");
+        return -1;
+    }
+   
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+       
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, ip_address, &serv_addr.sin_addr)<=0) 
+    {
+        printf("[!] Invalid address/ Address not supported \n");
+        return -1;
+    }
+   
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("[!] Connection Failed \n");
+        return -1;
+    }
+    send(sock , blockchain_name , strlen(blockchain_name) , 0 );
+    printf("[i] Blockchain Name sent\n");
+    valread = read( sock , buffer, 1024);
+    printf("[i] Node answered '%s'\n",buffer );
+
+    if(strcmp(blockchain_name, buffer) == 0) {
+
+        char *compiled_packet_buffer = compile_to_packet_buffer(source_packet);
+        send(sock, &compiled_packet_buffer, sizeof(compiled_packet_buffer), 0);
+
+    }
+
+    valread = read( sock , buffer, 1024);
+
+    return 0;
 }

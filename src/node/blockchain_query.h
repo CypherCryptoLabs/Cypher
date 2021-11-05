@@ -11,6 +11,7 @@ struct return_data {
 
 char *compile_to_packet_buffer(struct packet *block);
 void notify_ticker_subscriber(char* subscriber_address, char *packet);
+int forward_query(char *ip_address, struct packet *source_packet);
 
 int create_new_block( struct packet *block, MYSQL *dbc) {
 
@@ -369,6 +370,15 @@ struct return_data add_block_to_queue(struct packet *source_packet) {
     int i = 0;
     bool block_added = false;
 
+    // notify other nodes that a new block has been requested
+
+    for(int i = 0; i < node_list.length; i++) {
+
+        forward_query(node_list.node_address_list[i], source_packet);
+
+    }
+
+    // adding block to local queue
     while(i < BLOCK_QUEUE_LENGTH && !block_added){
         if(!block_queue[i]) {
             block_added = true;
