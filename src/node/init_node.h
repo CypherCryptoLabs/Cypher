@@ -107,11 +107,6 @@ int register_to_network() {
     memcpy(packet_buffer + 267, pubkey_buffer, pubkey_numbytes);
     memcpy(packet_buffer + 267 + pubkey_numbytes, encrypted_file_escaped, encrypted_buffer_size + offset);
 
-    /*for (int i = 0; i < 268 + pubkey_numbytes + encrypted_buffer_size; i++) {
-        printf("%02X", packet_buffer[i]);
-    }
-    printf("\n\n");*/
-
     printf("[i] connecting to node...\n");
 
     int sock = 0, valread;
@@ -193,7 +188,7 @@ int register_to_network() {
                     node_field_length[2] = i - null_byte_index;
                     num_of_null_bytes = 0;
 
-                    char *query_string = "INSERT INTO node(id, ip_address, public_key) VALUES(?, ?, ?);";
+                    char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
                     MYSQL_BIND param_uoi[3];
 
                     param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
@@ -237,6 +232,100 @@ int register_to_network() {
     return 0;
 }
 
+int setup_node_list() {
+
+    // get number of registered nodes in the network
+
+    char query_string[500] = "SELECT ip_address FROM node WHERE id != ?;";
+    MYSQL_BIND param[1];
+    FILE    *pubkey_infile;
+    unsigned char    *pubkey_buffer;
+    long    pubkey_numbytes;
+
+    pubkey_infile = fopen("public.pem", "r");
+    if(pubkey_infile == NULL)
+        return 1;
+
+    fseek(pubkey_infile, 0L, SEEK_END);
+    pubkey_numbytes = ftell(pubkey_infile);
+
+    fseek(pubkey_infile, 0L, SEEK_SET);	
+
+    pubkey_buffer = (char*)calloc(pubkey_numbytes, sizeof(char));
+
+    if(pubkey_buffer == NULL)
+        return 1;
+
+    fread(pubkey_buffer, sizeof(char), pubkey_numbytes, pubkey_infile);
+    fclose(pubkey_infile);
+
+    char *pub_key_hash = get_sha512_string(pubkey_buffer, pubkey_numbytes);
+    unsigned long pub_key_hash_num_bytes = 128;
+
+    param[0].buffer_type = MYSQL_TYPE_VARCHAR;
+    param[0].buffer = pub_key_hash;
+    param[0].is_unsigned = 0;
+    param[0].is_null = 0;
+    param[0].length = &pub_key_hash_num_bytes;
+
+    MYSQL *dbc = connecto_to_db();
+    MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param, dbc);
+
+    MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(prev_block_stmt);
+    if (!prepare_meta_result)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(prev_block_stmt));
+        return 1;
+    // use bind structure and query_string to get data from query
+    }
+
+    int column_count= mysql_num_fields(prepare_meta_result);
+    if (column_count != 1)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        return 1;
+    }
+
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    char node_ip_address[16] = {0};
+    long unsigned result_len;
+    bool result_is_null;
+
+    result_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[0].buffer = node_ip_address;
+    result_bind[0].buffer_length = sizeof(node_ip_address);
+    result_bind[0].length = &result_len;
+    result_bind[0].is_null = &result_is_null;
+
+    if (mysql_stmt_bind_result(prev_block_stmt, result_bind)) {
+        fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(prev_block_stmt));
+        exit(1);
+    }
+
+    mysql_stmt_store_result(prev_block_stmt);
+    int num_rows = mysql_stmt_num_rows(prev_block_stmt);
+
+    node_list.length = num_rows;
+    *node_list.node_address_list = malloc(num_rows * 16 * sizeof(char));
+
+    for(int i = 0; i < num_rows; i++) {
+        mysql_stmt_fetch(prev_block_stmt);
+       
+        char *ip_address_from_row = malloc(result_len + 1);
+        memset(ip_address_from_row, 0, result_len + 1);
+        memcpy(ip_address_from_row, node_ip_address, result_len);
+
+        node_list.node_address_list[i] = ip_address_from_row;
+
+    }
+
+    return 0;
+
+}
+
 void init_node() {
     // This function is used to set up everything needed by the node
     char *public_key_filename = "public.pem";
@@ -248,5 +337,6 @@ void init_node() {
     }
 
     register_to_network();
+    setup_node_list();
 
 }

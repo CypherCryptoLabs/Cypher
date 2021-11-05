@@ -11,6 +11,7 @@ struct return_data {
 
 char *compile_to_packet_buffer(struct packet *block);
 void notify_ticker_subscriber(char* subscriber_address, char *packet);
+int forward_query(char *ip_address, struct packet *source_packet);
 
 int create_new_block( struct packet *block, MYSQL *dbc) {
 
@@ -362,13 +363,24 @@ struct return_data search_blockchain( struct packet *needle) {
 
 }
 
-struct return_data add_block_to_queue(struct packet *source_packet) {
+struct return_data add_block_to_queue(struct packet *source_packet, bool alert_network) {
 
     struct return_data return_data_struct;
 
     int i = 0;
     bool block_added = false;
 
+    // notify other nodes that a new block has been requested
+
+    if(alert_network) {
+        for(int i = 0; i < node_list.length; i++) {
+
+            forward_query(node_list.node_address_list[i], source_packet);
+
+        }
+    }
+
+    // adding block to local queue
     while(i < BLOCK_QUEUE_LENGTH && !block_added){
         if(!block_queue[i]) {
             block_added = true;
@@ -486,51 +498,25 @@ struct return_data register_new_node(char *ip_address, char *data_blob, int data
     char *query_string;
     MYSQL_BIND param_uoi[3];
 
-    if(num_rows < 1) {
+    query_string = "REPLACE INTO node VALUES(?, ?, ?);";
 
-        query_string = "INSERT INTO node(id, ip_address, public_key) VALUES(?, ?, ?);";
+    param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[0].buffer = decrypted_hash;
+    param_uoi[0].is_unsigned = 0;
+    param_uoi[0].is_null = 0;
+    param_uoi[0].length = &decrypted_size;
 
-        param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
-        param_uoi[0].buffer = decrypted_hash;
-        param_uoi[0].is_unsigned = 0;
-        param_uoi[0].is_null = 0;
-        param_uoi[0].length = &decrypted_size;
+    param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[1].buffer = ip_address;
+    param_uoi[1].is_unsigned = 0;
+    param_uoi[1].is_null = 0;
+    param_uoi[1].length = &ip_address_len;
 
-        param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
-        param_uoi[1].buffer = ip_address;
-        param_uoi[1].is_unsigned = 0;
-        param_uoi[1].is_null = 0;
-        param_uoi[1].length = &ip_address_len;
-
-        param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
-        param_uoi[2].buffer = pub_key;
-        param_uoi[2].is_unsigned = 0;
-        param_uoi[2].is_null = 0;
-        param_uoi[2].length = &pub_key_len;
-
-    } else {
-
-        query_string = "UPDATE node SET ip_address = ?, public_key = ? WHERE id = ?;";
-
-        param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
-        param_uoi[0].buffer = ip_address;
-        param_uoi[0].is_unsigned = 0;
-        param_uoi[0].is_null = 0;
-        param_uoi[0].length = &ip_address_len;
-
-        param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
-        param_uoi[1].buffer = pub_key;
-        param_uoi[1].is_unsigned = 0;
-        param_uoi[1].is_null = 0;
-        param_uoi[1].length = &pub_key_len;
-
-        param_uoi[3].buffer_type = MYSQL_TYPE_VARCHAR;
-        param_uoi[3].buffer = decrypted_hash;
-        param_uoi[3].is_unsigned = 0;
-        param_uoi[3].is_null = 0;
-        param_uoi[3].length = &decrypted_size;
-
-    }
+    param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[2].buffer = pub_key;
+    param_uoi[2].is_unsigned = 0;
+    param_uoi[2].is_null = 0;
+    param_uoi[2].length = &pub_key_len;
 
     MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
     mysql_stmt_close(update_or_insert_stmt);

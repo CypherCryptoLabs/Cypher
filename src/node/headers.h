@@ -47,9 +47,14 @@ struct live_ticker_subscriber {
     int socket;
 };
 
-struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};
+struct node_cache {
+    int length;
+    char *node_address_list[];
+};
 
+struct packet *block_queue[BLOCK_QUEUE_LENGTH] = {0};
 struct live_ticker_subscriber *live_ticker_subscriber_list[LIVE_TICKER_SUBSCRIBER_COUNT] = {0};
+struct node_cache node_list;
 
 #include "rsa_wrapper.h"
 #include "crypto.h"
