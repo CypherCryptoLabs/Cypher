@@ -188,7 +188,7 @@ int register_to_network() {
                     node_field_length[2] = i - null_byte_index;
                     num_of_null_bytes = 0;
 
-                    char *query_string = "INSERT INTO node(id, ip_address, public_key) VALUES(?, ?, ?);";
+                    char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
                     MYSQL_BIND param_uoi[3];
 
                     param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
