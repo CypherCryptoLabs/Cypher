@@ -16,7 +16,7 @@ do
     hexdump -n 64 -e '16/4 "%08X" 1 "\0"' /dev/urandom >> ./.testpackage$i
 
     printf "sending packet %d...\n" $i
-    netcat -w 1 192.168.2.130 50000 <./.testpackage$i &
+    netcat -w 1 192.168.2.131 50000 <./.testpackage$i &
 
     printf "deleting packet %d...\n" $i
     rm ./.testpackage$i

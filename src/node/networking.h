@@ -86,7 +86,7 @@ void * handle_request( void* args ) {
 
             // add new blobk to blockchain
             printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
-            return_data_struct = add_block_to_queue(parsed_packet);
+            return_data_struct = add_block_to_queue(parsed_packet, 1);
 
             break;
 
@@ -111,6 +111,14 @@ void * handle_request( void* args ) {
             return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
             
             break;
+
+        case 5:
+
+            // add new blobk to blockchain without alerting other nodes
+            printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
+            return_data_struct = add_block_to_queue(parsed_packet, 0);
+
+            break;
         
         default:
             printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
@@ -119,7 +127,7 @@ void * handle_request( void* args ) {
             break;
         }
     } else {
-        return_data_struct.return_code = 256;
+        return_data_struct.return_code = 128;
     }
 
     char client_status;
@@ -137,7 +145,7 @@ void * handle_request( void* args ) {
 
     // DEBUG
 
-    /*printf("%d %ld\n", return_data_struct.return_code, return_data_struct.data_num_of_bytes);
+    printf("%d %ld\n", return_data_struct.return_code, return_data_struct.data_num_of_bytes);
     
     for(int i = 0; i < (sizeof(int) + sizeof(unsigned long)); i++) {
         printf("%02x", status_message[i]);
@@ -147,7 +155,7 @@ void * handle_request( void* args ) {
     for(int i = 0; i < return_data_struct.data_num_of_bytes; i++) {
         printf("%02x", return_data_struct.data[i]);
     }
-    printf("\n");*/
+    printf("\n");
 
 }
 
@@ -237,8 +245,8 @@ void notify_ticker_subscriber(char* subscriber_address, char *packet) {
 
 char *compile_to_packet_buffer(struct packet *block) {
 
-    char *packet = malloc(sizeof(struct packet));
-    memset(packet, 0, sizeof(struct packet));
+    char *packet = malloc(267 + block->data_blob_length);
+    memset(packet, 0, 267 + block->data_blob_length);
 
     memcpy(packet + 1, block->timestamp, 10);
     memcpy(packet + 11, block->sender_address, 128);
@@ -267,6 +275,7 @@ int forward_query(char *ip_address, struct packet *source_packet) {
     serv_addr.sin_port = htons(PORT);
        
     // Convert IPv4 and IPv6 addresses from text to binary form
+    printf("%s\n", ip_address);
     if(inet_pton(AF_INET, ip_address, &serv_addr.sin_addr)<=0) 
     {
         printf("[!] Invalid address/ Address not supported \n");
@@ -286,11 +295,13 @@ int forward_query(char *ip_address, struct packet *source_packet) {
     if(strcmp(blockchain_name, buffer) == 0) {
 
         char *compiled_packet_buffer = compile_to_packet_buffer(source_packet);
-        send(sock, &compiled_packet_buffer, sizeof(compiled_packet_buffer), 0);
+        compiled_packet_buffer[0] = 0x5;
+
+        send(sock, compiled_packet_buffer, 268 + source_packet->data_blob_length, 0);
+
+        valread = read( sock , buffer, 1024);
 
     }
-
-    valread = read( sock , buffer, 1024);
 
     return 0;
 }

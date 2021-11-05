@@ -363,7 +363,7 @@ struct return_data search_blockchain( struct packet *needle) {
 
 }
 
-struct return_data add_block_to_queue(struct packet *source_packet) {
+struct return_data add_block_to_queue(struct packet *source_packet, bool alert_network) {
 
     struct return_data return_data_struct;
 
@@ -372,10 +372,12 @@ struct return_data add_block_to_queue(struct packet *source_packet) {
 
     // notify other nodes that a new block has been requested
 
-    for(int i = 0; i < node_list.length; i++) {
+    if(alert_network) {
+        for(int i = 0; i < node_list.length; i++) {
 
-        forward_query(node_list.node_address_list[i], source_packet);
+            forward_query(node_list.node_address_list[i], source_packet);
 
+        }
     }
 
     // adding block to local queue
