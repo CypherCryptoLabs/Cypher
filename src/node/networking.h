@@ -301,6 +301,7 @@ int forward_query(char *ip_address, struct packet *source_packet, char query_id)
     printf("[i] Blockchain Name sent\n");
     valread = read( sock , buffer, 1024);
     printf("[i] Node answered '%s'\n",buffer );
+    int return_code = 0;
 
     if(strcmp(blockchain_name, buffer) == 0) {
 
@@ -309,10 +310,15 @@ int forward_query(char *ip_address, struct packet *source_packet, char query_id)
 
         send(sock, compiled_packet_buffer, 268 + source_packet->data_blob_length, 0);
         read( sock , buffer, 1024);
+
+        if(buffer[0] != '\0') {
+            return_code = 1;
+        }
+
         char status = 1;
         send(sock, &status, 1, 0);
         free(compiled_packet_buffer);
     }
 
-    return 0;
+    return return_code;
 }
