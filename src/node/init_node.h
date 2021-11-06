@@ -167,11 +167,6 @@ int register_to_network() {
         unsigned long node_field_length[3];
         MYSQL *dbc = connecto_to_db();
 
-        for(int i = 0; i < data_num_of_bytes; i++) {
-            printf("%02x", db_buffer[i]);
-        }
-        printf("\n");
-
         for(int i =143; i < data_num_of_bytes; i++) {
 
             if(db_buffer[i] == '\0'){
