@@ -168,53 +168,48 @@ int register_to_network() {
         MYSQL *dbc = connecto_to_db();
 
         for(int i = 0; i < data_num_of_bytes; i++) {
+            printf("%02x", db_buffer[i]);
+        }
+        printf("\n");
+
+        for(int i =143; i < data_num_of_bytes; i++) {
 
             if(db_buffer[i] == '\0'){
-                
-                num_of_null_bytes++;
 
-                if(num_of_null_bytes == 1) {
-                    memcpy(node_id, db_buffer + null_byte_index + 1, i - null_byte_index);
-                    node_field_length[0] = i - null_byte_index - 1;
-                }
+                node_field_length[0] = 128;
+                node_field_length[1] = 15;
+                node_field_length[2] = (i - null_byte_index) - 15 - 128;
 
-                if(num_of_null_bytes == 2) {
-                    memcpy(node_ip_address, db_buffer + null_byte_index + 1, i - null_byte_index);
-                    node_field_length[1] = i - null_byte_index;
-                }
+                memcpy(node_id, db_buffer + null_byte_index, 128);
+                memcpy(node_ip_address, db_buffer + null_byte_index + 128, 15);
+                memcpy(node_public_key, db_buffer + null_byte_index + 128 + 15, node_field_length[2]);
 
-                if(num_of_null_bytes == 3) {
-                    memcpy(node_public_key, db_buffer + null_byte_index + 1, i - null_byte_index);
-                    node_field_length[2] = i - null_byte_index;
-                    num_of_null_bytes = 0;
+                char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
+                MYSQL_BIND param_uoi[3];
 
-                    char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
-                    MYSQL_BIND param_uoi[3];
+                param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+                param_uoi[0].buffer = node_id;
+                param_uoi[0].is_unsigned = 0;
+                param_uoi[0].is_null = 0;
+                param_uoi[0].length = &node_field_length[0];
 
-                    param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
-                    param_uoi[0].buffer = node_id;
-                    param_uoi[0].is_unsigned = 0;
-                    param_uoi[0].is_null = 0;
-                    param_uoi[0].length = &node_field_length[0];
+                param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+                param_uoi[1].buffer = node_ip_address;
+                param_uoi[1].is_unsigned = 0;
+                param_uoi[1].is_null = 0;
+                param_uoi[1].length = &node_field_length[1];
 
-                    param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
-                    param_uoi[1].buffer = node_ip_address;
-                    param_uoi[1].is_unsigned = 0;
-                    param_uoi[1].is_null = 0;
-                    param_uoi[1].length = &node_field_length[1];
+                param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
+                param_uoi[2].buffer = node_public_key;
+                param_uoi[2].is_unsigned = 0;
+                param_uoi[2].is_null = 0;
+                param_uoi[2].length = &node_field_length[2];
 
-                    param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
-                    param_uoi[2].buffer = node_public_key;
-                    param_uoi[2].is_unsigned = 0;
-                    param_uoi[2].is_null = 0;
-                    param_uoi[2].length = &node_field_length[2];
+                MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
+                mysql_stmt_close(update_or_insert_stmt);
 
-                    MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
-                    mysql_stmt_close(update_or_insert_stmt);
-
-                }
-
-                null_byte_index = i;
+                null_byte_index = i + 1;
+                i += 144;
 
             }
 
