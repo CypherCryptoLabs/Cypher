@@ -300,7 +300,7 @@ int forward_query(char *ip_address, struct packet *source_packet) {
         send(sock, compiled_packet_buffer, 268 + source_packet->data_blob_length, 0);
 
         valread = read( sock , buffer, 1024);
-
+        free(compiled_packet_buffer);
     }
 
     return 0;
