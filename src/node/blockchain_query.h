@@ -11,7 +11,7 @@ struct return_data {
 
 char *compile_to_packet_buffer(struct packet *block);
 void notify_ticker_subscriber(char* subscriber_address, char *packet);
-int forward_query(char *ip_address, struct packet *source_packet);
+int forward_query(char *ip_address, struct packet *source_packet, char query_id);
 
 int create_new_block( struct packet *block, MYSQL *dbc) {
 
@@ -375,7 +375,7 @@ struct return_data add_block_to_queue(struct packet *source_packet, bool alert_n
     if(alert_network) {
         for(int i = 0; i < node_list.length; i++) {
 
-            forward_query(node_list.node_address_list[i], source_packet);
+            forward_query(node_list.node_address_list[i], source_packet, 0x5);
 
         }
     }
@@ -425,10 +425,12 @@ struct return_data subscribe_to_live_ticker(char* subscriber_address, int commun
 
 }
 
-struct return_data register_new_node(char *ip_address, char *data_blob, int data_blob_length) {
+struct return_data register_new_node(char *ip_address, struct packet *source_packet, bool notify_network) {
 
     struct return_data return_data_struct;
     long unsigned int ip_address_len = strlen(ip_address);
+    char *data_blob = source_packet->data_blob;
+    int data_blob_length = source_packet->data_blob_length;
 
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
     if(end_of_pub_key != NULL) {

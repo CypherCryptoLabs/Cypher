@@ -108,15 +108,25 @@ void * handle_request( void* args ) {
         case 4:
 
             printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
-            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet->data_blob, parsed_packet->data_blob_length);
+            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet, 1);
             
             break;
 
         case 5:
 
-            // add new blobk to blockchain without alerting other nodes
+            // add new blobk to blockchain without alerting other nodes.
+            // need some other way of doing this, this could be exploited to desync nodes
             printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
             return_data_struct = add_block_to_queue(parsed_packet, 0);
+
+            break;
+
+        case 6:
+
+            // need some other way of doing this, this could be exploited to desync nodes
+            printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
+            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet, 0);
+            
 
             break;
         
@@ -130,14 +140,14 @@ void * handle_request( void* args ) {
         return_data_struct.return_code = 128;
     }
 
-    char client_status;
+    char *client_status;
     char status_message[sizeof(int) + sizeof(unsigned long)];
 
     memcpy(status_message, &return_data_struct.return_code, sizeof(int));
     memcpy(status_message + sizeof(int), &return_data_struct.data_num_of_bytes, sizeof(unsigned long));
 
     send(socket, &status_message, sizeof(int) + sizeof(unsigned long), 0 );
-    read(socket, &client_status, 1);
+    read(socket, client_status, 1);
 
     if(client_status == 0) {
         send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0 );
@@ -145,7 +155,7 @@ void * handle_request( void* args ) {
 
     // DEBUG
 
-    printf("%d %ld\n", return_data_struct.return_code, return_data_struct.data_num_of_bytes);
+    /*printf("%d %ld\n", return_data_struct.return_code, return_data_struct.data_num_of_bytes);
     
     for(int i = 0; i < (sizeof(int) + sizeof(unsigned long)); i++) {
         printf("%02x", status_message[i]);
@@ -155,7 +165,7 @@ void * handle_request( void* args ) {
     for(int i = 0; i < return_data_struct.data_num_of_bytes; i++) {
         printf("%02x", return_data_struct.data[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
 }
 
@@ -257,7 +267,7 @@ char *compile_to_packet_buffer(struct packet *block) {
 
 }
 
-int forward_query(char *ip_address, struct packet *source_packet) {
+int forward_query(char *ip_address, struct packet *source_packet, char query_id) {
 
     printf("[i] connecting to node...\n");
 
@@ -295,11 +305,12 @@ int forward_query(char *ip_address, struct packet *source_packet) {
     if(strcmp(blockchain_name, buffer) == 0) {
 
         char *compiled_packet_buffer = compile_to_packet_buffer(source_packet);
-        compiled_packet_buffer[0] = 0x5;
+        compiled_packet_buffer[0] = query_id;
 
         send(sock, compiled_packet_buffer, 268 + source_packet->data_blob_length, 0);
-
-        valread = read( sock , buffer, 1024);
+        read( sock , buffer, 1024);
+        char status = 1;
+        send(sock, &status, 1, 0);
         free(compiled_packet_buffer);
     }
 
