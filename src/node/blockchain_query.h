@@ -375,7 +375,10 @@ struct return_data add_block_to_queue(struct packet *source_packet, bool alert_n
     if(alert_network) {
         for(int i = 0; i < node_list.length; i++) {
 
-            forward_query(node_list.node_address_list[i], source_packet, 0x5);
+            if(forward_query(node_list.node_address_list[i], source_packet, 0x5) == 1) {
+                return_data_struct.return_code = 1;
+                return return_data_struct;
+            }
 
         }
     }
@@ -431,6 +434,18 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
     long unsigned int ip_address_len = strlen(ip_address);
     char *data_blob = source_packet->data_blob;
     int data_blob_length = source_packet->data_blob_length;
+
+    // notifiy every node in network that a new node is trying to register
+    if(notify_network) {
+        for(int i = 0; i < node_list.length; i++) {
+
+            if(forward_query(node_list.node_address_list[i], source_packet, 0x6) == 1) {
+                return_data_struct.return_code = 1;
+                return return_data_struct;
+            }
+
+        }
+    }
 
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
     if(end_of_pub_key != NULL) {
@@ -630,9 +645,9 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
         mysql_stmt_fetch(node_table_fields_stmt);
 
         memcpy(block_cluster + cluster_length, node_fields_id, node_fields_len[0]);
-        cluster_length += node_fields_len[0] + 1;
+        cluster_length += 128;
         memcpy(block_cluster + cluster_length, node_fields_ip_addr, node_fields_len[1]);
-        cluster_length += node_fields_len[1] + 1;
+        cluster_length += 15;
         memcpy(block_cluster + cluster_length, node_fields_pub_key, node_fields_len[2]);
         cluster_length += node_fields_len[2] + 1;
         
@@ -644,8 +659,14 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
     mysql_close(dbc);
 
     return_data_struct.return_code = 0;
-    return_data_struct.data_num_of_bytes = result_node_len;
-    return_data_struct.data = block_cluster;
+
+    if(notify_network) {
+        return_data_struct.data_num_of_bytes = result_node_len;
+        return_data_struct.data = block_cluster;
+    } else {
+        return_data_struct.data_num_of_bytes = 0;
+        return_data_struct.data = "";
+    }
     return return_data_struct;
 
 }
