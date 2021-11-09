@@ -57,7 +57,6 @@ struct live_ticker_subscriber *live_ticker_subscriber_list[LIVE_TICKER_SUBSCRIBE
 struct node_cache node_list;
 
 #include "rsa_wrapper.h"
-#include "crypto.h"
 #include "mysql_wrapper.h"
 #include "sha512.h"
 #include "blockchain_queue.h"

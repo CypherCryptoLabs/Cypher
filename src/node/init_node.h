@@ -54,45 +54,45 @@ int register_to_network() {
     char *pub_key_hash = get_sha512_string(pubkey_buffer, pubkey_numbytes);
     int pub_key_hash_num_bytes = 128;
 
-    unsigned char *encrypted_file = malloc(1024);
-    int encrypted_buffer_size = private_encrypt(pub_key_hash, pub_key_hash_num_bytes, privkey_buffer, encrypted_file);
+    unsigned char *encrypted_buffer = malloc(1024);
+    int encrypted_buffer_size = private_encrypt(pub_key_hash, pub_key_hash_num_bytes, privkey_buffer, encrypted_buffer);
 
     if(encrypted_buffer_size == -1){
-        printLastError("Private Decrypt failed ");
+        print_rsa_error("Private Decrypt failed ");
         exit(0);
     }
 
     int num_of_null_bytes = 0;
     for(int i = 0; i < encrypted_buffer_size; i++) {
-        if(encrypted_file[i] == '\x00') {
+        if(encrypted_buffer[i] == '\x00') {
             num_of_null_bytes++;
         }
     }
 
     int offset = 0;
-    unsigned char *encrypted_file_escaped = malloc(encrypted_buffer_size + num_of_null_bytes);
+    unsigned char *encrypted_buffer_escaped = malloc(encrypted_buffer_size + num_of_null_bytes);
     for(int i = 0; i < encrypted_buffer_size + num_of_null_bytes; i++) {
-        if(encrypted_file[i] == '\x00') {
-            encrypted_file_escaped[i + offset] = '\\';
+        if(encrypted_buffer[i] == '\x00') {
+            encrypted_buffer_escaped[i + offset] = '\\';
             offset++;
-            encrypted_file_escaped[i + offset] = '\x00';
+            encrypted_buffer_escaped[i + offset] = '\x00';
         } else {
-            encrypted_file_escaped[i + offset] = encrypted_file[i];
+            encrypted_buffer_escaped[i + offset] = encrypted_buffer[i];
         }
     }
 
-    unsigned char *decrypted_file = malloc(encrypted_buffer_size);
-    int decrypted_buffer_size = public_decrypt(encrypted_file, encrypted_buffer_size, pubkey_buffer, decrypted_file);
+    unsigned char *decrypted_buffer = malloc(encrypted_buffer_size);
+    int decrypted_buffer_size = public_decrypt(encrypted_buffer, encrypted_buffer_size, pubkey_buffer, decrypted_buffer);
 
     if(decrypted_buffer_size == -1){
-        printLastError("Private Decrypt failed ");
+        print_rsa_error("Private Decrypt failed ");
         exit(0);
     }
 
-    if(strcmp(decrypted_file, pub_key_hash) == 0) {
+    if(strcmp(decrypted_buffer, pub_key_hash) == 0) {
         printf("encryption and decryption successful!\n");
     } else {
-        printf("ERROR: Something went wrong! decrypted_file != encrypted_file\n");
+        printf("ERROR: Something went wrong! decrypted_buffer != encrypted_buffer\n");
     }
 
     unsigned char packet_buffer[775 + 512 + 267] = {0};
@@ -105,7 +105,7 @@ int register_to_network() {
     memcpy(packet_buffer + 11, pub_key_hash, 128);
     memcpy(packet_buffer + 139, pub_key_hash, 128);
     memcpy(packet_buffer + 267, pubkey_buffer, pubkey_numbytes);
-    memcpy(packet_buffer + 267 + pubkey_numbytes, encrypted_file_escaped, encrypted_buffer_size + offset);
+    memcpy(packet_buffer + 267 + pubkey_numbytes, encrypted_buffer_escaped, encrypted_buffer_size + offset);
 
     printf("[i] connecting to node...\n");
 

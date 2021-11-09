@@ -1,4 +1,45 @@
-void printLastError(char *msg)
+void generate_keypair()
+{
+	int ret = 0;
+	RSA *r = NULL;
+	BIGNUM *bne = NULL;
+	BIO *bp_public = NULL, *bp_private = NULL;
+
+	int				bits = 4096;
+	unsigned long	e = RSA_F4;
+
+	bne = BN_new();
+	ret = BN_set_word(bne,e);
+	if(ret != 1){
+		goto free_all;
+	}
+
+	r = RSA_new();
+	ret = RSA_generate_key_ex(r, bits, bne, NULL);
+	if(ret != 1){
+		goto free_all;
+	}
+
+	bp_public = BIO_new_file("public.pem", "w+");
+	ret = PEM_write_bio_RSAPublicKey(bp_public, r);
+	if(ret != 1){
+		goto free_all;
+	}
+
+	bp_private = BIO_new_file("private.pem", "w+");
+	ret = PEM_write_bio_RSAPrivateKey(bp_private, r, NULL, NULL, 0, NULL, NULL);
+
+free_all:
+
+	BIO_free_all(bp_public);
+	BIO_free_all(bp_private);
+	RSA_free(r);
+	BN_free(bne);
+
+	return;
+}
+
+void print_rsa_error(char *msg)
 {
     char * err = malloc(130);;
     ERR_load_crypto_strings();
@@ -30,7 +71,7 @@ RSA * create_RSA(unsigned char * key,int public)
 
     if(rsa == NULL)
     {
-        printLastError( "Failed to create RSA\n");
+        print_rsa_error( "Failed to create RSA\n");
     }
  
     return rsa;
