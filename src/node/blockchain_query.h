@@ -481,7 +481,7 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
     // signature does not match key
     if(strcmp(hashed_pub_key, decrypted_hash) != 0) {
         return_data_struct.return_code = 1;
-        return return_data_struct
+        return return_data_struct;
     }
 
     char *search_query_string = "SELECT id FROM node WHERE id = ?;";
