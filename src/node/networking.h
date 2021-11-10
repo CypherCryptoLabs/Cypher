@@ -108,7 +108,7 @@ void * handle_request( void* args ) {
         case 4:
 
             printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
-            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet, 1);
+            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet);
             
             break;
 
@@ -118,15 +118,6 @@ void * handle_request( void* args ) {
             // need some other way of doing this, this could be exploited to desync nodes
             printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
             return_data_struct = add_block_to_queue(parsed_packet, 0);
-
-            break;
-
-        case 6:
-
-            // need some other way of doing this, this could be exploited to desync nodes
-            printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
-            return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet, 0);
-            
 
             break;
         

@@ -428,24 +428,12 @@ struct return_data subscribe_to_live_ticker(char* subscriber_address, int commun
 
 }
 
-struct return_data register_new_node(char *ip_address, struct packet *source_packet, bool notify_network) {
+struct return_data register_new_node(char *ip_address, struct packet *source_packet) {
 
     struct return_data return_data_struct;
     long unsigned int ip_address_len = strlen(ip_address);
     char *data_blob = source_packet->data_blob;
     int data_blob_length = source_packet->data_blob_length;
-
-    // notifiy every node in network that a new node is trying to register
-    if(notify_network) {
-        for(int i = 0; i < node_list.length; i++) {
-
-            if(forward_query(node_list.node_address_list[i], source_packet, 0x6) == 1) {
-                return_data_struct.return_code = 1;
-                return return_data_struct;
-            }
-
-        }
-    }
 
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
     if(end_of_pub_key != NULL) {
@@ -665,14 +653,9 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
     mysql_close(dbc);
 
     return_data_struct.return_code = 0;
-
-    if(notify_network) {
-        return_data_struct.data_num_of_bytes = result_node_len;
-        return_data_struct.data = block_cluster;
-    } else {
-        return_data_struct.data_num_of_bytes = 0;
-        return_data_struct.data = "";
-    }
+    return_data_struct.data_num_of_bytes = result_node_len;
+    return_data_struct.data = block_cluster;
+    
     return return_data_struct;
 
 }
