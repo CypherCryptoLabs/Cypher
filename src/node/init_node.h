@@ -161,7 +161,7 @@ int register_to_network() {
         // parsing data received from node
         int null_byte_index = 0;
         int num_of_null_bytes = 0;
-        char node_id[128] = {0};
+        char node_id[129] = {0};
         char node_ip_address[16] = {0};
         char node_public_key[10000] = {0};
         unsigned long node_field_length[3];
@@ -178,6 +178,8 @@ int register_to_network() {
                 memcpy(node_id, db_buffer + null_byte_index, 128);
                 memcpy(node_ip_address, db_buffer + null_byte_index + 128, 15);
                 memcpy(node_public_key, db_buffer + null_byte_index + 128 + 15, node_field_length[2]);
+
+                printf("%s\n", node_id);
 
                 char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
                 MYSQL_BIND param_uoi[3];
@@ -199,53 +201,6 @@ int register_to_network() {
                 param_uoi[2].is_unsigned = 0;
                 param_uoi[2].is_null = 0;
                 param_uoi[2].length = &node_field_length[2];
-
-                printf("[i] connecting to node...\n");
-
-                int tmp_sock = 0, valread;
-                struct sockaddr_in tmp_serv_addr;
-                if ((tmp_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-                {
-                    printf("[!] Socket creation error \n");
-                    return -1;
-                }
-            
-                tmp_serv_addr.sin_family = AF_INET;
-                tmp_serv_addr.sin_port = htons(PORT);
-                
-                // Convert IPv4 and IPv6 addresses from text to binary form
-                if(inet_pton(AF_INET, node_ip_address, &tmp_serv_addr.sin_addr)<=0) 
-                {
-                    printf("[!] Invalid address/ Address not supported \n");
-                    return -1;
-                }
-            
-                if (connect(tmp_sock, (struct sockaddr *)&tmp_serv_addr, sizeof(tmp_serv_addr)) < 0)
-                {
-                    printf("[!] Connection Failed \n");
-                    return -1;
-                }
-                send(tmp_sock , blockchain_name , strlen(blockchain_name) , 0 );
-                printf("[i] Blockchain Name sent\n");
-                read(tmp_sock , buffer, 1024);
-                printf("[i] Node answered '%s'\n",buffer );
-
-                if(strcmp(blockchain_name, buffer) == 0) {
-                    send(tmp_sock , packet_buffer , 268 + pubkey_numbytes + encrypted_buffer_size + offset , 0 );
-                }
-
-                read( tmp_sock , buffer, 1024);
-                int tmp_return_code;
-                unsigned long tmp_data_num_of_bytes;
-
-                memcpy(&tmp_return_code, buffer, sizeof(int));
-                memcpy(&tmp_data_num_of_bytes, buffer + sizeof(int), sizeof(unsigned long));
-                char tmp_status = 1;
-
-                if(tmp_return_code == 0 && tmp_data_num_of_bytes != 0) {
-                    tmp_status = 1;
-                    send(sock, &tmp_status, 1, 0);
-                }
 
                 MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
                 mysql_stmt_close(update_or_insert_stmt);
