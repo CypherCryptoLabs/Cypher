@@ -179,8 +179,6 @@ int register_to_network() {
                 memcpy(node_ip_address, db_buffer + null_byte_index + 128, 15);
                 memcpy(node_public_key, db_buffer + null_byte_index + 128 + 15, node_field_length[2]);
 
-                printf("%s\n", node_id);
-
                 char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
                 MYSQL_BIND param_uoi[3];
 
