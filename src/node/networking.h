@@ -87,7 +87,6 @@ void * handle_request( void* args ) {
             // add new blobk to blockchain
             printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
             return_data_struct = add_block_to_queue(parsed_packet, 1);
-
             break;
 
         case 2:
@@ -95,21 +94,18 @@ void * handle_request( void* args ) {
             // search for block matching metadata
             printf("[i] Client send request search for Block in blockchain (query_id = '%X')\n", *client_packet);
             return_data_struct = search_blockchain(parsed_packet);
-
             break;
             
         case 3:
         
             printf("[i] Client send request to create a live ticker (query_id = '%X')\n", *client_packet);
             return_data_struct = subscribe_to_live_ticker(parsed_packet->sender_address, socket);
-
             break;
 
         case 4:
 
             printf("[i] Request to register new Node (query_id = '%X')\n", *client_packet);
             return_data_struct = register_new_node(inet_ntoa(arguments.address.sin_addr), parsed_packet);
-            
             break;
 
         case 5:
@@ -118,13 +114,17 @@ void * handle_request( void* args ) {
             // need some other way of doing this, this could be exploited to desync nodes
             printf("[i] Client send request to create a new Block (query_id = '%X')\n", parsed_packet->query_id);
             return_data_struct = add_block_to_queue(parsed_packet, 0);
+            break;
 
+        case 6:
+
+            printf("[i] Client send request to sync blockchain (query_id = '%X')\n", parsed_packet->query_id);
+            return_data_struct = sync_blockchain();
             break;
         
         default:
             printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);
             return_data_struct.return_code = 255;
-            
             break;
         }
     } else {

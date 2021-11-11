@@ -659,3 +659,60 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
     return return_data_struct;
 
 }
+
+struct return_data sync_blockchain() {
+
+    struct return_data return_data_struct;
+    MYSQL *dbc = connecto_to_db();
+
+    MYSQL_BIND result_param[1];
+    MYSQL_STMT* blockchain_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(id) + LENGTH(public_key) + LENGTH(ip_address) + 3) AS table_size FROM node;", result_param, dbc);
+
+    MYSQL_RES* prepare_meta_result_blockchain_len = mysql_stmt_result_metadata(blockchain_table_size_stmt);
+    if (!prepare_meta_result_blockchain_len)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(blockchain_table_size_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    int column_count_node_len= mysql_num_fields(prepare_meta_result_blockchain_len);
+    if (column_count_node_len != 1)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    MYSQL_BIND blockchain_len_result_bind[1];
+    memset(blockchain_len_result_bind, 0, sizeof(blockchain_len_result_bind));
+
+    bool blockchain_result_is_null;
+    unsigned long blockchain_result_len;
+    unsigned long long result_blockchain_len;
+
+    blockchain_len_result_bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+    blockchain_len_result_bind[0].buffer = &result_blockchain_len;
+    blockchain_len_result_bind[0].buffer_length = sizeof(result_blockchain_len);
+    blockchain_len_result_bind[0].length = &blockchain_result_len;
+    blockchain_len_result_bind[0].is_null = &blockchain_result_is_null;
+
+    if (mysql_stmt_bind_result(blockchain_table_size_stmt, blockchain_len_result_bind)) {
+        fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(blockchain_table_size_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    mysql_stmt_fetch(blockchain_table_size_stmt);
+    mysql_stmt_close(blockchain_table_size_stmt);
+
+    mysql_close(dbc);
+    free(dbc);
+
+    //char *block_cluster = malloc(result_blockchain_len);
+    printf("%d\n", result_blockchain_len);
+
+    return_data_struct.return_code = 1;
+    return return_data_struct;
+}
