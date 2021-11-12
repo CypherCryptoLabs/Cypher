@@ -719,4 +719,61 @@ struct return_data sync_blockchain() {
 
 struct return_data request_blockchain_sync(char *node_address) {
 
+    // get hash of newest block
+    struct return_data return_data_struct;
+    MYSQL *dbc = connecto_to_db();
+    MYSQL_BIND result_param[1];
+    MYSQL_STMT* last_hash_stmt = mysql_prepared_query("SELECT hash_of_prev_block  FROM blockchain ORDER BY timestamp DESC LIMIT 1;", result_param, dbc);
+
+    MYSQL_RES* prepare_meta_result_last_hash = mysql_stmt_result_metadata(last_hash_stmt);
+    if (!prepare_meta_result_last_hash)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(last_hash_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    int column_count_last_hash= mysql_num_fields(prepare_meta_result_last_hash);
+    if (column_count_last_hash != 1)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    bool result_is_null;
+    unsigned long result_len;
+    char result_last_hash[129];
+
+    result_bind[0].buffer_type = MYSQL_TYPE_STRING;
+    result_bind[0].buffer = &result_last_hash;
+    result_bind[0].buffer_length = sizeof(result_last_hash);
+    result_bind[0].length = &result_len;
+    result_bind[0].is_null = &result_is_null;
+
+    if (mysql_stmt_bind_result(last_hash_stmt, result_bind)) {
+        fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(last_hash_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    mysql_stmt_fetch(last_hash_stmt);
+    mysql_stmt_close(last_hash_stmt);
+
+    struct packet *request_packet = malloc(sizeof(struct packet));
+    memcpy(request_packet->data_blob, result_last_hash, result_len);
+    request_packet->data_blob_length = result_len;
+    request_packet->query_id = 6;
+    unsigned int timestamp = (unsigned int)time(NULL);
+    sprintf(request_packet->timestamp, "%d", timestamp);
+    memcpy(request_packet->receiver_address, local_key_hash, 128);
+    memcpy(request_packet->sender_address, local_key_hash, 128);
+
+    struct return_data request_answer = forward_query(node_address, request_packet, '\x04', 1);
+    return request_answer;
+
 }

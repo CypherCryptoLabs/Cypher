@@ -120,6 +120,7 @@ int register_to_network() {
     }
 
     mysql_close(dbc);
+    free(request_packet);
 
     return 0;
 }
