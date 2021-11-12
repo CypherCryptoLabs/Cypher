@@ -278,7 +278,6 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
     serv_addr.sin_port = htons(PORT);
        
     // Convert IPv4 and IPv6 addresses from text to binary form
-    printf("%s\n", ip_address);
     if(inet_pton(AF_INET, ip_address, &serv_addr.sin_addr)<=0) 
     {
         printf("[!] Invalid address/ Address not supported \n");

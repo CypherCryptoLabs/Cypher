@@ -55,129 +55,71 @@ int register_to_network() {
         printf("ERROR: Something went wrong! decrypted_buffer != encrypted_buffer\n");
     }
 
-    unsigned char packet_buffer[775 + 512 + 267] = {0};
-
-    packet_buffer[0] = 4;
-    char timestamp_as_string[11];
+    struct packet *request_packet = malloc(sizeof(struct packet));
+    memcpy(request_packet->data_blob, local_pub_key, local_pub_key_num_bytes);
+    memcpy(request_packet->data_blob + local_pub_key_num_bytes, encrypted_buffer_escaped, encrypted_buffer_size + offset);
+    request_packet->data_blob_length = local_pub_key_num_bytes + encrypted_buffer_size + offset;
+    request_packet->query_id = 4;
     unsigned int timestamp = (unsigned int)time(NULL);
-    sprintf(timestamp_as_string, "%d", timestamp);
-    memcpy(packet_buffer + 1, timestamp_as_string, 10);
-    memcpy(packet_buffer + 11, local_key_hash, 128);
-    memcpy(packet_buffer + 139, local_key_hash, 128);
-    memcpy(packet_buffer + 267, local_pub_key, local_pub_key_num_bytes);
-    memcpy(packet_buffer + 267 + local_pub_key_num_bytes, encrypted_buffer_escaped, encrypted_buffer_size + offset);
+    sprintf(request_packet->timestamp, "%d", timestamp);
+    memcpy(request_packet->receiver_address, local_key_hash, local_key_hash_num_bytes);
+    memcpy(request_packet->sender_address, local_key_hash, local_key_hash_num_bytes);
 
-    printf("[i] connecting to node...\n");
-
-    int sock = 0, valread;
-    struct sockaddr_in serv_addr;
-    char *blockchain_name = "Cypher Blockchain";
-    char buffer[20269] = {0};
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        printf("[!] Socket creation error \n");
-        return -1;
-    }
-   
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-       
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, "192.168.2.134", &serv_addr.sin_addr)<=0) 
-    {
-        printf("[!] Invalid address/ Address not supported \n");
-        return -1;
-    }
-   
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        printf("[!] Connection Failed \n");
-        return -1;
-    }
-    send(sock , blockchain_name , strlen(blockchain_name) , 0 );
-    printf("[i] Blockchain Name sent\n");
-    valread = read( sock , buffer, 1024);
-    printf("[i] Node answered '%s'\n",buffer );
-
-    if(strcmp(blockchain_name, buffer) == 0) {
-        send(sock , packet_buffer , 268 + local_pub_key_num_bytes + encrypted_buffer_size + offset , 0 );
-    }
-
-    valread = read( sock , buffer, 1024);
-    int return_code;
-    unsigned long data_num_of_bytes;
-
-    memcpy(&return_code, buffer, sizeof(int));
-    memcpy(&data_num_of_bytes, buffer + sizeof(int), sizeof(unsigned long));
-    char status = 1;
-
-    if(return_code == 0 && data_num_of_bytes != 0) {
-        status = 0;
-        send(sock, &status, 1, 0);
-
-        char *db_buffer = malloc(data_num_of_bytes);
-        read( sock , db_buffer, data_num_of_bytes - 1);
+    struct return_data request_answer = forward_query("192.168.2.134", request_packet, '\x04', 1);
         
-        // parsing data received from node
-        int null_byte_index = 0;
-        int num_of_null_bytes = 0;
-        char node_id[129] = {0};
-        char node_ip_address[16] = {0};
-        char node_public_key[10000] = {0};
-        unsigned long node_field_length[3];
-        MYSQL *dbc = connecto_to_db();
+    // parsing data received from node
+    int null_byte_index = 0;
+    //int num_of_null_bytes = 0;
+    char node_id[129] = {0};
+    char node_ip_address[16] = {0};
+    char node_public_key[10000] = {0};
+    unsigned long node_field_length[3];
+    MYSQL *dbc = connecto_to_db();
 
-        for(int i =143; i < data_num_of_bytes; i++) {
+    for(int i =143; i < request_answer.data_num_of_bytes; i++) {
 
-            if(db_buffer[i] == '\0'){
+        if(request_answer.data[i] == '\0'){
 
-                node_field_length[0] = 128;
-                node_field_length[1] = 15;
-                node_field_length[2] = (i - null_byte_index) - 15 - 128;
+            node_field_length[0] = 128;
+            node_field_length[1] = 15;
+            node_field_length[2] = (i - null_byte_index) - 15 - 128;
 
-                memcpy(node_id, db_buffer + null_byte_index, 128);
-                memcpy(node_ip_address, db_buffer + null_byte_index + 128, 15);
-                memcpy(node_public_key, db_buffer + null_byte_index + 128 + 15, node_field_length[2]);
+            memcpy(node_id, request_answer.data + null_byte_index, 128);
+            memcpy(node_ip_address, request_answer.data + null_byte_index + 128, 15);
+            memcpy(node_public_key, request_answer.data + null_byte_index + 128 + 15, node_field_length[2]);
 
-                char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
-                MYSQL_BIND param_uoi[3];
+            char *query_string = "REPLACE INTO node VALUES(?, ?, ?);"; 
+            MYSQL_BIND param_uoi[3];
 
-                param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
-                param_uoi[0].buffer = node_id;
-                param_uoi[0].is_unsigned = 0;
-                param_uoi[0].is_null = 0;
-                param_uoi[0].length = &node_field_length[0];
+            param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[0].buffer = node_id;
+            param_uoi[0].is_unsigned = 0;
+            param_uoi[0].is_null = 0;
+            param_uoi[0].length = &node_field_length[0];
 
-                param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
-                param_uoi[1].buffer = node_ip_address;
-                param_uoi[1].is_unsigned = 0;
-                param_uoi[1].is_null = 0;
-                param_uoi[1].length = &node_field_length[1];
+            param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[1].buffer = node_ip_address;
+            param_uoi[1].is_unsigned = 0;
+            param_uoi[1].is_null = 0;
+            param_uoi[1].length = &node_field_length[1];
 
-                param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
-                param_uoi[2].buffer = node_public_key;
-                param_uoi[2].is_unsigned = 0;
-                param_uoi[2].is_null = 0;
-                param_uoi[2].length = &node_field_length[2];
+            param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[2].buffer = node_public_key;
+            param_uoi[2].is_unsigned = 0;
+            param_uoi[2].is_null = 0;
+            param_uoi[2].length = &node_field_length[2];
 
-                MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
-                mysql_stmt_close(update_or_insert_stmt);
+            MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
+            mysql_stmt_close(update_or_insert_stmt);
 
-                null_byte_index = i + 1;
-                i += 144;
-
-            }
+            null_byte_index = i + 1;
+            i += 144;
 
         }
 
-        mysql_close(dbc);
-        free(db_buffer);
-
-    } else {
-        printf("[!] init_node.h: Something went wrong on the nodes side.\n");
-        send(sock, &status, 1, 0);
-        return -1;
     }
+
+    mysql_close(dbc);
 
     return 0;
 }
