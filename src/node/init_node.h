@@ -328,5 +328,6 @@ void init_node() {
 
     register_to_network();
     setup_node_list();
+    //request_blockchain_sync();
 
 }

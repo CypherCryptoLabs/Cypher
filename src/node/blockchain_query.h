@@ -11,7 +11,7 @@ struct return_data {
 
 char *compile_to_packet_buffer(struct packet *block);
 void notify_ticker_subscriber(char* subscriber_address, char *packet);
-int forward_query(char *ip_address, struct packet *source_packet, char query_id);
+struct return_data forward_query(char *ip_address, struct packet *source_packet, char query_id, bool request_data);
 
 int create_new_block( struct packet *block, MYSQL *dbc) {
 
@@ -375,7 +375,7 @@ struct return_data add_block_to_queue(struct packet *source_packet, bool alert_n
     if(alert_network) {
         for(int i = 0; i < node_list.length; i++) {
 
-            if(forward_query(node_list.node_address_list[i], source_packet, 0x5) == 1) {
+            if(forward_query(node_list.node_address_list[i], source_packet, 0x5, 0).return_code == 1) {
                 return_data_struct.return_code = 1;
                 return return_data_struct;
             }
@@ -711,8 +711,12 @@ struct return_data sync_blockchain() {
     free(dbc);
 
     //char *block_cluster = malloc(result_blockchain_len);
-    printf("%d\n", result_blockchain_len);
+    printf("%lld\n", result_blockchain_len);
 
     return_data_struct.return_code = 1;
     return return_data_struct;
+}
+
+struct return_data request_blockchain_sync(char *node_address) {
+
 }

@@ -258,8 +258,9 @@ char *compile_to_packet_buffer(struct packet *block) {
 
 }
 
-int forward_query(char *ip_address, struct packet *source_packet, char query_id) {
+struct return_data forward_query(char *ip_address, struct packet *source_packet, char query_id, bool request_data) {
 
+    struct return_data return_data_struct;
     printf("[i] connecting to node...\n");
 
     int sock = 0, valread;
@@ -269,7 +270,8 @@ int forward_query(char *ip_address, struct packet *source_packet, char query_id)
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("[!] Socket creation error \n");
-        return -1;
+        return_data_struct.return_code = -1;
+        return return_data_struct;
     }
    
     serv_addr.sin_family = AF_INET;
@@ -280,13 +282,15 @@ int forward_query(char *ip_address, struct packet *source_packet, char query_id)
     if(inet_pton(AF_INET, ip_address, &serv_addr.sin_addr)<=0) 
     {
         printf("[!] Invalid address/ Address not supported \n");
-        return -1;
+        return_data_struct.return_code = -1;
+        return return_data_struct;
     }
    
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         printf("[!] Connection Failed \n");
-        return -1;
+        return_data_struct.return_code = -1;
+        return return_data_struct;
     }
     send(sock , blockchain_name , strlen(blockchain_name) , 0 );
     printf("[i] Blockchain Name sent\n");
@@ -306,10 +310,22 @@ int forward_query(char *ip_address, struct packet *source_packet, char query_id)
             return_code = 1;
         }
 
-        char status = 1;
+        char status = !request_data;
         send(sock, &status, 1, 0);
+
+        if(request_data) {
+            unsigned long buffer_size;
+            memcpy(&buffer_size, buffer + sizeof(int), sizeof(unsigned long));
+            char *data_buffer = malloc(buffer_size);
+
+            read(sock, data_buffer, buffer_size);
+            return_data_struct.data = data_buffer;
+            return_data_struct.data_num_of_bytes = buffer_size;
+        }
+
         free(compiled_packet_buffer);
     }
 
-    return return_code;
+    return_data_struct.return_code = return_code;
+    return return_data_struct;
 }
