@@ -12,50 +12,10 @@ bool file_exists(char *filename) {
 }
 
 int register_to_network() {
-    FILE    *pubkey_infile;
-    FILE    *privkey_infile;
-    unsigned char    *pubkey_buffer;
-    unsigned char    *privkey_buffer;
-    long    pubkey_numbytes;
-    long    privkey_numbytes;
-
-    pubkey_infile = fopen("public.pem", "r");
-    if(pubkey_infile == NULL)
-        return 1;
-
-    privkey_infile = fopen("private.pem", "r");
-    if(privkey_infile == NULL)
-        return 1;
-
-    fseek(privkey_infile, 0L, SEEK_END);
-    privkey_numbytes = ftell(privkey_infile);
-
-    fseek(pubkey_infile, 0L, SEEK_END);
-    pubkey_numbytes = ftell(pubkey_infile);
-
-    fseek(pubkey_infile, 0L, SEEK_SET);
-    fseek(privkey_infile, 0L, SEEK_SET);	
-
-    pubkey_buffer = (char*)calloc(pubkey_numbytes, sizeof(char));	
-    privkey_buffer = (char*)calloc(privkey_numbytes, sizeof(char));	
-
-    if(pubkey_buffer == NULL)
-        return 1;
-
-    if(privkey_buffer == NULL)
-        return 1;
-
-    fread(pubkey_buffer, sizeof(char), pubkey_numbytes, pubkey_infile);
-    fclose(pubkey_infile);
-
-    fread(privkey_buffer, sizeof(char), privkey_numbytes, privkey_infile);
-    fclose(privkey_infile);
-
-    char *pub_key_hash = get_sha512_string(pubkey_buffer, pubkey_numbytes);
-    int pub_key_hash_num_bytes = 128;
+    int local_key_hash_num_bytes = 128;
 
     unsigned char *encrypted_buffer = malloc(1024);
-    int encrypted_buffer_size = private_encrypt(pub_key_hash, pub_key_hash_num_bytes, privkey_buffer, encrypted_buffer);
+    int encrypted_buffer_size = private_encrypt(local_key_hash, local_key_hash_num_bytes, local_priv_key, encrypted_buffer);
 
     if(encrypted_buffer_size == -1){
         print_rsa_error("Private Decrypt failed ");
@@ -82,14 +42,14 @@ int register_to_network() {
     }
 
     unsigned char *decrypted_buffer = malloc(encrypted_buffer_size);
-    int decrypted_buffer_size = public_decrypt(encrypted_buffer, encrypted_buffer_size, pubkey_buffer, decrypted_buffer);
+    int decrypted_buffer_size = public_decrypt(encrypted_buffer, encrypted_buffer_size, local_pub_key, decrypted_buffer);
 
     if(decrypted_buffer_size == -1){
         print_rsa_error("Private Decrypt failed ");
         exit(0);
     }
 
-    if(strcmp(decrypted_buffer, pub_key_hash) == 0) {
+    if(strcmp(decrypted_buffer, local_key_hash) == 0) {
         printf("encryption and decryption successful!\n");
     } else {
         printf("ERROR: Something went wrong! decrypted_buffer != encrypted_buffer\n");
@@ -102,10 +62,10 @@ int register_to_network() {
     unsigned int timestamp = (unsigned int)time(NULL);
     sprintf(timestamp_as_string, "%d", timestamp);
     memcpy(packet_buffer + 1, timestamp_as_string, 10);
-    memcpy(packet_buffer + 11, pub_key_hash, 128);
-    memcpy(packet_buffer + 139, pub_key_hash, 128);
-    memcpy(packet_buffer + 267, pubkey_buffer, pubkey_numbytes);
-    memcpy(packet_buffer + 267 + pubkey_numbytes, encrypted_buffer_escaped, encrypted_buffer_size + offset);
+    memcpy(packet_buffer + 11, local_key_hash, 128);
+    memcpy(packet_buffer + 139, local_key_hash, 128);
+    memcpy(packet_buffer + 267, local_pub_key, local_pub_key_num_bytes);
+    memcpy(packet_buffer + 267 + local_pub_key_num_bytes, encrypted_buffer_escaped, encrypted_buffer_size + offset);
 
     printf("[i] connecting to node...\n");
 
@@ -140,7 +100,7 @@ int register_to_network() {
     printf("[i] Node answered '%s'\n",buffer );
 
     if(strcmp(blockchain_name, buffer) == 0) {
-        send(sock , packet_buffer , 268 + pubkey_numbytes + encrypted_buffer_size + offset , 0 );
+        send(sock , packet_buffer , 268 + local_pub_key_num_bytes + encrypted_buffer_size + offset , 0 );
     }
 
     valread = read( sock , buffer, 1024);
@@ -249,14 +209,14 @@ int setup_node_list() {
     fread(pubkey_buffer, sizeof(char), pubkey_numbytes, pubkey_infile);
     fclose(pubkey_infile);
 
-    char *pub_key_hash = get_sha512_string(pubkey_buffer, pubkey_numbytes);
-    unsigned long pub_key_hash_num_bytes = 128;
+    char *local_key_hash = get_sha512_string(pubkey_buffer, pubkey_numbytes);
+    unsigned long local_key_hash_num_bytes = 128;
 
     param[0].buffer_type = MYSQL_TYPE_VARCHAR;
-    param[0].buffer = pub_key_hash;
+    param[0].buffer = local_key_hash;
     param[0].is_unsigned = 0;
     param[0].is_null = 0;
-    param[0].length = &pub_key_hash_num_bytes;
+    param[0].length = &local_key_hash_num_bytes;
 
     MYSQL *dbc = connecto_to_db();
     MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param, dbc);
@@ -316,6 +276,47 @@ int setup_node_list() {
 
 }
 
+int setup_local_keys() {
+    FILE    *pubkey_infile;
+    FILE    *privkey_infile;
+
+    pubkey_infile = fopen("public.pem", "r");
+    if(pubkey_infile == NULL)
+        return 1;
+
+    privkey_infile = fopen("private.pem", "r");
+    if(privkey_infile == NULL)
+        return 1;
+
+    fseek(privkey_infile, 0L, SEEK_END);
+    local_priv_key_num_bytes = ftell(privkey_infile);
+
+    fseek(pubkey_infile, 0L, SEEK_END);
+    local_pub_key_num_bytes = ftell(pubkey_infile);
+
+    fseek(pubkey_infile, 0L, SEEK_SET);
+    fseek(privkey_infile, 0L, SEEK_SET);	
+
+    local_pub_key = (char*)calloc(local_pub_key_num_bytes, sizeof(char));	
+    local_priv_key = (char*)calloc(local_priv_key_num_bytes, sizeof(char));	
+
+    if(local_pub_key == NULL)
+        return 1;
+
+    if(local_priv_key == NULL)
+        return 1;
+
+    fread(local_pub_key, sizeof(char), local_pub_key_num_bytes, pubkey_infile);
+    fclose(pubkey_infile);
+
+    fread(local_priv_key, sizeof(char), local_priv_key_num_bytes, privkey_infile);
+    fclose(privkey_infile);
+
+    local_key_hash = get_sha512_string(local_pub_key, local_pub_key_num_bytes);
+
+    return 0;
+}
+
 void init_node() {
     // This function is used to set up everything needed by the node
     char *public_key_filename = "public.pem";
@@ -326,8 +327,9 @@ void init_node() {
         generate_keypair();
     }
 
+    setup_local_keys();
     register_to_network();
     setup_node_list();
-    //request_blockchain_sync();
+    request_blockchain_sync("192.168.2.134");
 
 }
