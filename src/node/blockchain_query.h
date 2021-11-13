@@ -662,11 +662,12 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
 
 struct return_data sync_blockchain() {
 
+    // getting size of blockchain table
     struct return_data return_data_struct;
     MYSQL *dbc = connecto_to_db();
 
     MYSQL_BIND result_param[1];
-    MYSQL_STMT* blockchain_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(id) + LENGTH(public_key) + LENGTH(ip_address) + 3) AS table_size FROM node;", result_param, dbc);
+    MYSQL_STMT* blockchain_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(timestamp) + LENGTH(hash_of_prev_block) + LENGTH(data_blob) + LENGTH(receiver_address) + LENGTH(sender_address) + 9) AS table_size FROM blockchain;", result_param, dbc);
 
     MYSQL_RES* prepare_meta_result_blockchain_len = mysql_stmt_result_metadata(blockchain_table_size_stmt);
     if (!prepare_meta_result_blockchain_len)
@@ -707,12 +708,124 @@ struct return_data sync_blockchain() {
     mysql_stmt_fetch(blockchain_table_size_stmt);
     mysql_stmt_close(blockchain_table_size_stmt);
 
+    char *block_cluster = malloc(result_blockchain_len);
+    memset(block_cluster, 0, result_blockchain_len);
+
+    // building block_cluster
+    char query_string[500] = "SELECT UNIX_TIMESTAMP(timestamp), hash_of_prev_block, data_blob, receiver_address, sender_address, id FROM blockchain";
+    MYSQL_BIND param[4];
+
+    // use bind structure and query_string to get data from query
+    MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param, dbc);
+
+    MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(prev_block_stmt);
+    if (!prepare_meta_result)
+    {
+        fprintf(stderr, " mysql_stmt_result_metadata(), returned no meta information\n");
+        fprintf(stderr, " %s\n", mysql_stmt_error(prev_block_stmt));
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    // use bind structure and query_string to get data from query
+    }
+
+    int column_count= mysql_num_fields(prepare_meta_result);
+    if (column_count != 6)
+    {
+        fprintf(stderr, " invalid column count returned by MySQL\n");
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    MYSQL_BIND result_bind[9];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    bool result_is_null[8];
+    unsigned long result_len[8] = {0};
+    char result_receiver_address[129] = {0};
+    char result_sender_address[129] = {0};
+    char result_data_blob[129] = {0};
+    char result_hash[129] = {0};
+    char result_timestamp[11] = {0};
+    unsigned long result_id;
+
+    result_bind[1].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[1].buffer = &result_timestamp;
+    result_bind[1].buffer_length = sizeof(result_timestamp);
+    result_bind[1].length = &result_len[6];
+    result_bind[1].is_null = &result_is_null[6];
+
+    result_bind[2].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[2].buffer = &result_hash;
+    result_bind[2].buffer_length = sizeof(result_hash);
+    result_bind[2].length = &result_len[1];
+    result_bind[2].is_null = &result_is_null[1];
+
+    result_bind[3].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
+    result_bind[3].buffer = &result_data_blob;
+    result_bind[3].buffer_length = sizeof(result_data_blob);
+    result_bind[3].length = &result_len[2];
+    result_bind[3].is_null = &result_is_null[2];
+
+    result_bind[4].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[4].buffer = &result_receiver_address;
+    result_bind[4].buffer_length = sizeof(result_receiver_address);
+    result_bind[4].length = &result_len[4];
+    result_bind[4].is_null = &result_is_null[4];
+
+    result_bind[5].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[5].buffer = &result_sender_address;
+    result_bind[5].buffer_length = sizeof(result_sender_address);
+    result_bind[5].length = &result_len[5];
+    result_bind[5].is_null = &result_is_null[5];
+
+    result_bind[6].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[6].buffer = &result_id;
+    result_bind[6].buffer_length = sizeof(result_id);
+    result_bind[6].length = &result_len[7];
+    result_bind[6].is_null = &result_is_null[7];
+
+    if (mysql_stmt_bind_result(prev_block_stmt, result_bind)) {
+        fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(prev_block_stmt));
+        exit(1);
+    }
+
+    mysql_stmt_store_result(prev_block_stmt);
+    int num_rows = mysql_stmt_num_rows(prev_block_stmt);
+    int cluster_length = 0;
+
+    for(int i = 0; i < num_rows; i++) {
+
+        mysql_stmt_fetch(prev_block_stmt);
+        memcpy(block_cluster + cluster_length, &result_id, 8);
+        cluster_length += 8;
+        memcpy(block_cluster + cluster_length, result_timestamp, 10);
+        cluster_length += 10;
+        memcpy(block_cluster + cluster_length, result_hash, 128);
+        cluster_length += 128;
+        memcpy(block_cluster + cluster_length, result_sender_address, 128);
+        cluster_length += 128;
+        memcpy(block_cluster + cluster_length, result_receiver_address, 128);
+        cluster_length += 128;
+        memcpy(block_cluster + cluster_length, result_data_blob, result_len[7]);
+        cluster_length += result_len[7] + 1;
+        
+    }
+
+    return_data_struct.data = block_cluster;
+    return_data_struct.data_num_of_bytes = cluster_length;
+    return_data_struct.return_code = 0;
+
+    //DEBUG
+    for(int i = 0; i < cluster_length; i++) {
+        printf("%02x", block_cluster[i]);
+    }
+    printf("\n");
+
+    free(block_cluster);
+
+    return return_data_struct;
+
     mysql_close(dbc);
-    free(dbc);
-
-    //char *block_cluster = malloc(result_blockchain_len);
-    printf("%lld\n", result_blockchain_len);
-
     return_data_struct.return_code = 1;
     return return_data_struct;
 }
@@ -773,7 +886,14 @@ struct return_data request_blockchain_sync(char *node_address) {
     memcpy(request_packet->receiver_address, local_key_hash, 128);
     memcpy(request_packet->sender_address, local_key_hash, 128);
 
-    struct return_data request_answer = forward_query(node_address, request_packet, '\x04', 1);
+    struct return_data request_answer = forward_query(node_address, request_packet, '\x06', 1);
+
+    //DEBUG
+    for(int i = 0; i < request_answer.data_num_of_bytes; i++) {
+        printf("%02x", request_answer.data[i]);
+    }
+    printf("\n");
+
     return request_answer;
 
 }
