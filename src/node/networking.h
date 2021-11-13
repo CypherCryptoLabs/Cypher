@@ -141,13 +141,24 @@ void * handle_request( void* args ) {
     read(socket, client_status, 1);
 
     if(client_status == 0) {
+        
+        int slices = ceil(return_data_struct.data_num_of_bytes / 1024);
+        if(slices % 1024)
+            slices++;
 
-        int bytes_left = return_data_struct.data_num_of_bytes;
+        printf("%d slices\n", slices);
+        
+        for(int i = 0; i < slices; i++) {
+            send(socket, return_data_struct.data + (i * 1024), 1024, 0);
+            usleep(100);
+            /*read(socket, &client_status, 1);
 
-        while(bytes_left) {
-            send(socket, return_data_struct.data + (return_data_struct.data_num_of_bytes - bytes_left), (bytes_left > 14456) ? 14456 : bytes_left, 0);
-            bytes_left -= (bytes_left > 14456) ? 14456 : bytes_left;
+            if(!client_status) {
+                slices = 0;
+                printf("ABORT");
+            }*/
         }
+
     }
 
     // DEBUG
@@ -321,17 +332,29 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
         if(request_data) {
             unsigned long buffer_size;
             memcpy(&buffer_size, buffer + sizeof(int), sizeof(unsigned long));
-            char *data_buffer = malloc(buffer_size);
 
-            int bytes_left = buffer_size;
+            int slices = ceil(buffer_size / 1024);
+            if(slices % 1024)
+                slices++;
+            printf("%d slices\n", slices);
 
-            while(bytes_left) {
-                read(sock, data_buffer + (buffer_size - bytes_left), (bytes_left > 14456) ? 14456 : bytes_left);
-                bytes_left -= (bytes_left > 14456) ? 14456 : bytes_left;
+            unsigned char *data_buffer = malloc(slices * 1024);
+
+            for(int i = 0; i < slices; i++) {
+                char tmp_buffer[1024] = {0};
+                read(sock, tmp_buffer, 1024);
+
+                memcpy(data_buffer + (i * 1024), tmp_buffer, 1024);
+
             }
 
             return_data_struct.data = data_buffer;
             return_data_struct.data_num_of_bytes = buffer_size;
+
+            for(int i = 0; i < buffer_size; i ++) {
+                printf("%02x", data_buffer[i]);
+            }
+            printf("\n");
         }
 
         free(compiled_packet_buffer);

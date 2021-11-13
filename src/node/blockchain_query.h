@@ -816,10 +816,10 @@ struct return_data sync_blockchain() {
     return_data_struct.return_code = 0;
 
     //DEBUG
-    for(int i = 0; i < cluster_length; i++) {
+    /*for(int i = 0; i < cluster_length; i++) {
         printf("%02x", block_cluster[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
     free(block_cluster);
     mysql_close(dbc);
@@ -885,10 +885,10 @@ struct return_data request_blockchain_sync(char *node_address) {
     struct return_data request_answer = forward_query(node_address, request_packet, '\x06', 1);
 
     //DEBUG
-    for(int i = 0; i < request_answer.data_num_of_bytes; i++) {
+    /*for(int i = 0; i < request_answer.data_num_of_bytes; i++) {
         printf("%02x", request_answer.data[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
     return request_answer;
 
