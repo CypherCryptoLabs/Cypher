@@ -748,41 +748,41 @@ struct return_data sync_blockchain() {
     char result_timestamp[11] = {0};
     unsigned long result_id;
 
+    result_bind[0].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[0].buffer = &result_timestamp;
+    result_bind[0].buffer_length = sizeof(result_timestamp);
+    result_bind[0].length = &result_len[6];
+    result_bind[0].is_null = &result_is_null[6];
+
     result_bind[1].buffer_type = MYSQL_TYPE_VAR_STRING;
-    result_bind[1].buffer = &result_timestamp;
-    result_bind[1].buffer_length = sizeof(result_timestamp);
-    result_bind[1].length = &result_len[6];
-    result_bind[1].is_null = &result_is_null[6];
+    result_bind[1].buffer = &result_hash;
+    result_bind[1].buffer_length = sizeof(result_hash);
+    result_bind[1].length = &result_len[1];
+    result_bind[1].is_null = &result_is_null[1];
 
-    result_bind[2].buffer_type = MYSQL_TYPE_VAR_STRING;
-    result_bind[2].buffer = &result_hash;
-    result_bind[2].buffer_length = sizeof(result_hash);
-    result_bind[2].length = &result_len[1];
-    result_bind[2].is_null = &result_is_null[1];
+    result_bind[2].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
+    result_bind[2].buffer = &result_data_blob;
+    result_bind[2].buffer_length = sizeof(result_data_blob);
+    result_bind[2].length = &result_len[2];
+    result_bind[2].is_null = &result_is_null[2];
 
-    result_bind[3].buffer_type = MYSQL_TYPE_MEDIUM_BLOB;
-    result_bind[3].buffer = &result_data_blob;
-    result_bind[3].buffer_length = sizeof(result_data_blob);
-    result_bind[3].length = &result_len[2];
-    result_bind[3].is_null = &result_is_null[2];
+    result_bind[3].buffer_type = MYSQL_TYPE_VAR_STRING;
+    result_bind[3].buffer = &result_receiver_address;
+    result_bind[3].buffer_length = sizeof(result_receiver_address);
+    result_bind[3].length = &result_len[4];
+    result_bind[3].is_null = &result_is_null[4];
 
     result_bind[4].buffer_type = MYSQL_TYPE_VAR_STRING;
-    result_bind[4].buffer = &result_receiver_address;
-    result_bind[4].buffer_length = sizeof(result_receiver_address);
-    result_bind[4].length = &result_len[4];
-    result_bind[4].is_null = &result_is_null[4];
+    result_bind[4].buffer = &result_sender_address;
+    result_bind[4].buffer_length = sizeof(result_sender_address);
+    result_bind[4].length = &result_len[5];
+    result_bind[4].is_null = &result_is_null[5];
 
-    result_bind[5].buffer_type = MYSQL_TYPE_VAR_STRING;
-    result_bind[5].buffer = &result_sender_address;
-    result_bind[5].buffer_length = sizeof(result_sender_address);
-    result_bind[5].length = &result_len[5];
-    result_bind[5].is_null = &result_is_null[5];
-
-    result_bind[6].buffer_type = MYSQL_TYPE_LONG;
-    result_bind[6].buffer = &result_id;
-    result_bind[6].buffer_length = sizeof(result_id);
-    result_bind[6].length = &result_len[7];
-    result_bind[6].is_null = &result_is_null[7];
+    result_bind[5].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[5].buffer = &result_id;
+    result_bind[5].buffer_length = sizeof(result_id);
+    result_bind[5].length = &result_len[7];
+    result_bind[5].is_null = &result_is_null[7];
 
     if (mysql_stmt_bind_result(prev_block_stmt, result_bind)) {
         fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(prev_block_stmt));
@@ -822,11 +822,7 @@ struct return_data sync_blockchain() {
     printf("\n");
 
     free(block_cluster);
-
-    return return_data_struct;
-
     mysql_close(dbc);
-    return_data_struct.return_code = 1;
     return return_data_struct;
 }
 

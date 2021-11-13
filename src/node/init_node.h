@@ -131,28 +131,6 @@ int setup_node_list() {
 
     char query_string[500] = "SELECT ip_address FROM node WHERE id != ?;";
     MYSQL_BIND param[1];
-    FILE    *pubkey_infile;
-    unsigned char    *pubkey_buffer;
-    long    pubkey_numbytes;
-
-    pubkey_infile = fopen("public.pem", "r");
-    if(pubkey_infile == NULL)
-        return 1;
-
-    fseek(pubkey_infile, 0L, SEEK_END);
-    pubkey_numbytes = ftell(pubkey_infile);
-
-    fseek(pubkey_infile, 0L, SEEK_SET);	
-
-    pubkey_buffer = (char*)calloc(pubkey_numbytes, sizeof(char));
-
-    if(pubkey_buffer == NULL)
-        return 1;
-
-    fread(pubkey_buffer, sizeof(char), pubkey_numbytes, pubkey_infile);
-    fclose(pubkey_infile);
-
-    char *local_key_hash = get_sha512_string(pubkey_buffer, pubkey_numbytes);
     unsigned long local_key_hash_num_bytes = 128;
 
     param[0].buffer_type = MYSQL_TYPE_VARCHAR;
@@ -181,7 +159,6 @@ int setup_node_list() {
     }
 
     MYSQL_BIND result_bind[1];
-    memset(result_bind, 0, sizeof(result_bind));
 
     char node_ip_address[16] = {0};
     long unsigned result_len;
@@ -208,7 +185,6 @@ int setup_node_list() {
         mysql_stmt_fetch(prev_block_stmt);
        
         char *ip_address_from_row = malloc(result_len + 1);
-        memset(ip_address_from_row, 0, result_len + 1);
         memcpy(ip_address_from_row, node_ip_address, result_len);
 
         node_list.node_address_list[i] = ip_address_from_row;

@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <mysql/mysql.h>
 #include <ctype.h>
+#include <math.h>
 
 struct packet{
     int query_id;

@@ -141,7 +141,18 @@ void * handle_request( void* args ) {
     read(socket, client_status, 1);
 
     if(client_status == 0) {
-        send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0 );
+        /*for(int i = 0; i < ceil(return_data_struct.data_num_of_bytes / 14456); i ++) {
+            printf("%d\n", i);
+            send(socket, return_data_struct.data + (i * 14456), (14456 > return_data_struct.data_num_of_bytes - (i * 14456)) ? return_data_struct.data_num_of_bytes : 14456, 0 );
+        }*/
+        int bytes_left = return_data_struct.data_num_of_bytes;
+        int send_slices = 0;
+
+        while(bytes_left) {
+            send(socket, return_data_struct.data + (send_slices * 14456), (14456 > return_data_struct.data_num_of_bytes - (send_slices * 14456)) ? return_data_struct.data_num_of_bytes : 14456, 0 );
+            send_slices++;
+            bytes_left -= (send_slices * 14456) ? return_data_struct.data_num_of_bytes : 14456;
+        }
     }
 
     // DEBUG
