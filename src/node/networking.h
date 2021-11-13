@@ -141,17 +141,12 @@ void * handle_request( void* args ) {
     read(socket, client_status, 1);
 
     if(client_status == 0) {
-        /*for(int i = 0; i < ceil(return_data_struct.data_num_of_bytes / 14456); i ++) {
-            printf("%d\n", i);
-            send(socket, return_data_struct.data + (i * 14456), (14456 > return_data_struct.data_num_of_bytes - (i * 14456)) ? return_data_struct.data_num_of_bytes : 14456, 0 );
-        }*/
+
         int bytes_left = return_data_struct.data_num_of_bytes;
-        int send_slices = 0;
 
         while(bytes_left) {
-            send(socket, return_data_struct.data + (send_slices * 14456), (14456 > return_data_struct.data_num_of_bytes - (send_slices * 14456)) ? return_data_struct.data_num_of_bytes : 14456, 0 );
-            send_slices++;
-            bytes_left -= (send_slices * 14456) ? return_data_struct.data_num_of_bytes : 14456;
+            send(socket, return_data_struct.data + (return_data_struct.data_num_of_bytes - bytes_left), (bytes_left > 14456) ? 14456 : bytes_left, 0);
+            bytes_left -= (bytes_left > 14456) ? 14456 : bytes_left;
         }
     }
 
@@ -328,7 +323,13 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
             memcpy(&buffer_size, buffer + sizeof(int), sizeof(unsigned long));
             char *data_buffer = malloc(buffer_size);
 
-            read(sock, data_buffer, buffer_size);
+            int bytes_left = buffer_size;
+
+            while(bytes_left) {
+                read(sock, data_buffer + (buffer_size - bytes_left), (bytes_left > 14456) ? 14456 : bytes_left);
+                bytes_left -= (bytes_left > 14456) ? 14456 : bytes_left;
+            }
+
             return_data_struct.data = data_buffer;
             return_data_struct.data_num_of_bytes = buffer_size;
         }
