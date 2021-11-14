@@ -141,12 +141,13 @@ void * handle_request( void* args ) {
     read(socket, client_status, 1);
 
     if(client_status == 0) {
+        send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0);
         
-        int slices = ceil(return_data_struct.data_num_of_bytes / 1024);
+        /*int slices = ceil(return_data_struct.data_num_of_bytes / 1024);
         if(slices % 1024)
             slices++;
 
-        printf("%d slices\n", slices);
+        printf("%d slices %ld bytes\n", slices, return_data_struct.data_num_of_bytes);
         
         for(int i = 0; i < slices; i++) {
             send(socket, return_data_struct.data + (i * 1024), 1024, 0);
@@ -156,7 +157,7 @@ void * handle_request( void* args ) {
                 slices = 0;
                 printf("ABORT");
             }*/
-        }
+        //}
 
     }
 
@@ -331,22 +332,13 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
         if(request_data) {
             unsigned long buffer_size;
             memcpy(&buffer_size, buffer + sizeof(int), sizeof(unsigned long));
+            unsigned char *data_buffer = malloc(buffer_size);
+            int recv_bytes = 0;
 
-            int slices = ceil(buffer_size / 1024);
-            if(slices % 1024)
-                slices++;
-            printf("%d slices\n", slices);
-
-            unsigned char *data_buffer = malloc(slices * 1024);
-
-            for(int i = 0; i < slices; i++) {
-                char tmp_buffer[1024] = {0};
-                usleep(1000); // doesnt seem to get executed, but it fixes null bytes for some reason...
-                read(sock, tmp_buffer, 1024);
-                memcpy(data_buffer + (i * 1024), tmp_buffer, 1024);
-
+            while(recv_bytes < buffer_size) {
+                recv_bytes += recv(sock, data_buffer + (recv_bytes), buffer_size, 0);
             }
-
+            
             return_data_struct.data = data_buffer;
             return_data_struct.data_num_of_bytes = buffer_size;
 
