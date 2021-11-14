@@ -325,10 +325,10 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
             return_data_struct.data = data_buffer;
             return_data_struct.data_num_of_bytes = buffer_size;
 
-            for(int i = 0; i < buffer_size; i ++) {
+            /*for(int i = 0; i < buffer_size; i ++) {
                 printf("%02x", data_buffer[i]);
             }
-            printf("\n");
+            printf("\n");*/
         }
 
         free(compiled_packet_buffer);
