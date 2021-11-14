@@ -150,7 +150,6 @@ void * handle_request( void* args ) {
         
         for(int i = 0; i < slices; i++) {
             send(socket, return_data_struct.data + (i * 1024), 1024, 0);
-            usleep(100);
             /*read(socket, &client_status, 1);
 
             if(!client_status) {
@@ -342,8 +341,8 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
 
             for(int i = 0; i < slices; i++) {
                 char tmp_buffer[1024] = {0};
+                usleep(1000); // doesnt seem to get executed, but it fixes null bytes for some reason...
                 read(sock, tmp_buffer, 1024);
-
                 memcpy(data_buffer + (i * 1024), tmp_buffer, 1024);
 
             }
