@@ -142,23 +142,6 @@ void * handle_request( void* args ) {
 
     if(client_status == 0) {
         send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0);
-        
-        /*int slices = ceil(return_data_struct.data_num_of_bytes / 1024);
-        if(slices % 1024)
-            slices++;
-
-        printf("%d slices %ld bytes\n", slices, return_data_struct.data_num_of_bytes);
-        
-        for(int i = 0; i < slices; i++) {
-            send(socket, return_data_struct.data + (i * 1024), 1024, 0);
-            /*read(socket, &client_status, 1);
-
-            if(!client_status) {
-                slices = 0;
-                printf("ABORT");
-            }*/
-        //}
-
     }
 
     // DEBUG
