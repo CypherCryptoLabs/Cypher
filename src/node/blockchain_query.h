@@ -796,7 +796,7 @@ struct return_data send_blockchain() {
     for(int i = 0; i < num_rows; i++) {
 
         mysql_stmt_fetch(prev_block_stmt);
-        memcpy(block_cluster + cluster_length, &result_id, 8);
+        memcpy(block_cluster + cluster_length, (char *)&result_id, 8);
         cluster_length += 8;
         memcpy(block_cluster + cluster_length, result_timestamp, 10);
         cluster_length += 10;
@@ -838,20 +838,63 @@ void sync_blockchain(struct return_data blockchain_data) {
     char block_receiver_address[129] = {0};
     char block_data_blob[10001] = {0};
     MYSQL *dbc = connecto_to_db();
+    unsigned long field_length[6] = {8, 10, 128, 128, 128, 0};
 
     for(int i = 402; i < blockchain_data.data_num_of_bytes; i++) {
 
         if(blockchain_data.data[i] == '\0'){
-
-            //memcpy((void *)block_id, blockchain_data.data + null_byte_index, 8);
-            block_id = (unsigned long)blockchain_data.data + null_byte_index;
+            //block_id = &blockchain_data.data[null_byte_index];
+            memcpy(&block_id, blockchain_data.data + null_byte_index, 8);
             memcpy(block_timestamp, blockchain_data.data + null_byte_index + 8, 10);
             memcpy(block_prev_hash, blockchain_data.data + null_byte_index + 8 + 10, 128);
             memcpy(block_sender_address, blockchain_data.data + null_byte_index + 8 + 10 + 128, 128);
             memcpy(block_receiver_address, blockchain_data.data + null_byte_index + 8 + 10 + 128 + 128, 128);
             memcpy(block_data_blob, blockchain_data.data + null_byte_index + 8 + 10 + 128 + 128, (i - null_byte_index) - 403);
+            field_length[5] = (i - null_byte_index) - 403;
 
-            printf("%s\n", block_data_blob);
+            printf("%lu\n", block_id);
+
+            char *query_string = "REPLACE INTO blockchain VALUES(?, FROM_UNIXTIME(?), ?, ?, ?, ?);"; 
+            MYSQL_BIND param_uoi[6];
+
+            param_uoi[0].buffer_type = MYSQL_TYPE_LONG;
+            param_uoi[0].buffer = &block_id;
+            param_uoi[0].is_unsigned = 0;
+            param_uoi[0].is_null = 0;
+            param_uoi[0].length = &field_length[0];
+
+            param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[1].buffer = block_timestamp;
+            param_uoi[1].is_unsigned = 0;
+            param_uoi[1].is_null = 0;
+            param_uoi[1].length = &field_length[1];
+
+            param_uoi[2].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[2].buffer = block_prev_hash;
+            param_uoi[2].is_unsigned = 0;
+            param_uoi[2].is_null = 0;
+            param_uoi[2].length = &field_length[2];
+
+            param_uoi[3].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[3].buffer = block_sender_address;
+            param_uoi[3].is_unsigned = 0;
+            param_uoi[3].is_null = 0;
+            param_uoi[3].length = &field_length[3];
+
+            param_uoi[4].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[4].buffer = block_receiver_address;
+            param_uoi[4].is_unsigned = 0;
+            param_uoi[4].is_null = 0;
+            param_uoi[4].length = &field_length[4];
+
+            param_uoi[5].buffer_type = MYSQL_TYPE_VARCHAR;
+            param_uoi[5].buffer = block_data_blob;
+            param_uoi[5].is_unsigned = 0;
+            param_uoi[5].is_null = 0;
+            param_uoi[5].length = &field_length[5];
+
+            MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
+            mysql_stmt_close(update_or_insert_stmt);
 
             null_byte_index = i + 1;
             i += 402;
