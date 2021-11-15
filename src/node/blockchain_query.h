@@ -660,7 +660,7 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
 
 }
 
-struct return_data sync_blockchain() {
+struct return_data send_blockchain() {
 
     // getting size of blockchain table
     struct return_data return_data_struct;
@@ -740,10 +740,10 @@ struct return_data sync_blockchain() {
     memset(result_bind, 0, sizeof(result_bind));
 
     bool result_is_null[8];
-    unsigned long result_len[8] = {0};
+    unsigned long result_len[6] = {0};
     char result_receiver_address[129] = {0};
     char result_sender_address[129] = {0};
-    char result_data_blob[129] = {0};
+    char result_data_blob[10000] = {0};
     char result_hash[129] = {0};
     char result_timestamp[11] = {0};
     unsigned long result_id;
@@ -769,20 +769,20 @@ struct return_data sync_blockchain() {
     result_bind[3].buffer_type = MYSQL_TYPE_VAR_STRING;
     result_bind[3].buffer = &result_receiver_address;
     result_bind[3].buffer_length = sizeof(result_receiver_address);
-    result_bind[3].length = &result_len[4];
-    result_bind[3].is_null = &result_is_null[4];
+    result_bind[3].length = &result_len[3];
+    result_bind[3].is_null = &result_is_null[3];
 
     result_bind[4].buffer_type = MYSQL_TYPE_VAR_STRING;
     result_bind[4].buffer = &result_sender_address;
     result_bind[4].buffer_length = sizeof(result_sender_address);
-    result_bind[4].length = &result_len[5];
-    result_bind[4].is_null = &result_is_null[5];
+    result_bind[4].length = &result_len[4];
+    result_bind[4].is_null = &result_is_null[4];
 
     result_bind[5].buffer_type = MYSQL_TYPE_LONG;
     result_bind[5].buffer = &result_id;
     result_bind[5].buffer_length = sizeof(result_id);
-    result_bind[5].length = &result_len[7];
-    result_bind[5].is_null = &result_is_null[7];
+    result_bind[5].length = &result_len[5];
+    result_bind[5].is_null = &result_is_null[5];
 
     if (mysql_stmt_bind_result(prev_block_stmt, result_bind)) {
         fprintf(stderr, "mysql_stmt_bind_Result(), failed. Error:%s\n", mysql_stmt_error(prev_block_stmt));
@@ -806,9 +806,9 @@ struct return_data sync_blockchain() {
         cluster_length += 128;
         memcpy(block_cluster + cluster_length, result_receiver_address, 128);
         cluster_length += 128;
-        memcpy(block_cluster + cluster_length, result_data_blob, result_len[7]);
-        cluster_length += result_len[7] + 1;
-        
+        memcpy(block_cluster + cluster_length, result_data_blob, result_len[2]);
+        cluster_length += result_len[2] + 1;
+
     }
 
     return_data_struct.data = block_cluster;
@@ -824,6 +824,42 @@ struct return_data sync_blockchain() {
     free(block_cluster);
     mysql_close(dbc);
     return return_data_struct;
+}
+
+void sync_blockchain(struct return_data blockchain_data) {
+
+// parsing data received from node
+    int null_byte_index = 0;
+    //int num_of_null_bytes = 0;
+    unsigned long block_id = 0;
+    char block_timestamp[11] = {0};
+    char block_prev_hash[129] = {0};
+    char block_sender_address[129] = {0};
+    char block_receiver_address[129] = {0};
+    char block_data_blob[10001] = {0};
+    MYSQL *dbc = connecto_to_db();
+
+    for(int i = 402; i < blockchain_data.data_num_of_bytes; i++) {
+
+        if(blockchain_data.data[i] == '\0'){
+
+            //memcpy((void *)block_id, blockchain_data.data + null_byte_index, 8);
+            block_id = (unsigned long)blockchain_data.data + null_byte_index;
+            memcpy(block_timestamp, blockchain_data.data + null_byte_index + 8, 10);
+            memcpy(block_prev_hash, blockchain_data.data + null_byte_index + 8 + 10, 128);
+            memcpy(block_sender_address, blockchain_data.data + null_byte_index + 8 + 10 + 128, 128);
+            memcpy(block_receiver_address, blockchain_data.data + null_byte_index + 8 + 10 + 128 + 128, 128);
+            memcpy(block_data_blob, blockchain_data.data + null_byte_index + 8 + 10 + 128 + 128, (i - null_byte_index) - 403);
+
+            printf("%s\n", block_data_blob);
+
+            null_byte_index = i + 1;
+            i += 402;
+
+        }
+
+    }
+
 }
 
 struct return_data request_blockchain_sync(char *node_address) {
@@ -883,12 +919,7 @@ struct return_data request_blockchain_sync(char *node_address) {
     memcpy(request_packet->sender_address, local_key_hash, 128);
 
     struct return_data request_answer = forward_query(node_address, request_packet, '\x06', 1);
-
-    //DEBUG
-    /*for(int i = 0; i < request_answer.data_num_of_bytes; i++) {
-        printf("%02x", request_answer.data[i]);
-    }
-    printf("\n");*/
+    sync_blockchain(request_answer);
 
     return request_answer;
 

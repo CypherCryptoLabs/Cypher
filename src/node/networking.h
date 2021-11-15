@@ -119,7 +119,7 @@ void * handle_request( void* args ) {
         case 6:
 
             printf("[i] Client send request to sync blockchain (query_id = '%X')\n", parsed_packet->query_id);
-            return_data_struct = sync_blockchain();
+            return_data_struct = send_blockchain();
             break;
         
         default:
