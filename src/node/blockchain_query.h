@@ -829,7 +829,7 @@ struct return_data send_blockchain() {
 void sync_blockchain(struct return_data blockchain_data) {
 
 // parsing data received from node
-    int null_byte_index = 0;
+    int null_byte_index = 24;
     //int num_of_null_bytes = 0;
     unsigned long block_id = 0;
     char block_timestamp[11] = {0};
@@ -840,19 +840,18 @@ void sync_blockchain(struct return_data blockchain_data) {
     MYSQL *dbc = connecto_to_db();
     unsigned long field_length[6] = {8, 10, 128, 128, 128, 0};
 
-    for(int i = 402; i < blockchain_data.data_num_of_bytes; i++) {
+    for(int i = 426; i < blockchain_data.data_num_of_bytes; i++) {
 
         if(blockchain_data.data[i] == '\0'){
             //block_id = &blockchain_data.data[null_byte_index];
             memcpy(&block_id, blockchain_data.data + null_byte_index, 8);
             memcpy(block_timestamp, blockchain_data.data + null_byte_index + 8, 10);
+            if(strcmp(block_timestamp, "0000000000") == 0) {memcpy(block_timestamp, "0000000001", 10);}
             memcpy(block_prev_hash, blockchain_data.data + null_byte_index + 8 + 10, 128);
             memcpy(block_sender_address, blockchain_data.data + null_byte_index + 8 + 10 + 128, 128);
             memcpy(block_receiver_address, blockchain_data.data + null_byte_index + 8 + 10 + 128 + 128, 128);
             memcpy(block_data_blob, blockchain_data.data + null_byte_index + 8 + 10 + 128 + 128, (i - null_byte_index) - 403);
             field_length[5] = (i - null_byte_index) - 403;
-
-            printf("%lu\n", block_id);
 
             char *query_string = "REPLACE INTO blockchain VALUES(?, FROM_UNIXTIME(?), ?, ?, ?, ?);"; 
             MYSQL_BIND param_uoi[6];
