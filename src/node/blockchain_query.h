@@ -902,6 +902,8 @@ void sync_blockchain(struct return_data blockchain_data) {
 
     }
 
+    mysql_close(dbc);
+
 }
 
 struct return_data request_blockchain_sync(char *node_address) {
