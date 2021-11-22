@@ -119,7 +119,7 @@ void * handle_request( void* args ) {
         case 6:
 
             printf("[i] Client send request to sync blockchain (query_id = '%X')\n", parsed_packet->query_id);
-            return_data_struct = sync_blockchain();
+            return_data_struct = send_blockchain(parsed_packet);
             break;
         
         default:
@@ -141,7 +141,7 @@ void * handle_request( void* args ) {
     read(socket, client_status, 1);
 
     if(client_status == 0) {
-        send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0 );
+        send(socket, return_data_struct.data, return_data_struct.data_num_of_bytes, 0);
     }
 
     // DEBUG
@@ -151,12 +151,12 @@ void * handle_request( void* args ) {
     for(int i = 0; i < (sizeof(int) + sizeof(unsigned long)); i++) {
         printf("%02x", status_message[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
     for(int i = 0; i < return_data_struct.data_num_of_bytes; i++) {
         printf("%02x", return_data_struct.data[i]);
     }
-    printf("\n");*/
+    printf("\n");
 
 }
 
@@ -278,7 +278,6 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
     serv_addr.sin_port = htons(PORT);
        
     // Convert IPv4 and IPv6 addresses from text to binary form
-    printf("%s\n", ip_address);
     if(inet_pton(AF_INET, ip_address, &serv_addr.sin_addr)<=0) 
     {
         printf("[!] Invalid address/ Address not supported \n");
@@ -316,11 +315,20 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
         if(request_data) {
             unsigned long buffer_size;
             memcpy(&buffer_size, buffer + sizeof(int), sizeof(unsigned long));
-            char *data_buffer = malloc(buffer_size);
+            unsigned char *data_buffer = malloc(buffer_size);
+            int recv_bytes = 0;
 
-            read(sock, data_buffer, buffer_size);
+            while(recv_bytes < buffer_size) {
+                recv_bytes += recv(sock, data_buffer + (recv_bytes), buffer_size, 0);
+            }
+            
             return_data_struct.data = data_buffer;
             return_data_struct.data_num_of_bytes = buffer_size;
+
+            for(int i = 0; i < buffer_size; i ++) {
+                printf("%02x", data_buffer[i]);
+            }
+            printf("\n");
         }
 
         free(compiled_packet_buffer);
