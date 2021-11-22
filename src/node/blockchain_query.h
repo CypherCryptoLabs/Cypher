@@ -911,8 +911,6 @@ void sync_blockchain(struct return_data blockchain_data) {
             MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
             mysql_stmt_close(update_or_insert_stmt);
 
-            printf("%lu\n", block_id);
-
             null_byte_index = i + 1;
             i += 402;
 

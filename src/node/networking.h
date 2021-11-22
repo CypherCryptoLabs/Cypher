@@ -151,12 +151,12 @@ void * handle_request( void* args ) {
     for(int i = 0; i < (sizeof(int) + sizeof(unsigned long)); i++) {
         printf("%02x", status_message[i]);
     }
-    printf("\n");*/
+    printf("\n");
 
     for(int i = 0; i < return_data_struct.data_num_of_bytes; i++) {
         printf("%02x", return_data_struct.data[i]);
     }
-    printf("\n");
+    printf("\n");*/
 
 }
 
