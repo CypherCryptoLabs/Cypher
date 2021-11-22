@@ -660,14 +660,25 @@ struct return_data register_new_node(char *ip_address, struct packet *source_pac
 
 }
 
-struct return_data send_blockchain() {
+struct return_data send_blockchain(struct packet *parsed_packet) {
 
     // getting size of blockchain table
     struct return_data return_data_struct;
     MYSQL *dbc = connecto_to_db();
 
     MYSQL_BIND result_param[1];
-    MYSQL_STMT* blockchain_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(timestamp) + LENGTH(hash_of_prev_block) + LENGTH(data_blob) + LENGTH(receiver_address) + LENGTH(sender_address) + 9) AS table_size FROM blockchain;", result_param, dbc);
+    MYSQL_STMT* blockchain_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(timestamp) + LENGTH(hash_of_prev_block) + LENGTH(data_blob) + LENGTH(receiver_address) + LENGTH(sender_address) + 9) AS table_size FROM blockchain WHERE id > ?;", result_param, dbc);
+
+    unsigned long node_last_id = 0;
+    unsigned long node_last_id_length = 8;
+    memcpy(&node_last_id, &parsed_packet->data_blob, 8);
+    node_last_id = node_last_id - 1;
+
+    result_param[0].buffer_type = MYSQL_TYPE_LONG;
+    result_param[0].buffer = &node_last_id;
+    result_param[0].is_unsigned = 0;
+    result_param[0].is_null = 0;
+    result_param[0].length = &node_last_id_length;
 
     MYSQL_RES* prepare_meta_result_blockchain_len = mysql_stmt_result_metadata(blockchain_table_size_stmt);
     if (!prepare_meta_result_blockchain_len)
@@ -712,8 +723,14 @@ struct return_data send_blockchain() {
     memset(block_cluster, 0, result_blockchain_len);
 
     // building block_cluster
-    char query_string[500] = "SELECT UNIX_TIMESTAMP(timestamp), hash_of_prev_block, data_blob, receiver_address, sender_address, id FROM blockchain";
-    MYSQL_BIND param[4];
+    char query_string[500] = "SELECT UNIX_TIMESTAMP(timestamp), hash_of_prev_block, data_blob, receiver_address, sender_address, id FROM blockchain WHERE id > ?";
+    MYSQL_BIND param[1];
+
+    param[0].buffer_type = MYSQL_TYPE_LONG;
+    param[0].buffer = parsed_packet->data_blob;
+    param[0].is_unsigned = 0;
+    param[0].is_null = 0;
+    param[0].length = (unsigned long *)&parsed_packet->data_blob_length;
 
     // use bind structure and query_string to get data from query
     MYSQL_STMT* prev_block_stmt = mysql_prepared_query(query_string, param, dbc);
@@ -736,7 +753,7 @@ struct return_data send_blockchain() {
         return return_data_struct;
     }
 
-    MYSQL_BIND result_bind[9];
+    MYSQL_BIND result_bind[6];
     memset(result_bind, 0, sizeof(result_bind));
 
     bool result_is_null[8];
@@ -912,7 +929,7 @@ struct return_data request_blockchain_sync(char *node_address) {
     struct return_data return_data_struct;
     MYSQL *dbc = connecto_to_db();
     MYSQL_BIND result_param[1];
-    MYSQL_STMT* last_hash_stmt = mysql_prepared_query("SELECT hash_of_prev_block  FROM blockchain ORDER BY timestamp DESC LIMIT 1;", result_param, dbc);
+    MYSQL_STMT* last_hash_stmt = mysql_prepared_query("SELECT id  FROM blockchain ORDER BY timestamp DESC LIMIT 1;", result_param, dbc);
 
     MYSQL_RES* prepare_meta_result_last_hash = mysql_stmt_result_metadata(last_hash_stmt);
     if (!prepare_meta_result_last_hash)
@@ -936,11 +953,11 @@ struct return_data request_blockchain_sync(char *node_address) {
 
     bool result_is_null;
     unsigned long result_len;
-    char result_last_hash[129];
+    unsigned long last_id;
 
-    result_bind[0].buffer_type = MYSQL_TYPE_STRING;
-    result_bind[0].buffer = &result_last_hash;
-    result_bind[0].buffer_length = sizeof(result_last_hash);
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = &last_id;
+    result_bind[0].buffer_length = sizeof(last_id);
     result_bind[0].length = &result_len;
     result_bind[0].is_null = &result_is_null;
 
@@ -950,11 +967,17 @@ struct return_data request_blockchain_sync(char *node_address) {
         return return_data_struct;
     }
 
+    mysql_stmt_store_result(last_hash_stmt);
+    int num_rows = mysql_stmt_num_rows(last_hash_stmt);
+
     mysql_stmt_fetch(last_hash_stmt);
     mysql_stmt_close(last_hash_stmt);
 
+    if(num_rows == 0)
+        last_id = 1;
+
     struct packet *request_packet = malloc(sizeof(struct packet));
-    memcpy(request_packet->data_blob, result_last_hash, result_len);
+    memcpy(request_packet->data_blob, &last_id, result_len);
     request_packet->data_blob_length = result_len;
     request_packet->query_id = 6;
     unsigned int timestamp = (unsigned int)time(NULL);
