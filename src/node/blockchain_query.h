@@ -667,12 +667,11 @@ struct return_data send_blockchain(struct packet *parsed_packet) {
     MYSQL *dbc = connecto_to_db();
 
     MYSQL_BIND result_param[1];
-    MYSQL_STMT* blockchain_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(timestamp) + LENGTH(hash_of_prev_block) + LENGTH(data_blob) + LENGTH(receiver_address) + LENGTH(sender_address) + 9) AS table_size FROM blockchain WHERE id > ?;", result_param, dbc);
+    MYSQL_STMT* blockchain_table_size_stmt = mysql_prepared_query("SELECT SUM(LENGTH(timestamp) + LENGTH(hash_of_prev_block) + LENGTH(data_blob) + LENGTH(receiver_address) + LENGTH(sender_address) + 9) AS table_size FROM blockchain WHERE id >= ?;", result_param, dbc);
 
     unsigned long node_last_id = 0;
     unsigned long node_last_id_length = 8;
     memcpy(&node_last_id, &parsed_packet->data_blob, 8);
-    node_last_id = node_last_id - 1;
 
     result_param[0].buffer_type = MYSQL_TYPE_LONG;
     result_param[0].buffer = &node_last_id;
@@ -723,7 +722,7 @@ struct return_data send_blockchain(struct packet *parsed_packet) {
     memset(block_cluster, 0, result_blockchain_len);
 
     // building block_cluster
-    char query_string[500] = "SELECT UNIX_TIMESTAMP(timestamp), hash_of_prev_block, data_blob, receiver_address, sender_address, id FROM blockchain WHERE id > ?";
+    char query_string[500] = "SELECT UNIX_TIMESTAMP(timestamp), hash_of_prev_block, data_blob, receiver_address, sender_address, id FROM blockchain WHERE id >= ?";
     MYSQL_BIND param[1];
 
     param[0].buffer_type = MYSQL_TYPE_LONG;
@@ -911,6 +910,8 @@ void sync_blockchain(struct return_data blockchain_data) {
 
             MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
             mysql_stmt_close(update_or_insert_stmt);
+
+            printf("%lu\n", block_id);
 
             null_byte_index = i + 1;
             i += 402;
