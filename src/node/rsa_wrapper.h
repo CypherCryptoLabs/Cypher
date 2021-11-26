@@ -107,12 +107,12 @@ int public_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, un
 bool check_buffer_signature(char* buffer, int buffer_len, char* signature, int signature_len, char* pub_key, int pub_key_len) {
 
     char *buffer_hash = get_sha512_string(buffer, buffer_len);
-    char decrypted_hash[129];
+    char decrypted_hash[129] = {0};
+    char *_pub_key = malloc(pub_key_len + 1);
+    memset(_pub_key, 0, pub_key_len + 1);
+    memcpy(_pub_key, pub_key, pub_key_len);
 
-    unsigned long decrypted_hash_len = public_decrypt(signature, signature_len, (unsigned char *)pub_key, decrypted_hash);
-    decrypted_hash[128] = 0;
-
-    printf("%128s\n%128s\n", buffer_hash, decrypted_hash);
+    unsigned long decrypted_hash_len = public_decrypt(signature, signature_len, (unsigned char *)_pub_key, decrypted_hash);
 
     if(decrypted_hash_len) {
         if(strcmp(buffer_hash, decrypted_hash)) {

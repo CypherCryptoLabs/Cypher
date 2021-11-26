@@ -121,6 +121,11 @@ void * handle_request( void* args ) {
             printf("[i] Client send request to sync blockchain (query_id = '%X')\n", parsed_packet->query_id);
             return_data_struct = send_blockchain(parsed_packet);
             break;
+
+        case 7:
+            printf("[i] Client send request to register new Client (query_id = '%X')\n", parsed_packet->query_id);
+            return_data_struct = register_new_client(parsed_packet);
+            break;
         
         default:
             printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);

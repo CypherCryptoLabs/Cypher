@@ -990,3 +990,33 @@ struct return_data request_blockchain_sync(char *node_address) {
     return request_answer;
 
 }
+
+struct return_data register_new_client(struct packet *source_packet) {
+
+    struct return_data return_data_struct;
+    char *data_blob = source_packet->data_blob;
+    int data_blob_length = source_packet->data_blob_length;
+    char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
+    
+    if(end_of_pub_key != NULL) {
+        end_of_pub_key += 29;
+    } else {
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    long unsigned int pub_key_len = end_of_pub_key - data_blob;
+    unsigned char *signature_unescaped = malloc(data_blob_length - pub_key_len);
+    int offset = 0;
+
+    for(int i = 0; i < data_blob_length - pub_key_len; i++) {
+        if(data_blob[i + pub_key_len] == '\0' && data_blob[i + pub_key_len - 1] == '\\') {
+            signature_unescaped[i - 1] = '\0';
+            offset++;
+        }
+        
+        signature_unescaped[i - offset] = data_blob[i + pub_key_len];
+    }
+
+    check_buffer_signature(data_blob, data_blob_length, signature_unescaped, data_blob_length - pub_key_len - offset, data_blob, data_blob_length);
+}
