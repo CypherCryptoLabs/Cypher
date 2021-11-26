@@ -1018,5 +1018,34 @@ struct return_data register_new_client(struct packet *source_packet) {
         signature_unescaped[i - offset] = data_blob[i + pub_key_len];
     }
 
-    check_buffer_signature(data_blob, data_blob_length, signature_unescaped, data_blob_length - pub_key_len - offset, data_blob, data_blob_length);
+    if(!check_buffer_signature(data_blob, data_blob_length, signature_unescaped, data_blob_length - pub_key_len - offset, data_blob, data_blob_length)) {
+        return_data_struct.return_code = 1;
+        return return_data_struct;
+    }
+
+    char *hashed_pub_key = get_sha512_string(data_blob, data_blob_length);
+    int hashed_pub_key_len = 128;
+
+    MYSQL *dbc = connecto_to_db();
+    MYSQL_BIND param_uoi[2];
+
+    char *query_string = "REPLACE INTO client VALUES(?, ?);";
+
+    param_uoi[0].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[0].buffer = hashed_pub_key;
+    param_uoi[0].is_unsigned = 0;
+    param_uoi[0].is_null = 0;
+    param_uoi[0].length = (unsigned long*)&hashed_pub_key_len;
+
+    param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
+    param_uoi[1].buffer = data_blob;
+    param_uoi[1].is_unsigned = 0;
+    param_uoi[1].is_null = 0;
+    param_uoi[1].length = (unsigned long*)&data_blob_length;
+
+    MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
+    mysql_stmt_close(update_or_insert_stmt);
+
+    return_data_struct.return_code = 0;
+    return return_data_struct;
 }
