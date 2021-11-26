@@ -103,3 +103,25 @@ int public_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, un
     int  result = RSA_public_decrypt(data_len,enc_data,decrypted,rsa,padding);
     return result;
 }
+
+bool check_buffer_signature(char* buffer, int buffer_len, char* signature, int signature_len, char* pub_key, int pub_key_len) {
+
+    char *buffer_hash = get_sha512_string(buffer, buffer_len);
+    char decrypted_hash[129];
+
+    unsigned long decrypted_hash_len = public_decrypt(signature, signature_len, (unsigned char *)pub_key, decrypted_hash);
+    decrypted_hash[128] = 0;
+
+    printf("%128s\n%128s\n", buffer_hash, decrypted_hash);
+
+    if(decrypted_hash_len) {
+        if(strcmp(buffer_hash, decrypted_hash)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+
+}

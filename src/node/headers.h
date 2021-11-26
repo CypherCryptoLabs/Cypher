@@ -63,9 +63,9 @@ long local_priv_key_num_bytes;
 char *local_key_hash;
 long local_pub_key_num_bytes;
 
+#include "sha512.h"
 #include "rsa_wrapper.h"
 #include "mysql_wrapper.h"
-#include "sha512.h"
 #include "blockchain_queue.h"
 #include "blockchain_query.h"
 #include "blockchain_queue_worker.h"

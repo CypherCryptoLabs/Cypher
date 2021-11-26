@@ -65,7 +65,7 @@ int register_to_network() {
     memcpy(request_packet->receiver_address, local_key_hash, local_key_hash_num_bytes);
     memcpy(request_packet->sender_address, local_key_hash, local_key_hash_num_bytes);
 
-    struct return_data request_answer = forward_query("192.168.2.104", request_packet, '\x04', 1);
+    struct return_data request_answer = forward_query("192.168.178.25", request_packet, '\x04', 1);
         
     // parsing data received from node
     int null_byte_index = 0;
@@ -249,6 +249,6 @@ void init_node() {
     setup_local_keys();
     register_to_network();
     setup_node_list();
-    request_blockchain_sync("192.168.2.104");
+    request_blockchain_sync("192.168.178.25");
 
 }
