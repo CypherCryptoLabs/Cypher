@@ -19,7 +19,8 @@ fi
 
 if [ $1 = "test" ]
 then
-    gcc ./src/tests/test.c -o ./tests/test  -lcrypto -lcrypto -lz $(mysql_config --libs)
+    #gcc ./src/tests/test.c -o ./tests/test  -lcrypto -lcrypto -lz $(mysql_config --libs)
+    gcc ./src/tests/test.c -pthread -o ./tests/test -lcrypto -lz $(mysql_config --libs)
 fi
 
 if [ $1 = "all" ]
