@@ -401,8 +401,8 @@ void register_client(char *user_input_ip_address) {
     char *signature = malloc(500);
     int signature_length = private_encrypt(hashed_priv_key, 128, local_priv_key, signature);
 
+    new_block_packet->data_blob_length = local_pub_key_num_bytes + signature_length;
     memcpy(new_block_packet->data_blob + local_pub_key_num_bytes, signature, signature_length);
-
     struct return_data create_new_block_answer = forward_query(user_input_ip_address, new_block_packet, 7, 0);
 
     if(!create_new_block_answer.return_code) {
