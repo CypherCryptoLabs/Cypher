@@ -245,9 +245,6 @@ int main(int argc, char const *argv[]) {
     printf("Please enter Node-IP-Address: ");
     scanf("%16s", user_input_ip_address);
 
-    if(socket = connect_to_node(user_input_ip_address) == 0)
-        exit(1);
-
     printf("[i] running tests...\n");
 
     unsigned int timestamp = (unsigned int)time(NULL) - BLOCK_QUEUE_DELAY;
@@ -269,15 +266,19 @@ int main(int argc, char const *argv[]) {
 
     char node_status;
     bool request_data = 0;
-    send(socket, &packet_buffer, 268 + new_block_packet->data_blob_length, 0);
-    printf("TEST\n");
-    read(socket, &node_status, 1);
-    printf("TEST\n");
 
-    if(node_status) {
+    socket = connect_to_node(user_input_ip_address);
+    if( socket == 0)
+        exit(1);
+
+    sleep(1);
+    send(socket, &packet_buffer, 268 + new_block_packet->data_blob_length, 0);
+    read(socket, &node_status, 1);
+
+    if(!node_status) {
         printf("Success!\n");
     } else {
-        printf("Failure!\n");
+        printf("ERROR: %d\n", node_status);
     }
 
     send(socket, &request_data, 1, 0);
