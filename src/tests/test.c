@@ -33,6 +33,7 @@
 #include <mysql/mysql.h>
 #include <ctype.h>
 #include <math.h>
+#include <fcntl.h>
 
 #define PORT 50000
 
@@ -221,6 +222,20 @@ int connect_to_node(char *ip_address)
     return 0;
 }
 
+char *compile_to_packet_buffer(struct packet *block) {
+
+    char *packet = malloc(267 + block->data_blob_length);
+    memset(packet, 0, 267 + block->data_blob_length);
+
+    memcpy(packet + 1, block->timestamp, 10);
+    memcpy(packet + 11, block->sender_address, 128);
+    memcpy(packet + 139, block->receiver_address, 128);
+    memcpy(packet + 267, block->data_blob, block->data_blob_length);
+
+    return packet;
+
+}
+
 int main(int argc, char const *argv[]) {
     
     init_test();
@@ -234,5 +249,37 @@ int main(int argc, char const *argv[]) {
         exit(1);
 
     printf("[i] running tests...\n");
+
+    unsigned int timestamp = (unsigned int)time(NULL) - BLOCK_QUEUE_DELAY;
+    char timestamp_as_string[11];
+    sprintf(timestamp_as_string, "%d", timestamp);
+
+    struct packet *new_block_packet = malloc(sizeof(struct packet));
+    memcpy(new_block_packet->receiver_address, local_key_hash, 128);
+    memcpy(new_block_packet->sender_address, local_key_hash, 128);
+    memcpy(new_block_packet->timestamp, timestamp_as_string, 10);
+    new_block_packet->data_blob_length = rand() % (10000 + 1 - 0) + 0;
+
+    int rnd=open("/dev/urandom", O_RDONLY);
+    read(rnd, new_block_packet->data_blob, new_block_packet->data_blob_length);
+    close(rnd);
+
+    char *packet_buffer = compile_to_packet_buffer(new_block_packet);
+    packet_buffer[0] = 1;
+
+    char node_status;
+    bool request_data = 0;
+    send(socket, &packet_buffer, 268 + new_block_packet->data_blob_length, 0);
+    printf("TEST\n");
+    read(socket, &node_status, 1);
+    printf("TEST\n");
+
+    if(node_status) {
+        printf("Success!\n");
+    } else {
+        printf("Failure!\n");
+    }
+
+    send(socket, &request_data, 1, 0);
 
 }
