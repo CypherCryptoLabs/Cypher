@@ -321,20 +321,100 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
     return return_data_struct;
 }
 
+void printLastError(char *msg)
+{
+    char * err = malloc(130);;
+    ERR_load_crypto_strings();
+    ERR_error_string(ERR_get_error(), err);
+    printf("%s ERROR: %s\n",msg, err);
+    free(err);
+}
 
-int main(int argc, char const *argv[]) {
+int padding = RSA_PKCS1_PADDING;
+ 
+RSA * create_RSA(unsigned char * key,int public)
+{
+    RSA *rsa= NULL;
+    BIO *keybio ;
+    keybio = BIO_new_mem_buf(key, -1);
+    if (keybio==NULL)
+    {
+        printf( "Failed to create key BIO\n");
+        return 0;
+    }
+    if(public)
+    {
+        rsa = PEM_read_bio_RSAPublicKey(keybio, &rsa,NULL, NULL);
+    }
+    else
+    {
+        rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa,NULL, NULL);
+    }
+
+    if(rsa == NULL)
+    {
+        printLastError( "Failed to create RSA\n");
+    }
+ 
+    return rsa;
+}
+ 
+int public_encrypt(unsigned char * data,int data_len,unsigned char * key, unsigned char *encrypted)
+{
+    RSA * rsa = create_RSA(key,1);
+    int result = RSA_public_encrypt(data_len,data,encrypted,rsa,padding);
+    return result;
+}
+int private_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, unsigned char *decrypted)
+{
+    RSA * rsa = create_RSA(key,0);
+    int  result = RSA_private_decrypt(data_len,enc_data,decrypted,rsa,padding);
+    return result;
+}
+ 
+ 
+int private_encrypt(unsigned char * data,int data_len,unsigned char * key, unsigned char *encrypted)
+{
+    RSA * rsa = create_RSA(key,0);
+    int result = RSA_private_encrypt(data_len,data,encrypted,rsa,padding);
+    return result;
+}
+int public_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, unsigned char *decrypted)
+{
+    RSA * rsa = create_RSA(key,1);
+    int  result = RSA_public_decrypt(data_len,enc_data,decrypted,rsa,padding);
+    return result;
+}
+
+void register_client(char *user_input_ip_address) {
+    unsigned int timestamp = (unsigned int)time(NULL);
+    char timestamp_as_string[11];
+    sprintf(timestamp_as_string, "%d", timestamp);
+
+    struct packet *new_block_packet = malloc(sizeof(struct packet));
+    memcpy(new_block_packet->receiver_address, local_key_hash, 128);
+    memcpy(new_block_packet->sender_address, local_key_hash, 128);
+    memcpy(new_block_packet->timestamp, timestamp_as_string, 10);
+    memcpy(new_block_packet->data_blob, local_pub_key, local_pub_key_num_bytes);
+
+    char *hashed_priv_key = get_sha512_string(local_pub_key, local_pub_key_num_bytes);
+    char *signature = malloc(500);
+    int signature_length = private_encrypt(hashed_priv_key, 128, local_priv_key, signature);
+
+    memcpy(new_block_packet->data_blob + local_pub_key_num_bytes, signature, signature_length);
+
+    struct return_data create_new_block_answer = forward_query(user_input_ip_address, new_block_packet, 7, 0);
+
+    if(!create_new_block_answer.return_code) {
+        printf("Success!\n");
+    } else {
+        printf("ERROR: %d\n", create_new_block_answer.return_code);
+    }
     
-    init_test();
-    char user_input_ip_address[17] = {0};
-    printf("%s\n", local_key_hash);
-    int socket;
-    
-    printf("Please enter Node-IP-Address: ");
-    scanf("%16s", user_input_ip_address);
+}
 
-    printf("[i] running tests...\n");
-
-    unsigned int timestamp = (unsigned int)time(NULL) - BLOCK_QUEUE_DELAY;
+void create_block_test(char *user_input_ip_address) {
+    unsigned int timestamp = (unsigned int)time(NULL);
     char timestamp_as_string[11];
     sprintf(timestamp_as_string, "%d", timestamp);
 
@@ -355,5 +435,19 @@ int main(int argc, char const *argv[]) {
     } else {
         printf("ERROR: %d\n", create_new_block_answer.return_code);
     }
+}
+
+int main(int argc, char const *argv[]) {
+    
+    init_test();
+    char user_input_ip_address[17] = {0};
+    int socket;
+    
+    printf("Please enter Node-IP-Address: ");
+    scanf("%16s", user_input_ip_address);
+
+    printf("[i] running tests...\n");
+    create_block_test(user_input_ip_address);
+    register_client(user_input_ip_address);
 
 }
