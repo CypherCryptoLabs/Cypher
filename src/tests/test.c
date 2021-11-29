@@ -37,6 +37,12 @@
 
 #define PORT 50000
 
+struct return_data {
+    int return_code;
+    unsigned long data_num_of_bytes;
+    unsigned char *data;
+};
+
 struct packet{
     int query_id;
     char timestamp[11];
@@ -180,7 +186,7 @@ void init_test() {
     setup_local_keys();
 }
    
-int connect_to_node(char *ip_address)
+/*int connect_to_node(char *ip_address)
 {
 
     printf("[i] connecting to node...\n");
@@ -220,7 +226,7 @@ int connect_to_node(char *ip_address)
     }
 
     return 0;
-}
+}*/
 
 char *compile_to_packet_buffer(struct packet *block) {
 
@@ -233,13 +239,94 @@ char *compile_to_packet_buffer(struct packet *block) {
     memcpy(packet + 267, block->data_blob, block->data_blob_length);
 
     return packet;
-
 }
+
+struct return_data forward_query(char *ip_address, struct packet *source_packet, char query_id, bool request_data) {
+
+    struct return_data return_data_struct;
+    printf("[i] connecting to node...\n");
+
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *blockchain_name = "Cypher Blockchain";
+    char buffer[20269] = {0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("[!] Socket creation error \n");
+        return_data_struct.return_code = -1;
+        return return_data_struct;
+    }
+   
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+       
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, ip_address, &serv_addr.sin_addr)<=0) 
+    {
+        printf("[!] Invalid address/ Address not supported \n");
+        return_data_struct.return_code = -1;
+        return return_data_struct;
+    }
+   
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("[!] Connection Failed \n");
+        return_data_struct.return_code = -1;
+        return return_data_struct;
+    }
+    send(sock , blockchain_name , strlen(blockchain_name) , 0 );
+    printf("[i] Blockchain Name sent\n");
+    valread = read( sock , buffer, 1024);
+    printf("[i] Node answered '%s'\n",buffer );
+    int return_code = 0;
+
+    if(strcmp(blockchain_name, buffer) == 0) {
+
+        char *compiled_packet_buffer = compile_to_packet_buffer(source_packet);
+        compiled_packet_buffer[0] = query_id;
+
+        send(sock, compiled_packet_buffer, 268 + source_packet->data_blob_length, 0);
+        read( sock , buffer, 1024);
+
+        if(buffer[0] != '\0') {
+            return_code = 1;
+        }
+
+        char status = !request_data;
+        send(sock, &status, 1, 0);
+
+        if(request_data) {
+            unsigned long buffer_size;
+            memcpy(&buffer_size, buffer + sizeof(int), sizeof(unsigned long));
+            unsigned char *data_buffer = malloc(buffer_size);
+            int recv_bytes = 0;
+
+            while(recv_bytes < buffer_size) {
+                recv_bytes += recv(sock, data_buffer + (recv_bytes), buffer_size, 0);
+            }
+            
+            return_data_struct.data = data_buffer;
+            return_data_struct.data_num_of_bytes = buffer_size;
+
+            for(int i = 0; i < buffer_size; i ++) {
+                printf("%02x", data_buffer[i]);
+            }
+            printf("\n");
+        }
+
+        free(compiled_packet_buffer);
+    }
+
+    return_data_struct.return_code = return_code;
+    return return_data_struct;
+}
+
 
 int main(int argc, char const *argv[]) {
     
     init_test();
     char user_input_ip_address[17] = {0};
+    printf("%s\n", local_key_hash);
     int socket;
     
     printf("Please enter Node-IP-Address: ");
@@ -261,26 +348,12 @@ int main(int argc, char const *argv[]) {
     read(rnd, new_block_packet->data_blob, new_block_packet->data_blob_length);
     close(rnd);
 
-    char *packet_buffer = compile_to_packet_buffer(new_block_packet);
-    packet_buffer[0] = 1;
+    struct return_data create_new_block_answer = forward_query(user_input_ip_address, new_block_packet, 1, 0);
 
-    char node_status;
-    bool request_data = 0;
-
-    socket = connect_to_node(user_input_ip_address);
-    if( socket == 0)
-        exit(1);
-
-    sleep(1);
-    send(socket, &packet_buffer, 268 + new_block_packet->data_blob_length, 0);
-    read(socket, &node_status, 1);
-
-    if(!node_status) {
+    if(!create_new_block_answer.return_code) {
         printf("Success!\n");
     } else {
-        printf("ERROR: %d\n", node_status);
+        printf("ERROR: %d\n", create_new_block_answer.return_code);
     }
-
-    send(socket, &request_data, 1, 0);
 
 }
