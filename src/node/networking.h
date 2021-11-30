@@ -304,7 +304,7 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
 
     if(strcmp(blockchain_name, buffer) == 0) {
 
-        char *compiled_packet_buffer = compile_to_packet_buffer(source_packet);
+        unsigned char *compiled_packet_buffer = compile_to_packet_buffer(source_packet);
         compiled_packet_buffer[0] = query_id;
 
         send(sock, compiled_packet_buffer, 268 + source_packet->data_blob_length, 0);
@@ -329,11 +329,6 @@ struct return_data forward_query(char *ip_address, struct packet *source_packet,
             
             return_data_struct.data = data_buffer;
             return_data_struct.data_num_of_bytes = buffer_size;
-
-            for(int i = 0; i < buffer_size; i ++) {
-                printf("%02x", data_buffer[i]);
-            }
-            printf("\n");
         }
 
         free(compiled_packet_buffer);
