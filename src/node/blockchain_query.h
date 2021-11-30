@@ -995,7 +995,7 @@ struct return_data register_new_client(struct packet *source_packet) {
 
     struct return_data return_data_struct;
     char *data_blob = source_packet->data_blob;
-    int data_blob_length = source_packet->data_blob_length;
+    unsigned long data_blob_length = source_packet->data_blob_length;
     char *end_of_pub_key = strstr(data_blob, "-----END RSA PUBLIC KEY-----");
     
     if(end_of_pub_key != NULL) {
@@ -1024,7 +1024,7 @@ struct return_data register_new_client(struct packet *source_packet) {
     }
 
     char *hashed_pub_key = get_sha512_string(data_blob, data_blob_length);
-    int hashed_pub_key_len = 128;
+    unsigned long hashed_pub_key_len = 128;
 
     MYSQL *dbc = connecto_to_db();
     MYSQL_BIND param_uoi[2];
@@ -1035,13 +1035,13 @@ struct return_data register_new_client(struct packet *source_packet) {
     param_uoi[0].buffer = hashed_pub_key;
     param_uoi[0].is_unsigned = 0;
     param_uoi[0].is_null = 0;
-    param_uoi[0].length = (unsigned long*)&hashed_pub_key_len;
+    param_uoi[0].length = &hashed_pub_key_len;
 
     param_uoi[1].buffer_type = MYSQL_TYPE_VARCHAR;
     param_uoi[1].buffer = data_blob;
     param_uoi[1].is_unsigned = 0;
     param_uoi[1].is_null = 0;
-    param_uoi[1].length = (unsigned long*)&data_blob_length;
+    param_uoi[1].length = &data_blob_length;
 
     MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
     mysql_stmt_close(update_or_insert_stmt);
