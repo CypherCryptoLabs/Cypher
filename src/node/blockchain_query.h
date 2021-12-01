@@ -991,7 +991,7 @@ struct return_data request_blockchain_sync(char *node_address) {
 
 }
 
-struct return_data register_new_client(struct packet *source_packet) {
+struct return_data register_new_client(struct packet *source_packet, bool alert_network) {
 
     struct return_data return_data_struct;
     char *data_blob = source_packet->data_blob;
@@ -1045,6 +1045,17 @@ struct return_data register_new_client(struct packet *source_packet) {
 
     MYSQL_STMT* update_or_insert_stmt = mysql_prepared_query(query_string, param_uoi, dbc);
     mysql_stmt_close(update_or_insert_stmt);
+
+    if(alert_network) {
+        for(int i = 0; i < node_list.length; i++) {
+
+            if(forward_query(node_list.node_address_list[i], source_packet, 0x8, 0).return_code == 1) {
+                return_data_struct.return_code = 1;
+                return return_data_struct;
+            }
+
+        }
+    }
 
     return_data_struct.return_code = 0;
     return return_data_struct;

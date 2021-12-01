@@ -124,7 +124,12 @@ void * handle_request( void* args ) {
 
         case 7:
             printf("[i] Client send request to register new Client (query_id = '%X')\n", parsed_packet->query_id);
-            return_data_struct = register_new_client(parsed_packet);
+            return_data_struct = register_new_client(parsed_packet, 1);
+            break;
+
+        case 8:
+            printf("[i] Client send request to register new Client without alerting network(query_id = '%X')\n", parsed_packet->query_id);
+            return_data_struct = register_new_client(parsed_packet, 0);
             break;
         
         default:
