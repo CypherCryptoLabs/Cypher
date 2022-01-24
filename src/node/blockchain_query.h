@@ -18,6 +18,9 @@ int create_new_block( struct packet *block, MYSQL *dbc) {
     MYSQL_BIND result_param[1];
     MYSQL_STMT* prev_block_stmt = mysql_prepared_query("SELECT id, hash_of_prev_block, data_blob, receiver_address, sender_address, UNIX_TIMESTAMP(timestamp) FROM blockchain ORDER BY id DESC LIMIT 1;", result_param, dbc);
 
+    if(is_cypher_transaction(block) && !varify_capher_transaction(block))
+        return 1;
+
     /* Fetch result set meta information */
     MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(prev_block_stmt);
     if (!prepare_meta_result)

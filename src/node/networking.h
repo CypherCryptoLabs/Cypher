@@ -131,6 +131,11 @@ void * handle_request( void* args ) {
             printf("[i] Client send request to register new Client without alerting network(query_id = '%X')\n", parsed_packet->query_id);
             return_data_struct = register_new_client(parsed_packet, 0);
             break;
+
+        case 9:
+            printf("[i] Client send request for a CYPHER transaction (query_id = '%X')\n", parsed_packet->query_id);
+            return_data_struct = cypher_transaction(parsed_packet);
+            break;
         
         default:
             printf("[!] query_id '%u' is invalid!\n", parsed_packet->query_id);

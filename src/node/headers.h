@@ -71,3 +71,4 @@ long local_pub_key_num_bytes;
 #include "blockchain_queue_worker.h"
 #include "networking.h"
 #include "init_node.h"
+#include "cypher.h"
