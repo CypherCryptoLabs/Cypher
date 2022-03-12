@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "starkbank-ecdsa": "^1.1.4"
+  }
+}
