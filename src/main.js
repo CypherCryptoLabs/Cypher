@@ -1,5 +1,3 @@
-// CONFIG //
-
 const transactionQueue = require(__dirname + "/transactionQueue.js");
 const bcrypto = require(__dirname + "/bcrypto.js");
 const networking = require(__dirname + "/networking.js");
