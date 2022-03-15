@@ -39,8 +39,9 @@ class transactionQueue {
          if (_this.queue && _this.queue.length) {
             var sortedQueue = _this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
             var potentialNewBlock = _this.Blockchain.generateBlock(sortedQueue);
-            var packet = { queryID: 3, potentialBlock: potentialNewBlock, unixTimestamp: Date.now(), publicKey: _this.bcrypto.getPubKey().toPem() }
+            var packet = {potentialBlock: potentialNewBlock, unixTimestamp: Date.now(), publicKey: _this.bcrypto.getPubKey().toPem() }
             packet.signature = _this.bcrypto.sign(JSON.stringify(packet));
+            packet.queryID = 3;
 
             for (var i = 0; i < networkingInstance.nodeList.length; i++) {
                let client = new net.Socket();
@@ -49,12 +50,20 @@ class transactionQueue {
 
                   client.write(JSON.stringify(packet));
                   client.end();
-                  client.destroy();
+                  //client.destroy();
 
                });
-            }
 
-            console.log(networkingInstance.nodeList);
+               client.on('close', () => {
+                  console.log('Client closed');
+               });
+      
+               client.on('error', (err) => {
+                  console.error(err);
+                  reject();
+               });
+
+            }
 
             //_this.Blockchain.appendBlockToBlockchain(potentialNewBlock);
             _this.clean(sortedQueue);
