@@ -1,5 +1,5 @@
 ### Cypher:
-Cypher is a new Blockchain, that aims to provide a decentralized live messenger service. To make it attractive to people to run a "Node" to support the Cypher Network, there is a Cryptocurrency that will be based on the Cypher Blockchain called "Cypher".
+Cypher is a new Blockchain, that aims to provide a decentralized live messenger service. To make it attractive for people to run a "Node" to support the Cypher Network, there is a Cryptocurrency that will be based on the Cypher Blockchain called "Cypher".
 
 ### Contribute:
 You can simply create a Pullrequest, I will take a look at your code, and either accept your PR, or give you feedback. Your Pullrequest should only contain Bug-fixes, or complete a feature/goal in the "TODO" list. All Pullrequests that do not follow these 2 simple rules will NOT be accepted!
