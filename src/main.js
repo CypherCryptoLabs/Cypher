@@ -6,7 +6,7 @@ const fs = require("fs");
 let config = JSON.parse(fs.readFileSync("config.json", "utf-8"));
 var BCrypto = new bcrypto();
 const TransactionQueue = new transactionQueue(BCrypto);
-let netInstance = new networking(config.host, config.port, BCrypto, config.stableNode);
+let netInstance = new networking(config.host, config.port, BCrypto, TransactionQueue, config.stableNode);
 
 TransactionQueue.worker(netInstance);
 netInstance.connectionHandler();
