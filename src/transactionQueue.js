@@ -50,7 +50,7 @@ class transactionQueue {
 
                   client.write(JSON.stringify(packet));
                   client.end();
-                  //client.destroy();
+                  client.destroy();
 
                });
 
