@@ -2,10 +2,9 @@ const blockchain = require(__dirname + "/blockchain.js");
 
 class transactionQueue {
 
-   constructor(validatorPort, bcrypto) {
+   constructor(bcrypto) {
       this.queue = [];
       this.Blockchain = new blockchain();
-      this.validatorPort = validatorPort;
       this.bcrypto = bcrypto;
    }
 
