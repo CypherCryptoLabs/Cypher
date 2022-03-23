@@ -271,22 +271,23 @@ class networking {
       var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
 
 
-      var closestAddressToApproximateForgerAddress = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-      var closestAddressToApproximateForgerAddressDifference = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      var forgerAddress = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
+      var forgerAddressDifference = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
 
       for(var i = 0; i < numOfValidators; i++) {
 
-         var diffNodeAddressApproximateForgerAddressDifference = forgerAproximateAddress.minus(this.nodeList[i].blockchainAddress, 16);
-         if (diffNodeAddressApproximateForgerAddressDifference.isNegative)
-         diffNodeAddressApproximateForgerAddressDifference = diffNodeAddressApproximateForgerAddressDifference.negated();
+         var difference = forgerAproximateAddress.minus(this.nodeList[i].blockchainAddress, 16);
+         if(difference.isNegative())
+            difference = difference.negated();
 
-         if(diffNodeAddressApproximateForgerAddressDifference.isLessThan(closestAddressToApproximateForgerAddressDifference, 16)) {
-            closestAddressToApproximateForgerAddress = this.nodeList[i].blockchainAddress;
-            closestAddressToApproximateForgerAddressDifference = diffNodeAddressApproximateForgerAddressDifference;
+         if(difference.lt(forgerAddressDifference)) {
+            forgerAddress = new BigNumber(this.nodeList[i].blockchainAddress, 16);
+            forgerAddressDifference = difference;
          }
       }
 
-      console.log(this.bcrypto.hash(latestBlockHash + nextVotingSlot) + "\n" + closestAddressToApproximateForgerAddress);
+      console.log(forgerAddress.toString(16));
+      console.log(forgerAproximateAddress.toString(16));
       console.log(this.nodeList);
    }
 
