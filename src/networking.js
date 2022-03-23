@@ -1,6 +1,7 @@
 const net = require('net');
 const server = net.createServer();
 const crypto = require('crypto');
+const BigNumber = require('bignumber.js');
 
 class networking {
 
@@ -152,7 +153,8 @@ class networking {
       var newNode = {
          ipAddress: packet.payload.ipAddress,
          port: packet.payload.port,
-         publicKey: packet.publicKey
+         publicKey: packet.publicKey,
+         blockchainAddress: this.bcrypto.hash(packet.publicKey)
       };
       var nodeIsAlreadyRegistered = false;
       var nodeIndex = -1;
@@ -260,6 +262,32 @@ class networking {
          packetIsValid = false;
 
       return packetIsValid;
+   }
+
+   pickValidators(latestBlockHash, nextVotingSlot) {
+      var varlidators = {validators:[], forger:{}};
+
+      let numOfValidators = (this.nodeList.length - 1 < 128) ? this.nodeList.length - 1 : 128;
+      var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
+
+
+      var closestAddressToApproximateForgerAddress = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      var closestAddressToApproximateForgerAddressDifference = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
+      for(var i = 0; i < numOfValidators; i++) {
+
+         var diffNodeAddressApproximateForgerAddressDifference = forgerAproximateAddress.minus(this.nodeList[i].blockchainAddress, 16);
+         if (diffNodeAddressApproximateForgerAddressDifference.isNegative)
+         diffNodeAddressApproximateForgerAddressDifference = diffNodeAddressApproximateForgerAddressDifference.negated();
+
+         if(diffNodeAddressApproximateForgerAddressDifference.isLessThan(closestAddressToApproximateForgerAddressDifference, 16)) {
+            closestAddressToApproximateForgerAddress = this.nodeList[i].blockchainAddress;
+            closestAddressToApproximateForgerAddressDifference = diffNodeAddressApproximateForgerAddressDifference;
+         }
+      }
+
+      console.log(this.bcrypto.hash(latestBlockHash + nextVotingSlot) + "\n" + closestAddressToApproximateForgerAddress);
+      console.log(this.nodeList);
    }
 
 }

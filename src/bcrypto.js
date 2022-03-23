@@ -4,6 +4,7 @@ const Ecdsa = ellipticcurve.Ecdsa;
 const PublicKey = ellipticcurve.PublicKey;
 const Signature = ellipticcurve.Signature;
 const fs = require("fs");
+const crypto = require('crypto');
 
 class bcrypto {
 
@@ -52,6 +53,10 @@ class bcrypto {
          return this.publicKey.toPem();
 
       return this.publicKey;
+   }
+
+   hash(data) {
+      return crypto.createHash('sha256').update(data).digest('hex')
    }
 
 }

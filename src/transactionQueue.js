@@ -33,9 +33,9 @@ class transactionQueue {
       return !senderHasPendingTransaction;
    }
 
-   worker(networkingInstance) {
+   async worker(networkingInstance) {
       var _this = this;
-      setInterval(function () { // need to find alterbative to setInterval
+      /*setInterval(function () { // need to find alterbative to setInterval
          if (_this.queue && _this.queue.length) {
             var sortedQueue = _this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
             var potentialNewBlock = _this.Blockchain.generateBlock(sortedQueue);
@@ -68,7 +68,22 @@ class transactionQueue {
             //_this.Blockchain.appendBlockToBlockchain(potentialNewBlock);
             _this.clean(sortedQueue);
          }
-      }, 10000);
+      }, 10000);*/
+
+      while(true) {
+         var now = Date.now();
+         var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
+
+         var validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock()), nextVoteSlotTimestamp.toString());
+
+         var timeToWait = nextVoteSlotTimestamp - now;
+
+         var sleepPromise = new Promise((resolve) => {
+            setTimeout(resolve, timeToWait);
+         });
+         
+         await sleepPromise;
+      }
    }
 
    clean(usedQueue) {
