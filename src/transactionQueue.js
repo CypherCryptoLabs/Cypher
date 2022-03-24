@@ -75,6 +75,7 @@ class transactionQueue {
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
 
          var validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock()), nextVoteSlotTimestamp.toString());
+         console.log(validators);
 
          var timeToWait = nextVoteSlotTimestamp - now;
 

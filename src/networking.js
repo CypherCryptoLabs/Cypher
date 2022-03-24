@@ -265,7 +265,7 @@ class networking {
    }
 
    pickValidators(latestBlockHash, nextVotingSlot) {
-      var varlidators = {validators:[], forger:{}};
+      var validators = {validators:[], forger:{}};
 
       let numOfValidators = (this.nodeList.length - 1 < 128) ? this.nodeList.length - 1 : 128;
       var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
@@ -281,14 +281,41 @@ class networking {
             difference = difference.negated();
 
          if(difference.lt(forgerAddressDifference)) {
+            validators.forger = this.nodeList[i];
             forgerAddress = new BigNumber(this.nodeList[i].blockchainAddress, 16);
             forgerAddressDifference = difference;
          }
       }
 
-      console.log(forgerAddress.toString(16));
-      console.log(forgerAproximateAddress.toString(16));
-      console.log(this.nodeList);
+      var validatorAproximateAddress = forgerAproximateAddress;
+      while(validators.validators.length < numOfValidators) {
+         validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16));
+
+         var nodeListCopy = JSON.parse(JSON.stringify(this.nodeList));
+         nodeListCopy.push({blockchainAddress: validatorAproximateAddress});
+         
+         nodeListCopy = nodeListCopy.sort((a, b) => (a.blockchainAddress > b.blockchainAddress) ? 1 : -1);
+         var index = nodeListCopy.map(function(e) { return e.blockchainAddress; }).indexOf(validatorAproximateAddress);
+
+         var indexesToAdd = new Array();
+         if(index == 0) {
+            indexesToAdd.push(index + 1);
+         } else if(index == this.nodeList.length) {
+            indexesToAdd.push(index - 1);
+         } else {
+            indexesToAdd.push(index - 1);
+            indexesToAdd.push(index + 1);
+         }
+
+         for(var i = 0; i < indexesToAdd.length; i++) {
+            if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(this.nodeList[indexesToAdd[i]].blockchainAddress) == -1 && forgerAproximateAddress != this.nodeList[indexesToAdd[i]].blockchainAddress) {
+               validators.validators.push(this.nodeList[indexesToAdd[i]]);
+            }
+         }
+      }
+      
+      return validators;
+
    }
 
 }
