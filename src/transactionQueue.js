@@ -36,9 +36,7 @@ class transactionQueue {
    async worker(networkingInstance) {
       var _this = this;
       /*setInterval(function () { // need to find alterbative to setInterval
-         if (_this.queue && _this.queue.length) {
-            var sortedQueue = _this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-            var potentialNewBlock = _this.Blockchain.generateBlock(sortedQueue);
+         
             var packet = {potentialBlock: potentialNewBlock, unixTimestamp: Date.now(), publicKey: _this.bcrypto.getPubKey().toPem() }
             packet.signature = _this.bcrypto.sign(JSON.stringify(packet));
             packet.queryID = 3;
@@ -66,7 +64,6 @@ class transactionQueue {
             }
 
             //_this.Blockchain.appendBlockToBlockchain(potentialNewBlock);
-            _this.clean(sortedQueue);
          }
       }, 10000);*/
 
@@ -75,13 +72,20 @@ class transactionQueue {
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
 
          var validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock()), nextVoteSlotTimestamp.toString());
-         console.log(validators);
-
          var timeToWait = nextVoteSlotTimestamp - now;
 
          var sleepPromise = new Promise((resolve) => {
             setTimeout(resolve, timeToWait);
          });
+
+         let localNodeAddress = this.bcrypto.hash(this.bcrypto.getPubKey(true));
+         if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress)) {
+            console.log("Im a validator")
+         } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
+            var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
+            var potentialNewBlock = this.Blockchain.generateBlock(sortedQueue);
+            this.clean(sortedQueue);
+         }
          
          await sleepPromise;
       }
