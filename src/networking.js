@@ -319,19 +319,18 @@ class networking {
 
    }
 
-   voteOnBlock(validators) {
+   voteOnBlock(forger) {
       var client = new net.Socket();
-      console.log(validators.forger)
 
-      /*client.connect(forger.port, forger.ipAddress, () => {
-         var packet = {queryID:3, unixTimestamp: new Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
+      client.connect(forger.port, forger.ipAddress, () => {
+         var packet = {queryID:3, unixTimestamp: Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
          var packetCopy = JSON.parse(JSON.stringify(packet));
          delete packetCopy.queryID;
 
-         packet.signature = this.bcrypto.sign(packetCopy);
+         packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
 
          client.write(JSON.stringify(packet))
-      });*/
+      });
    }
 
 }
