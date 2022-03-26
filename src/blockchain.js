@@ -2,6 +2,11 @@ const fs = require("fs");
 const crypto = require('crypto');
 
 class blockchain {
+
+   constructor(bcrypto) {
+      this.bcrypto = bcrypto;
+   }
+
    generateBlock(sortedQueue) {
       sortedQueue.forEach(object => {
          delete object["queryID"];
@@ -12,10 +17,10 @@ class blockchain {
       var block = {
          id: JSON.parse(previousBlock).id + 1,
          timestamp: Date.now(),
-         previousBlockHash: crypto.createHash('sha256').update(previousBlock).digest('hex'),
-         rewardAddress: "a564f649810816d55065b3680f37c149e9d892358a7b0ec88253df2154d60be5",
+         previousBlockHash: this.bcrypto.hash(previousBlock),
+         rewardAddress: this.bcrypto.hash(this.bcrypto.getPubKey(true)),
          rewardAmount: 10,
-         payloadHash: crypto.createHash('sha256').update(JSON.stringify(sortedQueue)).digest('hex'),
+         payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
       }
 

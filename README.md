@@ -2,9 +2,11 @@
 Cypher is a new Blockchain, that aims to provide a decentralized live messenger service. To make it attractive for people to run a "Node" to support the Cypher Network, there is a Cryptocurrency that will be based on the Cypher Blockchain called "Cypher".
 
 ### Contribute:
-You can simply create a Pullrequest, I will take a look at your code, and either accept your PR, or give you feedback. Your Pullrequest should only contain Bug-fixes, or complete a feature/goal in the "TODO" list. All Pullrequests that do not follow these 2 simple rules will NOT be accepted!
+You can simply create a Pull request, I will take a look at your code, and either accept your PR, or give you feedback. Your Pull request should only contain Bug-fixes, or complete a feature/goal in the "TODO" list. All Pull requests that do not follow these 2 simple rules will NOT be accepted!
 
 ### Installation:
+This tutorial uses the commands for GNU/Linux, if you are using anything different, the commands may not work as expected. I assume you have ```git``` installed on your system, if that's not the case, please do that now.
+
 Download the Codebase:
 ```
 git clone https://github.com/michelbarnich/cypher.git
@@ -13,9 +15,17 @@ git clone https://github.com/michelbarnich/cypher.git
 Next you need Node.js and NPM. The instructions on how to install these 2 components depends on the OS that you are using.
 Finally, you can install all dependencies:
 ```
-cd cypher
+cd cypher/src
 npm install --save
 ```
+
+After installing all dependencies, you should remove the ```private.pem``` file that is used for testing, and the ```blockchain.json``` that is only used for testing as well. The node will automatically regenerate the ```private.pem```file at startup. You need to recreate the ```blockchain.json```file yourself. This functionality will be added to the ```test.js```script in the future.
+```
+cd ..
+rm blockchain.json private.pem
+```
+
+If you wish, you can change the settings for the Node, by editing the ```config.json``` file.
 
 Now you can start the node with a simple command:
 ```
@@ -24,14 +34,16 @@ node src/main.js
 
 ### TODO:
 - [ ] All TCP traffic signed
-- [ ] Proper way of creating a fingerprint of the publickey
-- [ ] check Blockchain that is received on Network Registration
+- [ ] Proper way of creating a fingerprint of the public key
+- [ ] Sync Blockchain with Network on startup
+- [ ] verify Blockchain that is received on Network Registration
 - [ ] P.o.S. Consensus Algorithm
+- [ ] P.o.S. Penalties and Health System
 
 ### License: 
 MIT License
 
-Copyright (c) [2022] [Michel Barnich]
+Copyright (c) 2022 Michel Barnich
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

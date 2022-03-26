@@ -5,7 +5,7 @@ class transactionQueue {
 
    constructor(bcrypto) {
       this.queue = [];
-      this.Blockchain = new blockchain();
+      this.Blockchain = new blockchain(bcrypto);
       this.bcrypto = bcrypto;
    }
 
@@ -71,23 +71,22 @@ class transactionQueue {
          var now = Date.now();
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
 
-         var validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock()), nextVoteSlotTimestamp.toString());
-         var timeToWait = nextVoteSlotTimestamp - now;
+         let validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock()), nextVoteSlotTimestamp.toString());
+         var timeToWait = nextVoteSlotTimestamp - Date.now();
 
          var sleepPromise = new Promise((resolve) => {
             setTimeout(resolve, timeToWait);
          });
+         await sleepPromise;
 
          let localNodeAddress = this.bcrypto.hash(this.bcrypto.getPubKey(true));
-         if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress)) {
-            console.log("Im a validator")
+         if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
+            networkingInstance.voteOnBlock(validators);
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
             var potentialNewBlock = this.Blockchain.generateBlock(sortedQueue);
-            this.clean(sortedQueue);
          }
          
-         await sleepPromise;
       }
    }
 

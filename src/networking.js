@@ -300,7 +300,7 @@ class networking {
          var indexesToAdd = new Array();
          if(index == 0) {
             indexesToAdd.push(index + 1);
-         } else if(index == this.nodeList.length) {
+         } else if(index == nodeListCopy.length - 1) {
             indexesToAdd.push(index - 1);
          } else {
             indexesToAdd.push(index - 1);
@@ -308,14 +308,30 @@ class networking {
          }
 
          for(var i = 0; i < indexesToAdd.length; i++) {
-            if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(this.nodeList[indexesToAdd[i]].blockchainAddress) == -1 && forgerAproximateAddress != this.nodeList[indexesToAdd[i]].blockchainAddress) {
-               validators.validators.push(this.nodeList[indexesToAdd[i]]);
+            if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(nodeListCopy[indexesToAdd[i]].blockchainAddress) == -1 && 
+            validators.forger.blockchainAddress != nodeListCopy[indexesToAdd[i]].blockchainAddress) {
+               validators.validators.push(nodeListCopy[indexesToAdd[i]]);
             }
          }
       }
       
       return validators;
 
+   }
+
+   voteOnBlock(validators) {
+      var client = new net.Socket();
+      console.log(validators.forger)
+
+      /*client.connect(forger.port, forger.ipAddress, () => {
+         var packet = {queryID:3, unixTimestamp: new Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
+         var packetCopy = JSON.parse(JSON.stringify(packet));
+         delete packetCopy.queryID;
+
+         packet.signature = this.bcrypto.sign(packetCopy);
+
+         client.write(JSON.stringify(packet))
+      });*/
    }
 
 }
