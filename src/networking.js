@@ -15,6 +15,7 @@ class networking {
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
       this.registerToNetwork();
+      this.potentialBlock;
    }
 
    async broadcastToRandomNodes(packet, numOfRandomPeers = -1) {
@@ -203,7 +204,7 @@ class networking {
                      break;
 
                   case 3:
-                     console.log(packet);
+                     socket.write(JSON.stringify(this.potentialBlock));
                      break;
                }
             }
@@ -321,6 +322,7 @@ class networking {
 
    voteOnBlock(forger) {
       var client = new net.Socket();
+      var blockToVoteOn;
 
       client.connect(forger.port, forger.ipAddress, () => {
          var packet = {queryID:3, unixTimestamp: Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
@@ -331,6 +333,15 @@ class networking {
 
          client.write(JSON.stringify(packet))
       });
+
+      client.on('data', (data) => {
+         console.log(data.toString());
+      });
+   }
+
+   updatePotentialBlock(potentialBlock) {
+      this.potentialBlock = potentialBlock;
+      console.log(this.potentialBlock);
    }
 
 }

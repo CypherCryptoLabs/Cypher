@@ -8,9 +8,11 @@ class blockchain {
    }
 
    generateBlock(sortedQueue) {
-      sortedQueue.forEach(object => {
-         delete object["queryID"];
-      })
+      if(sortedQueue.length) {
+         sortedQueue.forEach(object => {
+            delete object["queryID"];
+         });
+      }
 
       var previousBlock = this.getNewestBlock();
 

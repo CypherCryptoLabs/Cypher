@@ -81,11 +81,27 @@ class transactionQueue {
 
          let localNodeAddress = this.bcrypto.hash(this.bcrypto.getPubKey(true));
          if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
+            
+            var sleepPromise = new Promise((resolve) => {
+               setTimeout(resolve, 100);
+            });
+            await sleepPromise;
+
             networkingInstance.voteOnBlock(validators.forger);
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-            var potentialNewBlock = this.Blockchain.generateBlock(sortedQueue);
+            networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue));
+         } else {
+            networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock({}));
          }
+
+
+         var sleepPromise = new Promise((resolve) => {
+            setTimeout(resolve, 15000);
+         });
+         await sleepPromise;
+
+         networkingInstance.updatePotentialBlock({});
          
       }
    }
