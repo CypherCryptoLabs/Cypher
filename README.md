@@ -39,6 +39,7 @@ node src/main.js
 - [ ] verify Blockchain that is received on Network Registration
 - [ ] P.o.S. Consensus Algorithm
 - [ ] P.o.S. Penalties and Health System
+- [ ] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
 
 ### License: 
 MIT License
