@@ -24,7 +24,7 @@ class blockchain {
          rewardAmount: 10,
          payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
-         validators: [],
+         validators: {},
          forgerSignature: ""
       }
       if(validators) {
@@ -154,6 +154,15 @@ class blockchain {
          }
          if(!transactionFound)
             blockIsValid = false;
+      }
+      
+      if(Object.keys(block.validators).length != validators.length)
+         blockIsValid = false;
+      
+      for(var i = 0; i < block.validators.length && blockIsValid; i++) {
+         if(block.validators[validators[i]] == undefined) {
+            blockIsValid = false;
+         }
       }
 
       console.log(blockIsValid);
