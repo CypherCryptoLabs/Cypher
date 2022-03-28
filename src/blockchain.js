@@ -107,7 +107,6 @@ class blockchain {
    validateBlock(block, currentVotingSlot, validators, forger) {
       block = JSON.parse(block);
       var blockIsValid = true;
-      console.log(JSON.stringify(Object.getOwnPropertyNames(block)));
       
       if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "validators", "forgerSignature"]))
          blockIsValid = false;
