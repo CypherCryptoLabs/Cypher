@@ -2,6 +2,8 @@ const net = require('net');
 const server = net.createServer();
 const crypto = require('crypto');
 const BigNumber = require('bignumber.js');
+const { resolve } = require('path');
+const blockchain = require('./blockchain');
 
 class networking {
 
@@ -16,6 +18,7 @@ class networking {
       this.transactionQueue = transactionQueue;
       this.registerToNetwork();
       this.potentialBlock;
+      this.blockchain = new blockchain(bcrypto);
    }
 
    async broadcastToRandomNodes(packet, numOfRandomPeers = -1) {
@@ -320,28 +323,53 @@ class networking {
 
    }
 
-   voteOnBlock(forger) {
+   async voteOnBlock(forger, currentVotingSlot, validators) {
       var client = new net.Socket();
       var blockToVoteOn;
 
-      client.connect(forger.port, forger.ipAddress, () => {
-         var packet = {queryID:3, unixTimestamp: Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
-         var packetCopy = JSON.parse(JSON.stringify(packet));
-         delete packetCopy.queryID;
+      var retrieveBlockPromise = new Promise((resolve, reject) => {
+         client.connect(forger.port, forger.ipAddress, () => {
+            var packet = {queryID:3, unixTimestamp: Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
+            var packetCopy = JSON.parse(JSON.stringify(packet));
+            delete packetCopy.queryID;
+   
+            packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+   
+            client.write(JSON.stringify(packet))
+         });
+   
+         client.on('data', (data) => {
+            blockToVoteOn = data.toString();
+            resolve();
+         });
 
-         packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+         client.on('error', (error) => {
+            reject();
+         })
+      })
 
-         client.write(JSON.stringify(packet))
-      });
+      try {
+         await retrieveBlockPromise;
+         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger)) {
+            // send signature to Forger
+            this.bcrypto.sign(blockToVoteOn);
 
-      client.on('data', (data) => {
-         console.log(data.toString());
-      });
+         }
+      } catch (error) {
+         console.log(error);
+      }
    }
 
-   updatePotentialBlock(potentialBlock) {
+   async updatePotentialBlock(potentialBlock) {
       this.potentialBlock = potentialBlock;
-      console.log(this.potentialBlock);
+      //console.log(this.potentialBlock);
+
+      var sleepPromise = new Promise((resolve) => {
+         setTimeout(resolve, 15000);
+      });
+      await sleepPromise;
+
+      this.potentialBlock = {};
    }
 
 }

@@ -24,6 +24,8 @@ class blockchain {
          rewardAmount: 10,
          payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
+         validators: [],
+         forgerSignature: ""
       }
 
       /*var block = {
@@ -100,6 +102,39 @@ class blockchain {
 
       }
       return balance;
+   }
+
+   validateBlock(block, currentVotingSlot, validators, forger) {
+      block = JSON.parse(block);
+      var blockIsValid = true;
+      console.log(JSON.stringify(Object.getOwnPropertyNames(block)));
+      
+      if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "validators", "forgerSignature"]))
+         blockIsValid = false;
+
+      if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
+         blockIsValid =false;
+
+      let previousBlock = this.getNewestBlock();
+      let previousBlockHash = this.bcrypto.hash(previousBlock);
+
+      if(block.previousBlockHash != previousBlockHash)
+         blockIsValid = flase;
+      
+      if(block.id != JSON.parse(previousBlock).id + 1)
+         blockIsValid = false;
+      
+      if(block.rewardAddress != forger.blockchainAddress) 
+         blockIsValid = false;
+      
+      if(block.rewardAmount != 10)
+         blockIsValid = false;
+
+      if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
+         blockIsValid = false;
+
+      console.log(blockIsValid);
+
    }
 
 }
