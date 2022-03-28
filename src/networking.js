@@ -323,7 +323,7 @@ class networking {
 
    }
 
-   async voteOnBlock(forger, currentVotingSlot, validators) {
+   async voteOnBlock(forger, currentVotingSlot, validators, transactionQueue) {
       var client = new net.Socket();
       var blockToVoteOn;
 
@@ -348,9 +348,14 @@ class networking {
          })
       })
 
+      var transactionQueueCopy = JSON.parse(JSON.stringify(transactionQueue));
+      transactionQueueCopy.forEach(object => {
+         delete object["queryID"];
+      });
+
       try {
          await retrieveBlockPromise;
-         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger)) {
+         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
             this.bcrypto.sign(blockToVoteOn);
 

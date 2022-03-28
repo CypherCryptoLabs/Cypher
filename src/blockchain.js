@@ -7,7 +7,7 @@ class blockchain {
       this.bcrypto = bcrypto;
    }
 
-   generateBlock(sortedQueue) {
+   generateBlock(sortedQueue, validators) {
       if(sortedQueue.length) {
          sortedQueue.forEach(object => {
             delete object["queryID"];
@@ -27,6 +27,14 @@ class blockchain {
          validators: [],
          forgerSignature: ""
       }
+      if(validators) {
+         for(var i = 0; i < validators.validators.length; i++) {
+            block.validators[validators.validators[i].blockchainAddress] = "";
+            console.log(i);
+         }
+      }
+
+      console.log(block)
 
       /*var block = {
          id : 0,
@@ -104,7 +112,7 @@ class blockchain {
       return balance;
    }
 
-   validateBlock(block, currentVotingSlot, validators, forger) {
+   validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {
       block = JSON.parse(block);
       var blockIsValid = true;
       
@@ -131,6 +139,22 @@ class blockchain {
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
          blockIsValid = false;
+
+      for(var i = 0; i < block.payload.length && blockIsValid; i++) {
+         var transactionFound = false;
+         for(var j = 0; j < transactionQueue.length && !transactionFound; j++) {
+            let transactionQueueEntryString = JSON.stringify(transactionQueue[j]);
+            let blockPayloadEntryString = JSON.stringify(block.payload[j]);
+
+            if(blockPayloadEntryString == transactionQueueEntryString) {
+               transactionFound = true;
+            }
+
+            console.log("TEST")
+         }
+         if(!transactionFound)
+            blockIsValid = false;
+      }
 
       console.log(blockIsValid);
 
