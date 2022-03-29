@@ -34,6 +34,11 @@ class blockchain {
          }
       }
 
+      var blockCopy = JSON.parse(JSON.stringify(block));
+      delete block["forgerSignature"];
+
+      block.forgerSignature = this.bcrypto.sign(JSON.stringify(blockCopy));
+
       console.log(block)
 
       /*var block = {
@@ -113,6 +118,10 @@ class blockchain {
    }
 
    validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {
+      var blockCopy = JSON.parse(block);
+      delete blockCopy.forgerSignature;
+      blockCopy = JSON.stringify(blockCopy);
+
       block = JSON.parse(block);
       var blockIsValid = true;
       
@@ -149,8 +158,6 @@ class blockchain {
             if(blockPayloadEntryString == transactionQueueEntryString) {
                transactionFound = true;
             }
-
-            console.log("TEST")
          }
          if(!transactionFound)
             blockIsValid = false;
@@ -164,6 +171,9 @@ class blockchain {
             blockIsValid = false;
          }
       }
+
+      if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
+         blockIsValid = true;
 
       console.log(blockIsValid);
 

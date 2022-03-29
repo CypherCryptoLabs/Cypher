@@ -207,7 +207,12 @@ class networking {
                      break;
 
                   case 3:
-                     socket.write(JSON.stringify(this.potentialBlock));
+                     if(packet.type == "request")
+                        socket.write(JSON.stringify(this.potentialBlock));
+
+                     if(packet.type == "vote")
+                        console.log(packet.signature);
+                               
                      break;
                }
             }
