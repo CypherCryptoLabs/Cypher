@@ -38,8 +38,6 @@ class blockchain {
 
       block.forgerSignature = this.bcrypto.sign(JSON.stringify(blockCopy));
 
-      console.log(block)
-
       /*var block = {
          id : 0,
          timestamp : Date.now(),

@@ -18,6 +18,8 @@ class networking {
       this.transactionQueue = transactionQueue;
       this.registerToNetwork();
       this.potentialBlock;
+      this.validators;
+      this.signatures;
       this.blockchain = new blockchain(bcrypto);
    }
 
@@ -210,8 +212,14 @@ class networking {
                      if(packet.type == "request")
                         socket.write(JSON.stringify(this.potentialBlock));
 
-                     if(packet.type == "vote")
-                        console.log(packet);
+                     if(packet.type == "vote") {
+                        var blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
+                        delete blockToVoteOnCopy.validators;
+
+                        if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, blockToVoteOnCopy)) {
+                           this.signatures[this.bcrypto.hash(packet.publicKey)] = packet.payload.signature;
+                        }
+                     }
                                
                      break;
                }
@@ -362,7 +370,11 @@ class networking {
          await retrieveBlockPromise;
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
-            var blockVoteSignature = this.bcrypto.sign(blockToVoteOn);
+            this.updateValidators(validators, blockToVoteOn);
+            var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
+            delete blockToVoteOn.validators;
+
+            var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
             var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
             var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
             delete packetVoteCopy.queryID;
@@ -372,7 +384,6 @@ class networking {
             for(var i = 0; i < validators.length; i++) {
                if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {
                   var clientVote = new net.Socket();
-                  console.log("vote " + i)
                   clientVote.connect(validators[i].port, validators[i].ipAddress, () => {
                      console.log(JSON.stringify(packetVote));
             
@@ -391,6 +402,14 @@ class networking {
       } catch (error) {
          console.log(error);
       }
+
+      var timeToWait = currentVotingSlot + 15000 - Date.now();
+
+         var sleepPromise = new Promise((resolve) => {
+            setTimeout(resolve, timeToWait);
+         });
+      await sleepPromise;
+      // share block with network
    }
 
    async updatePotentialBlock(potentialBlock) {
@@ -403,6 +422,22 @@ class networking {
       await sleepPromise;
 
       this.potentialBlock = {};
+   }
+
+   async updateValidators(validators, potentialBlock) {
+      this.updatePotentialBlock(potentialBlock);
+      this.validators = validators;
+      this.signatures = {};
+      //console.log(this.potentialBlock);
+
+      var sleepPromise = new Promise((resolve) => {
+         setTimeout(resolve, 15000);
+      });
+      await sleepPromise;
+
+      console.log(this.signatures);
+      this.validators = {};
+      this.signatures = {};
    }
 
 }
