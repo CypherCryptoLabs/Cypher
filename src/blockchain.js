@@ -30,7 +30,6 @@ class blockchain {
       if(validators) {
          for(var i = 0; i < validators.validators.length; i++) {
             block.validators[validators.validators[i].blockchainAddress] = "";
-            console.log(i);
          }
       }
 
@@ -175,7 +174,7 @@ class blockchain {
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
          blockIsValid = true;
 
-      console.log(blockIsValid);
+      return blockIsValid;
 
    }
 

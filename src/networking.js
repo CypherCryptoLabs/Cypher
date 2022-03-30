@@ -211,7 +211,7 @@ class networking {
                         socket.write(JSON.stringify(this.potentialBlock));
 
                      if(packet.type == "vote")
-                        console.log(packet.signature);
+                        console.log(packet);
                                
                      break;
                }
@@ -362,7 +362,28 @@ class networking {
          await retrieveBlockPromise;
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
-            this.bcrypto.sign(blockToVoteOn);
+            var blockVoteSignature = this.bcrypto.sign(blockToVoteOn);
+
+            for(var i = 0; i < validators.length; i++) {
+               var clientVote = new net.Socket();
+               console.log("vote " + i)
+               clientVote.connect(validators[i].port, validators[i].ipAddress, () => {
+                  var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
+                  var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
+                  delete packetVoteCopy.queryID;
+         
+                  packetVote.signature = this.bcrypto.sign(JSON.stringify(packetVoteCopy));
+                  console.log(JSON.stringify(packetVote));
+         
+                  clientVote.write(JSON.stringify(packetVote))
+               });
+         
+               clientVote.on('data', (data) => {
+               });
+      
+               clientVote.on('error', (error) => {
+               })
+            }
 
          }
       } catch (error) {
