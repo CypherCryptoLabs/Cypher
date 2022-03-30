@@ -216,7 +216,13 @@ class networking {
                         var blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
                         delete blockToVoteOnCopy.validators;
 
-                        if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, blockToVoteOnCopy)) {
+                        var senderIsValidator = false;
+                        for(var i = 0; i < this.validators.length; i++) {
+                           if(packet.publicKey == this.validators[i].publicKey)
+                              senderIsValidator = true;
+                        }
+
+                        if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, blockToVoteOnCopy) && senderIsValidator) {
                            this.signatures[this.bcrypto.hash(packet.publicKey)] = packet.payload.signature;
                         }
                      }
