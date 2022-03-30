@@ -363,26 +363,28 @@ class networking {
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
             var blockVoteSignature = this.bcrypto.sign(blockToVoteOn);
+            var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
+            var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
+            delete packetVoteCopy.queryID;
+   
+            packetVote.signature = this.bcrypto.sign(JSON.stringify(packetVoteCopy));
 
             for(var i = 0; i < validators.length; i++) {
-               var clientVote = new net.Socket();
-               console.log("vote " + i)
-               clientVote.connect(validators[i].port, validators[i].ipAddress, () => {
-                  var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
-                  var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
-                  delete packetVoteCopy.queryID;
+               if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {
+                  var clientVote = new net.Socket();
+                  console.log("vote " + i)
+                  clientVote.connect(validators[i].port, validators[i].ipAddress, () => {
+                     console.log(JSON.stringify(packetVote));
+            
+                     clientVote.write(JSON.stringify(packetVote))
+                  });
+            
+                  clientVote.on('data', (data) => {
+                  });
          
-                  packetVote.signature = this.bcrypto.sign(JSON.stringify(packetVoteCopy));
-                  console.log(JSON.stringify(packetVote));
-         
-                  clientVote.write(JSON.stringify(packetVote))
-               });
-         
-               clientVote.on('data', (data) => {
-               });
-      
-               clientVote.on('error', (error) => {
-               })
+                  clientVote.on('error', (error) => {
+                  })
+               }
             }
 
          }
