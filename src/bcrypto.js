@@ -30,7 +30,7 @@ class bcrypto {
             fs.writeFileSync('private.pem', this.privateKey.toPem());
          }
       } catch (err) {
-         console.log(err);
+         //console.log(err);
       }
    }
 

@@ -41,7 +41,7 @@ class networking {
 
             var randomNodeNotified = new Promise(function (resolve, reject) {
                client.connect(randomNode.port, randomNode.ipAddress, () => {
-                  console.log(`client connected to ${randomNode.ipAddress}:${randomNode.port}`);
+                  //console.log(`client connected to ${randomNode.ipAddress}:${randomNode.port}`);
 
                   client.write(JSON.stringify(packet));
                   client.end();
@@ -49,14 +49,14 @@ class networking {
 
                client.on('data', (data) => {
                   data = data.toString();
-                  console.log(data);
+                  //console.log(data);
                   resolve();
                   client.destroy();
                });
 
                // Add a 'close' event handler for the client socket 
                client.on('close', () => {
-                  console.log('Client closed');
+                  //console.log('Client closed');
                });
 
                client.on('error', (err) => {
@@ -69,7 +69,7 @@ class networking {
                var x = await randomNodeNotified;
                successfullyNotifiedNodes.push(randomNode.ipAddress);
             } catch (error) {
-               console.log(error);
+               //console.log(error);
             }
 
             notifiedNodes.push(randomNode.ipAddress);
@@ -104,7 +104,7 @@ class networking {
       var registration = new Promise(function (resolve, reject) {
          var client = new net.Socket();
          client.connect(_this.port, _this.stableNode, () => {
-            console.log(`client connected to ${_this.stableNode}:${_this.port}`);
+            //console.log(`client connected to ${_this.stableNode}:${_this.port}`);
 
             client.write(JSON.stringify(packet));
             client.end();
@@ -122,7 +122,7 @@ class networking {
 
          // Add a 'close' event handler for the client socket 
          client.on('close', () => {
-            console.log('Client closed');
+            //console.log('Client closed');
          });
 
          client.on('error', (err) => {
@@ -148,10 +148,10 @@ class networking {
                });
             });
 
-            try { await registeredToNode; } catch (error) { console.log(error) }
+            try { await registeredToNode; } catch (error) { /*console.log(error)*/ }
          }
       } catch (error) {
-         console.log(error);
+         //console.log(error);
       }
    }
 
@@ -189,6 +189,7 @@ class networking {
          var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
          socket.on('data', (data) => {
+            console.log("received :"  + data.toString());
             // handle incomming data
             if (this.verrifyPacket(data.toString())) {
                var packet = JSON.parse(data.toString());
@@ -235,56 +236,61 @@ class networking {
          });
 
          socket.on('error', (err) => {
-            console.log(`[` + Date.now().toString + `] Error occurred in ${clientAddress}: ${err.message}`);
+            //console.log(`[` + Date.now().toString + `] Error occurred in ${clientAddress}: ${err.message}`);
          });
       });
    }
 
    verrifyPacket(packetJSON) {
-      let packet = JSON.parse(packetJSON);
-      let packetCopy = JSON.parse(packetJSON);
-      var packetIsValid = true;
+      try {
+         let packet = JSON.parse(packetJSON);
+         let packetCopy = JSON.parse(packetJSON);
+         var packetIsValid = true;
 
-      if (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now())
-         packetIsValid = false;
+         if (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now())
+            packetIsValid = false;
 
-      switch (packet.queryID) {
-         case 1:
-            if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'blockchainSenderAddress', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['blockchainReceiverAddress', 'unitsToTransfer', 'networkFee']))
-               packetIsValid = false;
+         switch (packet.queryID) {
+            case 1:
+               if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'blockchainSenderAddress', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['blockchainReceiverAddress', 'unitsToTransfer', 'networkFee']))
+                  packetIsValid = false;
 
-            if (packet.payload.unitsToTransfer <= 0 || packet.payload.networkFee < 0) {
-               packetIsValid = false;
-            }
+               if (packet.payload.unitsToTransfer <= 0 || packet.payload.networkFee < 0) {
+                  packetIsValid = false;
+               }
 
-            if (packet.blockchainSenderAddress != crypto.createHash('sha256').update(packet.publicKey).digest('hex'))
-               packetIsValid = false;
+               if (packet.blockchainSenderAddress != crypto.createHash('sha256').update(packet.publicKey).digest('hex'))
+                  packetIsValid = false;
 
-            break;
+               break;
 
-         case 2:
-            if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['ipAddress', 'port']))
-               packetIsValid = false;
+            case 2:
+               if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['ipAddress', 'port']))
+                  packetIsValid = false;
 
-            if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(packet.payload.ipAddress))
-               packetIsValid = false;
+               if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(packet.payload.ipAddress))
+                  packetIsValid = false;
 
-            if (isNaN(packet.payload.port) || packet.payload.port > 65535 || packet.payload.port < 1)
-               packetIsValid = false;
+               if (isNaN(packet.payload.port) || packet.payload.port > 65535 || packet.payload.port < 1)
+                  packetIsValid = false;
 
-            break;
-         case 3:
-            break;
+               break;
+            case 3:
+               break;
 
+         }
+
+         delete packetCopy.queryID;
+         delete packetCopy.signature;
+
+         if (!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
+            packetIsValid = false;
+
+         return packetIsValid;
+      } catch (error) {
+         console.log(error);
+         return false;
       }
-
-      delete packetCopy.queryID;
-      delete packetCopy.signature;
-
-      if (!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
-         packetIsValid = false;
-
-      return packetIsValid;
    }
 
    pickValidators(latestBlockHash, nextVotingSlot) {
@@ -389,9 +395,11 @@ class networking {
 
             for(var i = 0; i < validators.length; i++) {
                if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {
-                  var clientVote = new net.Socket();
-                  clientVote.connect(validators[i].port, validators[i].ipAddress, () => {
-                     console.log(JSON.stringify(packetVote));
+                  let z = i;
+                  let clientVote = new net.Socket();
+                  console.log(validators[z]);
+                  clientVote.connect(validators[z].port, validators[z].ipAddress, () => {
+                     console.log("send vote package (" + validators[z].ipAddress + ":" + validators[z].port + "): " + JSON.stringify(packetVote));
             
                      clientVote.write(JSON.stringify(packetVote))
                   });
@@ -415,7 +423,16 @@ class networking {
             setTimeout(resolve, timeToWait);
          });
       await sleepPromise;
-      // share block with network
+      
+      var votes = this.getVotes();
+      this.updateValidators({}, {});
+
+      if(JSON.stringify(votes) != "{}" && votes.length >= validators.length / 2) {
+         var votedBlock = JSON.parse(blockToVoteOn);
+
+         console.log(votes);
+
+      }
    }
 
    async updatePotentialBlock(potentialBlock) {
@@ -435,15 +452,10 @@ class networking {
       this.validators = validators;
       this.signatures = {};
       //console.log(this.potentialBlock);
+   }
 
-      var sleepPromise = new Promise((resolve) => {
-         setTimeout(resolve, 15000);
-      });
-      await sleepPromise;
-
-      console.log(this.signatures);
-      this.validators = {};
-      this.signatures = {};
+   getVotes() {
+      return this.signatures;
    }
 
 }
