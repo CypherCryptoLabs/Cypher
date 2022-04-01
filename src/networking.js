@@ -218,12 +218,14 @@ class networking {
                         delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
-                        for(var i = 0; i < this.validators.length; i++) {
-                           if(packet.publicKey == this.validators[i].publicKey)
-                              senderIsValidator = true;
+                        if(this.validators != undefined && this.validators.hasOwnProperty('length')) {
+                           for(var i = 0; i < this.validators.length; i++) {
+                              if(packet.publicKey == this.validators[i].publicKey)
+                                 senderIsValidator = true;
+                           }
                         }
 
-                        if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, blockToVoteOnCopy) && senderIsValidator) {
+                        if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, JSON.stringify(blockToVoteOnCopy)) && senderIsValidator) {
                            this.signatures[this.bcrypto.hash(packet.publicKey)] = packet.payload.signature;
                         }
                      }
@@ -427,10 +429,8 @@ class networking {
       var votes = this.getVotes();
       this.updateValidators({}, {});
 
-      if(JSON.stringify(votes) != "{}" && votes.length >= validators.length / 2) {
+      if(votes != undefined && Object.keys(votes).length >= ((Object.keys(validators).length / 2) - 1)) {
          var votedBlock = JSON.parse(blockToVoteOn);
-
-         console.log(votes);
 
       }
    }
