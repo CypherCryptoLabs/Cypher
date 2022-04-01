@@ -189,7 +189,7 @@ class networking {
          var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
          socket.on('data', (data) => {
-            console.log("received :"  + data.toString());
+            //console.log("received :"  + data.toString());
             // handle incomming data
             if (this.verrifyPacket(data.toString())) {
                var packet = JSON.parse(data.toString());
@@ -214,8 +214,8 @@ class networking {
                         socket.write(JSON.stringify(this.potentialBlock));
 
                      if(packet.type == "vote") {
-                        var blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
-                        delete blockToVoteOnCopy.validators;
+                        var blockToVoteOnCopy = JSON.parse(this.potentialBlock);
+                        //delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
                         if(this.validators != undefined && this.validators.hasOwnProperty('length')) {
@@ -290,7 +290,7 @@ class networking {
 
          return packetIsValid;
       } catch (error) {
-         console.log(error);
+         //console.log(error);
          return false;
       }
    }
@@ -389,6 +389,7 @@ class networking {
             delete blockToVoteOn.validators;
 
             var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
+            console.log(JSON.stringify(blockToVoteOnCopy));
             var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
             var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
             delete packetVoteCopy.queryID;
@@ -399,9 +400,9 @@ class networking {
                if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {
                   let z = i;
                   let clientVote = new net.Socket();
-                  console.log(validators[z]);
+                  //console.log(validators[z]);
                   clientVote.connect(validators[z].port, validators[z].ipAddress, () => {
-                     console.log("send vote package (" + validators[z].ipAddress + ":" + validators[z].port + "): " + JSON.stringify(packetVote));
+                     //console.log("send vote package (" + validators[z].ipAddress + ":" + validators[z].port + "): " + JSON.stringify(packetVote));
             
                      clientVote.write(JSON.stringify(packetVote))
                   });
@@ -416,7 +417,7 @@ class networking {
 
          }
       } catch (error) {
-         console.log(error);
+         //console.log(error);
       }
 
       var timeToWait = currentVotingSlot + 15000 - Date.now();
@@ -427,6 +428,7 @@ class networking {
       await sleepPromise;
       
       var votes = this.getVotes();
+      console.log(votes);
       this.updateValidators({}, {});
 
       if(votes != undefined && Object.keys(votes).length >= ((Object.keys(validators).length / 2) - 1)) {
