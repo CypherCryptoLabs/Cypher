@@ -214,7 +214,12 @@ class networking {
                         socket.write(JSON.stringify(this.potentialBlock));
 
                      if(packet.type == "vote") {
-                        var blockToVoteOnCopy = JSON.parse(this.potentialBlock);
+                        var blockToVoteOnCopy;
+                        if(typeof this.potentialBlock == "string") {
+                           blockToVoteOnCopy = JSON.parse(this.potentialBlock);
+                        } else if(typeof this.potentialBlock == "object") {
+                           blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
+                        }
                         //delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
@@ -230,6 +235,10 @@ class networking {
                         }
                      }
                                
+                     break;
+
+                  case 4:
+                     console.log(packet);
                      break;
                }
             }
@@ -278,6 +287,12 @@ class networking {
 
                break;
             case 3:
+               // TODO: checks for packet with QueryID 3 and 4
+               break;
+            case 4:
+               break;
+            default:
+               packetIsValid = false;
                break;
 
          }
@@ -389,7 +404,6 @@ class networking {
             delete blockToVoteOn.validators;
 
             var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
-            console.log(JSON.stringify(blockToVoteOnCopy));
             var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
             var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
             delete packetVoteCopy.queryID;
@@ -415,25 +429,37 @@ class networking {
                }
             }
 
+            var timeToWait = currentVotingSlot + 15000 - Date.now();
+
+            var sleepPromise = new Promise((resolve) => {
+               setTimeout(resolve, timeToWait);
+            });
+            await sleepPromise;
+            
+            var votes = this.getVotes();
+            this.updateValidators({}, {});
+
+            if(votes != undefined && Object.keys(votes).length >= ((Object.keys(validators).length / 2) - 1)) {
+               var votedBlock = JSON.parse(blockToVoteOn);
+
+               for(var i = 0; i < Object.keys(votes).length; i++) {
+                  votedBlock.validators[Object.keys(votes)[i]] = votes[Object.keys(votes)[i]];
+               }
+               
+               votedBlock.validators[this.bcrypto.hash(this.bcrypto.getPubKey(true))] = blockVoteSignature;
+               var broadcastPacket = {queryID:4, unixTimestamp: Date.now(), payload: {block:votedBlock},publicKey:this.bcrypto.getPubKey().toPem()};
+               var broadcastPacketCopy = JSON.parse(JSON.stringify(broadcastPacket));
+               delete broadcastPacketCopy.queryID;
+      
+               broadcastPacket.signature = this.bcrypto.sign(JSON.stringify(broadcastPacketCopy));
+
+               this.broadcastToRandomNodes(broadcastPacket);
+
+            }
+
          }
       } catch (error) {
          //console.log(error);
-      }
-
-      var timeToWait = currentVotingSlot + 15000 - Date.now();
-
-         var sleepPromise = new Promise((resolve) => {
-            setTimeout(resolve, timeToWait);
-         });
-      await sleepPromise;
-      
-      var votes = this.getVotes();
-      console.log(votes);
-      this.updateValidators({}, {});
-
-      if(votes != undefined && Object.keys(votes).length >= ((Object.keys(validators).length / 2) - 1)) {
-         var votedBlock = JSON.parse(blockToVoteOn);
-
       }
    }
 
