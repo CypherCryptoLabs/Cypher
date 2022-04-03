@@ -221,7 +221,7 @@ class networking {
                         } else if(typeof this.potentialBlock == "object") {
                            blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
                         }
-                        //delete blockToVoteOnCopy.validators;
+                        delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
                         if(this.validators != undefined && this.validators.hasOwnProperty('length')) {
@@ -243,6 +243,9 @@ class networking {
                      if(JSON.parse(this.blockchain.getNewestBlock()).id == packet.payload.block.id - 1) {
                         socket.write(JSON.stringify({ status: true }));
                         this.broadcastToRandomNodes(packet);
+
+                        this.blockchain.appendBlockToBlockchain(packet.payload.block);
+                        this.transactionQueue.clean(packet.payload.block.payload);
                      } else {
                         socket.write(JSON.stringify({ status: false }));
                      }
@@ -318,12 +321,20 @@ class networking {
                delete blockCopy.validators;
                blockCopy = JSON.stringify(blockCopy);
 
-               for(var i = 0; i < Object.keys(packet.payload.block.validators).length; i++) {
+               var blockValidators = Object.keys(packet.payload.block.validators);
+               var invalidSignatures = 0;
+
+               for(var i = 0; i < blockValidators.length; i++) {
                   for(var j = 0; j < this.validators.length; j++) {
-                     if(Object.keys(packet.payload.block.validators)[i] == this.validators[j].blockchainAddress) {
-                        console.log(this.bcrypto.verrifySignature(packet.payload.block.validators[Object.keys(packet.payload.block.validators)[i]], this.validators[j].publicKey, blockCopy));
+                     if(blockValidators[i] == this.validators[j].blockchainAddress) {
+                        if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.validators[j].publicKey, blockCopy))
+                           invalidSignatures++;
                      }
                   }
+               }
+
+               if(invalidSignatures > blockValidators.length / 2) {
+                  packetIsValid = false;
                }
 
                break;
@@ -440,7 +451,7 @@ class networking {
             // send signature to Forger
             this.updatePotentialBlock(blockToVoteOn);
             var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
-            delete blockToVoteOn.validators;
+            delete blockToVoteOnCopy.validators;
 
             var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
             var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};

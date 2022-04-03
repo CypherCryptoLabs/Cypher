@@ -34,7 +34,7 @@ class blockchain {
       }
 
       var blockCopy = JSON.parse(JSON.stringify(block));
-      delete block["forgerSignature"];
+      delete blockCopy["forgerSignature"];
 
       block.forgerSignature = this.bcrypto.sign(JSON.stringify(blockCopy));
 
@@ -115,7 +115,6 @@ class blockchain {
    }
 
    validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {
-      console.log(block);
       var blockCopy = JSON.parse(block);
       delete blockCopy.forgerSignature;
       blockCopy = JSON.stringify(blockCopy);
@@ -173,6 +172,7 @@ class blockchain {
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
          blockIsValid = true;
 
+      console.log(blockIsValid)
       return blockIsValid;
 
    }
