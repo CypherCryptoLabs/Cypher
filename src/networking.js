@@ -239,6 +239,8 @@ class networking {
 
                   case 4:
                      console.log(packet);
+                     socket.write(JSON.stringify({ status: true }));
+                     this.broadcastToRandomNodes(packet)
                      break;
                }
             }
@@ -287,6 +289,20 @@ class networking {
 
                break;
             case 3:
+               /*if ((JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'publicKey', 'signature']) || packet.type != "request") && (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['signature'] || packet.type != "vote"))) {
+                  packetIsValid = false;
+               }*/
+
+               if(!packet.hasOwnProperty("type") && packet.type != "request" && packet.type != "vote")
+                  packetIsValid = false;
+
+               if(packet.type == "request" && JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'publicKey', 'signature'])) {
+                  packetIsValid = false;
+               }
+
+               if(packet.type == "vote" && (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['signature']))) {
+                  packetIsValid = false;
+               }
                // TODO: checks for packet with QueryID 3 and 4
                break;
             case 4:
