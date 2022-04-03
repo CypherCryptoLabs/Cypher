@@ -107,6 +107,10 @@ class transactionQueue {
       }
    }
 
+   getQueue() {
+      return JSON.parse(JSON.stringify(this.queue));
+   }
+
 }
 
 module.exports = transactionQueue;

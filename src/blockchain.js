@@ -115,6 +115,7 @@ class blockchain {
    }
 
    validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {
+      console.log(block);
       var blockCopy = JSON.parse(block);
       delete blockCopy.forgerSignature;
       blockCopy = JSON.stringify(blockCopy);
@@ -132,7 +133,7 @@ class blockchain {
       let previousBlockHash = this.bcrypto.hash(previousBlock);
 
       if(block.previousBlockHash != previousBlockHash)
-         blockIsValid = flase;
+         blockIsValid = false;
       
       if(block.id != JSON.parse(previousBlock).id + 1)
          blockIsValid = false;

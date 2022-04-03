@@ -18,8 +18,9 @@ class networking {
       this.transactionQueue = transactionQueue;
       this.registerToNetwork();
       this.potentialBlock;
+      this.forger;
       this.validators;
-      this.signatures;
+      this.signatures = {};
       this.blockchain = new blockchain(bcrypto);
    }
 
@@ -238,9 +239,14 @@ class networking {
                      break;
 
                   case 4:
-                     console.log(packet);
-                     socket.write(JSON.stringify({ status: true }));
-                     this.broadcastToRandomNodes(packet)
+
+                     if(JSON.parse(this.blockchain.getNewestBlock()).id == packet.payload.block.id - 1) {
+                        socket.write(JSON.stringify({ status: true }));
+                        this.broadcastToRandomNodes(packet);
+                     } else {
+                        socket.write(JSON.stringify({ status: false }));
+                     }
+
                      break;
                }
             }
@@ -289,10 +295,6 @@ class networking {
 
                break;
             case 3:
-               /*if ((JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'publicKey', 'signature']) || packet.type != "request") && (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['signature'] || packet.type != "vote"))) {
-                  packetIsValid = false;
-               }*/
-
                if(!packet.hasOwnProperty("type") && packet.type != "request" && packet.type != "vote")
                   packetIsValid = false;
 
@@ -303,9 +305,27 @@ class networking {
                if(packet.type == "vote" && (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['signature']))) {
                   packetIsValid = false;
                }
-               // TODO: checks for packet with QueryID 3 and 4
                break;
             case 4:
+               if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'payload', 'publicKey', 'signature']))
+                  packetIsValid = false;
+
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue())) {
+                  packetIsValid = false;
+               }
+
+               var blockCopy = JSON.parse(JSON.stringify(packet.payload.block));
+               delete blockCopy.validators;
+               blockCopy = JSON.stringify(blockCopy);
+
+               for(var i = 0; i < Object.keys(packet.payload.block.validators).length; i++) {
+                  for(var j = 0; j < this.validators.length; j++) {
+                     if(Object.keys(packet.payload.block.validators)[i] == this.validators[j].blockchainAddress) {
+                        console.log(this.bcrypto.verrifySignature(packet.payload.block.validators[Object.keys(packet.payload.block.validators)[i]], this.validators[j].publicKey, blockCopy));
+                     }
+                  }
+               }
+
                break;
             default:
                packetIsValid = false;
@@ -321,7 +341,7 @@ class networking {
 
          return packetIsValid;
       } catch (error) {
-         //console.log(error);
+         console.log(error);
          return false;
       }
    }
@@ -376,6 +396,9 @@ class networking {
             }
          }
       }
+
+      this.validators = validators.validators;
+      this.forger = validators.forger;
       
       return validators;
 
@@ -415,7 +438,7 @@ class networking {
          await retrieveBlockPromise;
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
-            this.updateValidators(validators, blockToVoteOn);
+            this.updatePotentialBlock(blockToVoteOn);
             var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
             delete blockToVoteOn.validators;
 
@@ -452,8 +475,8 @@ class networking {
             });
             await sleepPromise;
             
-            var votes = this.getVotes();
-            this.updateValidators({}, {});
+            var votes = this.signatures;
+            this.signatures = {};
 
             if(votes != undefined && Object.keys(votes).length >= ((Object.keys(validators).length / 2) - 1)) {
                var votedBlock = JSON.parse(blockToVoteOn);
@@ -475,7 +498,7 @@ class networking {
 
          }
       } catch (error) {
-         //console.log(error);
+         console.log(error);
       }
    }
 
@@ -491,10 +514,11 @@ class networking {
       this.potentialBlock = {};
    }
 
-   async updateValidators(validators, potentialBlock) {
-      this.updatePotentialBlock(potentialBlock);
+   async updateValidators(validators, potentialBlock, forger) {
+      /*this.updatePotentialBlock(potentialBlock);
+      this.forger = forger;
       this.validators = validators;
-      this.signatures = {};
+      this.signatures = {};*/
       //console.log(this.potentialBlock);
    }
 
