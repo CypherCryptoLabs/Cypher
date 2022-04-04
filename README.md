@@ -37,7 +37,7 @@ node src/main.js
 - [ ] Proper way of creating a fingerprint of the public key
 - [ ] Sync Blockchain with Network on startup
 - [ ] verify Blockchain that is received on Network Registration
-- [ ] P.o.S. Consensus Algorithm
+- [x] P.o.S. Consensus Algorithm
 - [ ] P.o.S. Penalties and Health System
 - [ ] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
 
