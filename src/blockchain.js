@@ -5,6 +5,7 @@ class blockchain {
 
    constructor(bcrypto) {
       this.bcrypto = bcrypto;
+      this.blockQueue = {id:-1};
    }
 
    generateBlock(sortedQueue, validators) {
@@ -49,13 +50,13 @@ class blockchain {
       return block;
    }
 
-   appendBlockToBlockchain(block) {
+   appendBlockToBlockchain() {
       var blockchainFilePath = "blockchain.json";
       var blockchainFileSize = fs.statSync(blockchainFilePath).size;
 
       fs.truncate(blockchainFilePath, blockchainFileSize - 2, function () { })
       fs.promises.truncate(blockchainFilePath, blockchainFileSize - 2, function () { }).then(() => {
-         fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(block) + "]}");
+         fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(this.blockQueue) + "]}");
       })
    }
 
@@ -127,15 +128,6 @@ class blockchain {
 
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
          blockIsValid =false;
-
-      let previousBlock = this.getNewestBlock();
-      let previousBlockHash = this.bcrypto.hash(previousBlock);
-
-      if(block.previousBlockHash != previousBlockHash)
-         blockIsValid = false;
-      
-      if(block.id != JSON.parse(previousBlock).id + 1)
-         blockIsValid = false;
       
       if(block.rewardAddress != forger.blockchainAddress) 
          blockIsValid = false;
@@ -172,9 +164,27 @@ class blockchain {
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
          blockIsValid = true;
 
+      let previousBlock = this.getNewestBlock();
+      let previousBlockHash = this.bcrypto.hash(previousBlock);
+
+      if(block.previousBlockHash != previousBlockHash)
+            blockIsValid = false;
+
+      if(block.id != JSON.parse(previousBlock).id + 1)
+         blockIsValid = false;
+
       console.log(blockIsValid)
       return blockIsValid;
 
+   }
+
+   addBlockToQueue(block) {   
+      if(this.blockQueue.id != block.id) {
+         this.blockQueue = block;
+         return true;
+      } else {
+         return false
+      }
    }
 
 }

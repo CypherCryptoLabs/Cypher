@@ -244,8 +244,10 @@ class networking {
                         socket.write(JSON.stringify({ status: true }));
                         this.broadcastToRandomNodes(packet);
 
-                        this.blockchain.appendBlockToBlockchain(packet.payload.block);
-                        this.transactionQueue.clean(packet.payload.block.payload);
+                        if(this.blockchain.addBlockToQueue(packet.payload.block)) {
+                           this.blockchain.appendBlockToBlockchain();
+                           this.transactionQueue.clean(packet.payload.block.payload);
+                        }
                      } else {
                         socket.write(JSON.stringify({ status: false }));
                      }
