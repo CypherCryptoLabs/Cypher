@@ -1,6 +1,7 @@
 const fs = require("fs");
 const crypto = require('crypto');
 const { formatWithOptions } = require("util");
+const { exit } = require("process");
 
 class blockchain {
 
@@ -48,7 +49,33 @@ class blockchain {
          console.log(this.addressCache);
       } catch (err) {
          console.log(err);
+         process.exit();
       }
+   }
+
+   updateAddressCache(block) {
+      if(this.addressCache.hasOwnProperty(block.rewardAddress)) {
+         this.addressCache[block.rewardAddress].balance += block.rewardAmount;
+         this.addressCache[block.rewardAddress].balanceChanges.push[block.id];
+      } else {
+         this.addressCache[block.rewardAddress] = {balance: block.rewardAmount, balanceChanges: [block.id]};
+      }
+
+      let payload = block.payload;
+      for(var j = 0; j < payload.length; j++) {
+         this.addressCache[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+
+         if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
+            this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
+            if(this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf[block.id] == -1) {
+               this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.push[block.id];
+            }
+         } else {
+            this.addressCache[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [block.id]};
+         }
+      }
+
+      fs.writeFileSync("cache.json", JSON.stringify(cacheObj));
    }
 
    generateBlock(sortedQueue, validators) {
@@ -96,6 +123,8 @@ class blockchain {
    appendBlockToBlockchain() {
       var blockchainFilePath = "blockchain.json";
       var blockchainFileSize = fs.statSync(blockchainFilePath).size;
+
+      this.updateAddressCache(this.blockQueue);
 
       fs.truncate(blockchainFilePath, blockchainFileSize - 2, function () { })
       fs.promises.truncate(blockchainFilePath, blockchainFileSize - 2, function () { }).then(() => {
