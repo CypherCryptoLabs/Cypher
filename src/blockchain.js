@@ -1,11 +1,54 @@
 const fs = require("fs");
 const crypto = require('crypto');
+const { formatWithOptions } = require("util");
 
 class blockchain {
 
    constructor(bcrypto) {
       this.bcrypto = bcrypto;
       this.blockQueue = {id:-1};
+      this.addressCache = {};
+      this.loadAddressCache();
+   }
+
+   loadAddressCache() {
+      try {
+         if (!fs.existsSync("cache.json")) {
+            console.log("generating Cache file...");
+            var blockchainCopy = JSON.parse(fs.readFileSync("blockchain.json").toString()).blockchain;
+            var cacheObj = {};
+
+            for(var i = 0; i < blockchainCopy.length; i++) {
+               if(cacheObj.hasOwnProperty(blockchainCopy[i].rewardAddress)) {
+                  cacheObj[blockchainCopy[i].rewardAddress].balance += blockchainCopy[i].rewardAmount;
+                  cacheObj[blockchainCopy[i].rewardAddress].balanceChanges.push(i);
+               } else {
+                  cacheObj[blockchainCopy[i].rewardAddress] = {balance: blockchainCopy[i].rewardAmount, balanceChanges: [i]};
+               }
+
+               let payload = blockchainCopy[i].payload;
+               for(var j = 0; j < payload.length; j++) {
+                  cacheObj[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+
+                  if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
+                     cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
+                     if(cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf(i) == -1) {
+                        cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.push(i);
+                     }
+                  } else {
+                     cacheObj[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [i]};
+                  }
+               }
+            }
+
+            fs.writeFileSync("cache.json", JSON.stringify(cacheObj));
+         }
+
+         this.addressCache = JSON.parse(fs.readFileSync("cache.json").toString());
+         console.log(this.addressCache);
+      } catch (err) {
+         console.log(err);
+      }
    }
 
    generateBlock(sortedQueue, validators) {
