@@ -3,13 +3,12 @@ const server = net.createServer();
 const crypto = require('crypto');
 const BigNumber = require('bignumber.js');
 const { resolve } = require('path');
-const blockchain = require('./blockchain');
 
 class networking {
 
    server = net.createServer();
 
-   constructor(host, port, bcrypto, transactionQueue, stableNode) {
+   constructor(host, port, bcrypto, transactionQueue, stableNode, blockchain) {
       this.host = host;
       this.port = port;
       this.nodeList = new Array();
@@ -21,7 +20,7 @@ class networking {
       this.forger;
       this.validators;
       this.signatures = {};
-      this.blockchain = new blockchain(bcrypto);
+      this.blockchain = blockchain;
    }
 
    async broadcastToRandomNodes(packet, numOfRandomPeers = -1) {
