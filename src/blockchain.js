@@ -164,27 +164,31 @@ class blockchain {
    }
 
    getBalanceForAddress(blockchainAddress) {
-      var balance = 0;
-      var blockchain = JSON.parse(fs.readFileSync('blockchain.json', 'utf8'));
+      if(!this.addressCache.hasOwnProperty(blockchainAddress)) {
+         var balance = 0;
+         var blockchain = JSON.parse(fs.readFileSync('blockchain.json', 'utf8'));
 
-      for (var i = 0; i < blockchain.blockchain.length; i++) {
+         for (var i = 0; i < blockchain.blockchain.length; i++) {
 
-         if (blockchain.blockchain[i].rewardAddress == blockchainAddress) {
-            balance += blockchain.blockchain[i].rewardAmount;
-         }
-
-         for (var j = 0; j < blockchain.blockchain[i].payload.length; j++) {
-            if (blockchain.blockchain[i].payload[j].blockchainSenderAddress == blockchainAddress) {
-               balance -= blockchain.blockchain[i].payload[j].payload.unitsToTransfer + blockchain.blockchain[i].payload[j].payload.networkFee;
+            if (blockchain.blockchain[i].rewardAddress == blockchainAddress) {
+               balance += blockchain.blockchain[i].rewardAmount;
             }
 
-            if (blockchain.blockchain[i].payload[j].payload.blockchainReceiverAddress == blockchainAddress) {
-               balance += blockchain.blockchain[i].payload[j].payload.unitsToTransfer;
-            }
-         }
+            for (var j = 0; j < blockchain.blockchain[i].payload.length; j++) {
+               if (blockchain.blockchain[i].payload[j].blockchainSenderAddress == blockchainAddress) {
+                  balance -= blockchain.blockchain[i].payload[j].payload.unitsToTransfer + blockchain.blockchain[i].payload[j].payload.networkFee;
+               }
 
+               if (blockchain.blockchain[i].payload[j].payload.blockchainReceiverAddress == blockchainAddress) {
+                  balance += blockchain.blockchain[i].payload[j].payload.unitsToTransfer;
+               }
+            }
+
+         }
+         return balance;
+      } else {
+         return this.addressCache[blockchainAddress].balance;
       }
-      return balance;
    }
 
    validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {
