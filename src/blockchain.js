@@ -1,11 +1,81 @@
 const fs = require("fs");
 const crypto = require('crypto');
+const { formatWithOptions } = require("util");
+const { exit } = require("process");
 
 class blockchain {
 
    constructor(bcrypto) {
       this.bcrypto = bcrypto;
       this.blockQueue = {id:-1};
+      this.addressCache = {};
+      this.loadAddressCache();
+   }
+
+   loadAddressCache() {
+      try {
+         if (!fs.existsSync("cache.json")) {
+            console.log("generating Cache file...");
+            var blockchainCopy = JSON.parse(fs.readFileSync("blockchain.json").toString()).blockchain;
+            var cacheObj = {};
+
+            for(var i = 0; i < blockchainCopy.length; i++) {
+               if(cacheObj.hasOwnProperty(blockchainCopy[i].rewardAddress)) {
+                  cacheObj[blockchainCopy[i].rewardAddress].balance += blockchainCopy[i].rewardAmount;
+                  cacheObj[blockchainCopy[i].rewardAddress].balanceChanges.push(i);
+               } else {
+                  cacheObj[blockchainCopy[i].rewardAddress] = {balance: blockchainCopy[i].rewardAmount, balanceChanges: [i]};
+               }
+
+               let payload = blockchainCopy[i].payload;
+               for(var j = 0; j < payload.length; j++) {
+                  cacheObj[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+
+                  if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
+                     cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
+                     if(cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf(i) == -1) {
+                        cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.push(i);
+                     }
+                  } else {
+                     cacheObj[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [i]};
+                  }
+               }
+            }
+
+            fs.writeFileSync("cache.json", JSON.stringify(cacheObj));
+         }
+
+         this.addressCache = JSON.parse(fs.readFileSync("cache.json").toString());
+         console.log(this.addressCache);
+      } catch (err) {
+         console.log(err);
+         process.exit();
+      }
+   }
+
+   updateAddressCache(block) {
+      if(this.addressCache.hasOwnProperty(block.rewardAddress)) {
+         this.addressCache[block.rewardAddress].balance += block.rewardAmount;
+         this.addressCache[block.rewardAddress].balanceChanges.push[block.id];
+      } else {
+         this.addressCache[block.rewardAddress] = {balance: block.rewardAmount, balanceChanges: [block.id]};
+      }
+
+      let payload = block.payload;
+      for(var j = 0; j < payload.length; j++) {
+         this.addressCache[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+
+         if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
+            this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
+            if(this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf[block.id] == -1) {
+               this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.push[block.id];
+            }
+         } else {
+            this.addressCache[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [block.id]};
+         }
+      }
+
+      fs.writeFileSync("cache.json", JSON.stringify(cacheObj));
    }
 
    generateBlock(sortedQueue, validators) {
@@ -54,6 +124,8 @@ class blockchain {
       var blockchainFilePath = "blockchain.json";
       var blockchainFileSize = fs.statSync(blockchainFilePath).size;
 
+      this.updateAddressCache(this.blockQueue);
+
       fs.truncate(blockchainFilePath, blockchainFileSize - 2, function () { })
       fs.promises.truncate(blockchainFilePath, blockchainFileSize - 2, function () { }).then(() => {
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(this.blockQueue) + "]}");
@@ -92,27 +164,31 @@ class blockchain {
    }
 
    getBalanceForAddress(blockchainAddress) {
-      var balance = 0;
-      var blockchain = JSON.parse(fs.readFileSync('blockchain.json', 'utf8'));
+      if(!this.addressCache.hasOwnProperty(blockchainAddress)) {
+         var balance = 0;
+         var blockchain = JSON.parse(fs.readFileSync('blockchain.json', 'utf8'));
 
-      for (var i = 0; i < blockchain.blockchain.length; i++) {
+         for (var i = 0; i < blockchain.blockchain.length; i++) {
 
-         if (blockchain.blockchain[i].rewardAddress == blockchainAddress) {
-            balance += blockchain.blockchain[i].rewardAmount;
-         }
-
-         for (var j = 0; j < blockchain.blockchain[i].payload.length; j++) {
-            if (blockchain.blockchain[i].payload[j].blockchainSenderAddress == blockchainAddress) {
-               balance -= blockchain.blockchain[i].payload[j].payload.unitsToTransfer + blockchain.blockchain[i].payload[j].payload.networkFee;
+            if (blockchain.blockchain[i].rewardAddress == blockchainAddress) {
+               balance += blockchain.blockchain[i].rewardAmount;
             }
 
-            if (blockchain.blockchain[i].payload[j].payload.blockchainReceiverAddress == blockchainAddress) {
-               balance += blockchain.blockchain[i].payload[j].payload.unitsToTransfer;
-            }
-         }
+            for (var j = 0; j < blockchain.blockchain[i].payload.length; j++) {
+               if (blockchain.blockchain[i].payload[j].blockchainSenderAddress == blockchainAddress) {
+                  balance -= blockchain.blockchain[i].payload[j].payload.unitsToTransfer + blockchain.blockchain[i].payload[j].payload.networkFee;
+               }
 
+               if (blockchain.blockchain[i].payload[j].payload.blockchainReceiverAddress == blockchainAddress) {
+                  balance += blockchain.blockchain[i].payload[j].payload.unitsToTransfer;
+               }
+            }
+
+         }
+         return balance;
+      } else {
+         return this.addressCache[blockchainAddress].balance;
       }
-      return balance;
    }
 
    validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {

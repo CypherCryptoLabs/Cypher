@@ -1,11 +1,10 @@
-const blockchain = require(__dirname + "/blockchain.js");
 const net = require('net');
 
 class transactionQueue {
 
-   constructor(bcrypto) {
+   constructor(bcrypto, blockchain) {
       this.queue = [];
-      this.Blockchain = new blockchain(bcrypto);
+      this.Blockchain = blockchain;
       this.bcrypto = bcrypto;
    }
 
