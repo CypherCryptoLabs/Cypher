@@ -78,6 +78,44 @@ class networking {
       }
    }
 
+   async syncBlockchain() {
+      var syncSuccessful = false;
+
+      var packet = {queryID:5, unixTimestamp: Date.now(), publicKey: this.bcrypto.getPubKey().toPem()};
+      var packetCopy = JSON.parse(JSON.stringify(packet));
+      delete packetCopy.queryID;
+      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+
+      while(!syncSuccessful && this.nodeList.length > 1) {
+         let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
+         if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
+            var blockchainSyncSuccessPromise = new Promise((resolve, reject) => {
+               let client = new net.Socket();
+               client.connect(this.nodeList[randomNodeIndex].port, this.nodeList[randomNodeIndex].ipAddress, () => {
+                  client.write(JSON.stringify(packet));
+               });
+
+               client.on('data', (data) => {
+                  console.log(data.toString());
+                  resolve();
+               })
+
+               client.on('error', (error) => {
+                  console.log(error);
+                  reject();
+               })
+            });
+
+            try {
+               await blockchainSyncSuccessPromise;
+               syncSuccessful = true;
+            } catch (error) {
+               console.log(error);
+            }
+         }
+      }
+   }
+
    async registerToNetwork() {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
@@ -153,6 +191,8 @@ class networking {
       } catch (error) {
          //console.log(error);
       }
+
+      this.syncBlockchain();
    }
 
    addNodeToNodeList(packet) {
@@ -252,6 +292,9 @@ class networking {
                      }
 
                      break;
+                  case 5:
+                     socket.write(JSON.stringify({id:JSON.parse(this.blockchain.getNewestBlock()).id}));
+                     break;
                }
             }
             socket.end();
@@ -338,6 +381,9 @@ class networking {
                   packetIsValid = false;
                }
 
+               break;
+            
+            case 5:
                break;
             default:
                packetIsValid = false;
