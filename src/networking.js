@@ -297,6 +297,7 @@ class networking {
                   case 5:
                      if(packet.type == "request") {
                         socket.write(JSON.stringify({id:this.bcrypto.hash(this.blockchain.getNewestBlock())}));
+                        this.blockchain.getNewestNBlocks(100);
                      } else if(packet.type = "sync") {
                         this.blockchain.getNewestNBlocks(0);
                      }

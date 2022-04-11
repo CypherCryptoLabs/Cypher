@@ -143,7 +143,7 @@ class blockchain {
       var index = 0;
       while (stringNotFound) {
          buffer1.copy(buffer2);
-         fs.readSync(blockchainFd, buffer1, 0, buffer1.length, (blockchainFileSize - (buffer1.length * i) < 0) ? 0 : blockchainFileSize - (buffer1.length * i));
+         fs.readSync(blockchainFd, buffer1, 0, buffer1.length, (blockchainFileSize - (buffer1.length) < 0) ? 0 : blockchainFileSize - (buffer1.length));
 
          var bufferConCatString = Buffer.concat([buffer1, buffer2]);
          index = bufferConCatString.toString("utf-8").lastIndexOf("{\"id\":");
@@ -151,11 +151,12 @@ class blockchain {
          if (index != -1) {
             stringNotFound = false;
             //console.log(index);
+         
          }
 
       }
 
-      var lastBlockBuffer = Buffer.alloc(i * 10000 - index - 2 - ((blockchainFileSize < 10000 ? 10000 - blockchainFileSize : 0)));
+      var lastBlockBuffer = Buffer.alloc(10000 - index - 2 - ((blockchainFileSize < 10000 ? 10000 - blockchainFileSize : 0)));
       fs.readSync(blockchainFd, lastBlockBuffer, 0, lastBlockBuffer.length, blockchainFileSize - lastBlockBuffer.length - 2);
       lastBlockBuffer = lastBlockBuffer.toString("utf-8");
 
@@ -170,16 +171,16 @@ class blockchain {
       var blockchainFileSize = fs.statSync("blockchain.json").size;
 
       var index = -1;
+      var i = 0;
       while(index == -1) {
          var buffer = Buffer.alloc(10000);
-         fs.readSync(blockchainFd, buffer, 0, buffer.length, (blockchainFileSize - (buffer.length * i) < 0) ? 0 : blockchainFileSize - (buffer.length * i));
+         fs.readSync(blockchainFd, buffer, 0, buffer.length, buffer.length * i);
+         i++;
 
-         nBlocks = Buffer.concat([buffer, Buffer.from(nBlocks)]).toString("utf-8");
-         index = nBlocks.lastIndexOf("{\"id:" + n + "\"");
+         index = buffer.toString().lastIndexOf('"id":' + n);
       }
 
-      console.log(index);
-      console.log(nBlocks);
+      console.log(index + (i-1) * 10000);
    }
 
    getBalanceForAddress(blockchainAddress) {
