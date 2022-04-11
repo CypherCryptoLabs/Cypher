@@ -163,6 +163,25 @@ class blockchain {
 
    }
 
+   getNewestNBlocks(n) {
+      var nBlocks = "";
+
+      var blockchainFd = fs.openSync("blockchain.json", "r");
+      var blockchainFileSize = fs.statSync("blockchain.json").size;
+
+      var index = -1;
+      while(index == -1) {
+         var buffer = Buffer.alloc(10000);
+         fs.readSync(blockchainFd, buffer, 0, buffer.length, (blockchainFileSize - (buffer.length * i) < 0) ? 0 : blockchainFileSize - (buffer.length * i));
+
+         nBlocks = Buffer.concat([buffer, Buffer.from(nBlocks)]).toString("utf-8");
+         index = nBlocks.lastIndexOf("{\"id:" + n + "\"");
+      }
+
+      console.log(index);
+      console.log(nBlocks);
+   }
+
    getBalanceForAddress(blockchainAddress) {
       if(!this.addressCache.hasOwnProperty(blockchainAddress)) {
          var balance = 0;

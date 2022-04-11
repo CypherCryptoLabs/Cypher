@@ -81,10 +81,12 @@ class networking {
    async syncBlockchain() {
       var syncSuccessful = false;
 
-      var packet = {queryID:5, unixTimestamp: Date.now(), publicKey: this.bcrypto.getPubKey().toPem()};
+      var packet = {queryID:5, unixTimestamp: Date.now(), type:"request", publicKey: this.bcrypto.getPubKey().toPem()};
       var packetCopy = JSON.parse(JSON.stringify(packet));
       delete packetCopy.queryID;
       packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+
+      var newestBlockHash = "";
 
       while(!syncSuccessful && this.nodeList.length > 1) {
          let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
@@ -96,7 +98,7 @@ class networking {
                });
 
                client.on('data', (data) => {
-                  console.log(data.toString());
+                  newestBlockHash = data.toString();
                   resolve();
                })
 
@@ -293,7 +295,11 @@ class networking {
 
                      break;
                   case 5:
-                     socket.write(JSON.stringify({id:JSON.parse(this.blockchain.getNewestBlock()).id}));
+                     if(packet.type == "request") {
+                        socket.write(JSON.stringify({id:this.bcrypto.hash(this.blockchain.getNewestBlock())}));
+                     } else if(packet.type = "sync") {
+                        this.blockchain.getNewestNBlocks(0);
+                     }
                      break;
                }
             }
