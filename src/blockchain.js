@@ -75,7 +75,7 @@ class blockchain {
          }
       }
 
-      fs.writeFileSync("cache.json", JSON.stringify(cacheObj));
+      fs.writeFileSync("cache.json", JSON.stringify(this.addressCache));
    }
 
    generateBlock(sortedQueue, validators) {
@@ -120,16 +120,24 @@ class blockchain {
       return block;
    }
 
-   appendBlockToBlockchain() {
+   appendBlockToBlockchain(block = undefined) {
       var blockchainFilePath = "blockchain.json";
       var blockchainFileSize = fs.statSync(blockchainFilePath).size;
 
-      this.updateAddressCache(this.blockQueue);
+      if(block == undefined){
+         this.updateAddressCache(this.blockQueue);
+      } else {
+         this.loadAddressCache();
+         this.updateAddressCache(block);
+      }
 
-      fs.truncate(blockchainFilePath, blockchainFileSize - 2, function () { })
-      fs.promises.truncate(blockchainFilePath, blockchainFileSize - 2, function () { }).then(() => {
+      fs.truncateSync(blockchainFilePath, blockchainFileSize - 2);
+
+      if(block == undefined)
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(this.blockQueue) + "]}");
-      })
+
+      if(block != undefined)
+         fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(block) + "]}");
    }
 
    getNewestBlock() {
@@ -143,7 +151,7 @@ class blockchain {
       var index = 0;
       while (stringNotFound) {
          buffer1.copy(buffer2);
-         fs.readSync(blockchainFd, buffer1, 0, buffer1.length, (blockchainFileSize - (buffer1.length * i) < 0) ? 0 : blockchainFileSize - (buffer1.length * i));
+         fs.readSync(blockchainFd, buffer1, 0, buffer1.length, (blockchainFileSize - (buffer1.length) < 0) ? 0 : blockchainFileSize - (buffer1.length));
 
          var bufferConCatString = Buffer.concat([buffer1, buffer2]);
          index = bufferConCatString.toString("utf-8").lastIndexOf("{\"id\":");
@@ -151,16 +159,39 @@ class blockchain {
          if (index != -1) {
             stringNotFound = false;
             //console.log(index);
+         
          }
 
       }
 
-      var lastBlockBuffer = Buffer.alloc(i * 10000 - index - 2 - ((blockchainFileSize < 10000 ? 10000 - blockchainFileSize : 0)));
+      var lastBlockBuffer = Buffer.alloc(10000 - index - 2 - ((blockchainFileSize < 10000 ? 10000 - blockchainFileSize : 0)));
       fs.readSync(blockchainFd, lastBlockBuffer, 0, lastBlockBuffer.length, blockchainFileSize - lastBlockBuffer.length - 2);
       lastBlockBuffer = lastBlockBuffer.toString("utf-8");
 
       return lastBlockBuffer;
 
+   }
+
+   getNewestNBlocks(n) {
+      var nBlocks = "";
+
+      var blockchainFd = fs.openSync("blockchain.json", "r");
+      var blockchainFileSize = fs.statSync("blockchain.json").size;
+      var totalBuffer = Buffer.alloc(0);
+
+      var index = -1;
+      var i = 0;
+      while(index == -1) {
+         var buffer = Buffer.alloc(10000);
+         fs.readSync(blockchainFd, buffer, 0, buffer.length, blockchainFileSize - (buffer.length * i));
+         i++;
+
+         index = buffer.toString().lastIndexOf('{"id":' + n + ',');
+         totalBuffer = Buffer.concat([buffer, totalBuffer]);
+      }
+
+      totalBuffer = totalBuffer.toString("utf-8").slice(index).slice(0, -10002);
+      return "{\"blocks\":[" + totalBuffer + "]}";
    }
 
    getBalanceForAddress(blockchainAddress) {

@@ -78,6 +78,97 @@ class networking {
       }
    }
 
+   async syncBlockchain() {
+      var syncSuccessful = false;
+
+      var packet = {queryID:5, unixTimestamp: Date.now(), type: "request", payload:{blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id}, publicKey: this.bcrypto.getPubKey().toPem()};
+      var packetCopy = JSON.parse(JSON.stringify(packet));
+      delete packetCopy.queryID;
+      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+
+      var newBlocks = "";
+
+      while(!syncSuccessful && this.nodeList.length > 1) {
+         let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
+         if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
+            var blockchainSyncSuccessPromise = new Promise((resolve, reject) => {
+               let client = new net.Socket();
+               client.connect(this.nodeList[randomNodeIndex].port, this.nodeList[randomNodeIndex].ipAddress, () => {
+                  client.write(JSON.stringify(packet));
+               });
+
+               client.on('data', (data) => {
+                  newBlocks = data.toString();
+                  resolve();
+               })
+
+               client.on('error', (error) => {
+                  console.log(error);
+                  reject();
+               })
+            });
+
+            try {
+               await blockchainSyncSuccessPromise;
+               //console.log(newBlocks);
+               
+               var blockchainUpdate = JSON.parse(newBlocks).blocks;
+               var newestBlock = JSON.stringify(blockchainUpdate[blockchainUpdate.length - 1]);
+               console.log(newestBlock);
+
+               var validatePacket = {queryID:5, unixTimestamp: Date.now(), type: "verification", payload:{hash:this.bcrypto.hash(newestBlock)}, publicKey: this.bcrypto.getPubKey().toPem()};
+               var validatePacketCopy = JSON.parse(JSON.stringify(validatePacket));
+               delete validatePacketCopy.queryID;
+               validatePacket.signature = this.bcrypto.sign(JSON.stringify(validatePacketCopy));
+
+               let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
+               var blockchainValidateSuccessPromise = new Promise((resolve, reject) => {
+                  let validateClient = new net.Socket();
+                  validateClient.connect(this.nodeList[validationRandomNode].port, this.nodeList[validationRandomNode].ipAddress, () => {
+                     validateClient.write(JSON.stringify(validatePacket));
+                  });
+   
+                  validateClient.on('data', (data) => {
+                     if(JSON.parse(data.toString()).status) {
+                        resolve();
+                     } else {
+                        reject();
+                     }
+                  })
+   
+                  validateClient.on('error', (error) => {
+                     console.log(error);
+                     reject();
+                  })
+               });
+
+               await blockchainValidateSuccessPromise;
+
+               var syncIsInvalid = false;
+               if(this.bcrypto.hash(this.blockchain.getNewestBlock()) != blockchainUpdate[1].previousBlockHash)
+                  syncIsInvalid = true;
+               
+               for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
+                  if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
+                     syncIsInvalid = true;
+               }
+
+               if(syncIsInvalid)
+                  throw "one or more blocks are invalid!";
+
+               for(var i = 1; i < blockchainUpdate.length; i++) {
+                  this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
+               }
+
+               syncSuccessful = true;
+
+            } catch (error) {
+               console.log(error);
+            }
+         }
+      }
+   }
+
    async registerToNetwork() {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
@@ -153,6 +244,8 @@ class networking {
       } catch (error) {
          //console.log(error);
       }
+
+      this.syncBlockchain();
    }
 
    addNodeToNodeList(packet) {
@@ -252,6 +345,15 @@ class networking {
                      }
 
                      break;
+                  case 5:
+                        if(packet.type == "request")
+                           socket.write(this.blockchain.getNewestNBlocks(packet.payload.blockHeight));
+                        
+                        if(packet.type == "verification") {
+                           socket.write("{\"status\":" + (this.bcrypto.hash(JSON.stringify(JSON.parse(this.blockchain.getNewestBlock()))) == packet.payload.hash) + "}");
+                        }
+
+                     break;
                }
             }
             socket.end();
@@ -338,6 +440,9 @@ class networking {
                   packetIsValid = false;
                }
 
+               break;
+            
+            case 5:
                break;
             default:
                packetIsValid = false;

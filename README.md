@@ -35,8 +35,8 @@ node src/main.js
 ### TODO:
 - [ ] All TCP traffic signed
 - [ ] Proper way of creating a fingerprint of the public key
-- [ ] Sync Blockchain with Network on startup
-- [ ] verify Blockchain that is received on Network Registration
+- [x] Sync Blockchain with Network on startup
+- [x] verify Blockchain that is received on Network Registration
 - [x] P.o.S. Consensus Algorithm
 - [ ] P.o.S. Penalties and Health System
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
