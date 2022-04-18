@@ -75,7 +75,7 @@ class blockchain {
          }
       }
 
-      fs.writeFileSync("cache.json", JSON.stringify(cacheObj));
+      fs.writeFileSync("cache.json", JSON.stringify(this.addressCache));
    }
 
    generateBlock(sortedQueue, validators) {
@@ -120,16 +120,24 @@ class blockchain {
       return block;
    }
 
-   appendBlockToBlockchain() {
+   appendBlockToBlockchain(block = undefined) {
       var blockchainFilePath = "blockchain.json";
       var blockchainFileSize = fs.statSync(blockchainFilePath).size;
 
-      this.updateAddressCache(this.blockQueue);
+      if(block == undefined){
+         this.updateAddressCache(this.blockQueue);
+      } else {
+         this.loadAddressCache();
+         this.updateAddressCache(block);
+      }
 
-      fs.truncate(blockchainFilePath, blockchainFileSize - 2, function () { })
-      fs.promises.truncate(blockchainFilePath, blockchainFileSize - 2, function () { }).then(() => {
+      fs.truncateSync(blockchainFilePath, blockchainFileSize - 2);
+
+      if(block == undefined)
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(this.blockQueue) + "]}");
-      })
+
+      if(block != undefined)
+         fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(block) + "]}");
    }
 
    getNewestBlock() {

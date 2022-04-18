@@ -143,6 +143,23 @@ class networking {
                });
 
                await blockchainValidateSuccessPromise;
+
+               var syncIsInvalid = false;
+               if(this.bcrypto.hash(this.blockchain.getNewestBlock()) != blockchainUpdate[1].previousBlockHash)
+                  syncIsInvalid = true;
+               
+               for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
+                  if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
+                     syncIsInvalid = true;
+               }
+
+               if(syncIsInvalid)
+                  throw "one or more blocks are invalid!";
+
+               for(var i = 1; i < blockchainUpdate.length; i++) {
+                  this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
+               }
+
                syncSuccessful = true;
 
             } catch (error) {
