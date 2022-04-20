@@ -181,17 +181,19 @@ class blockchain {
 
       var index = -1;
       var i = 0;
+      var dataReadForIteration = 0;
+
       while(index == -1) {
          var buffer = Buffer.alloc(10000);
-         fs.readSync(blockchainFd, buffer, 0, buffer.length, blockchainFileSize - (buffer.length * i));
+         dataReadForIteration = fs.readSync(blockchainFd, buffer, 0, buffer.length, blockchainFileSize - (buffer.length * i));
          i++;
 
          index = buffer.toString().lastIndexOf('{"id":' + n + ',');
          totalBuffer = Buffer.concat([buffer, totalBuffer]);
       }
 
-      totalBuffer = totalBuffer.toString("utf-8").slice(index).slice(0, -10002);
-      return "{\"blocks\":[" + totalBuffer + "]}";
+      totalBuffer = totalBuffer.subarray(index, dataReadForIteration + ((i - 2) * 10000)).toString("utf-8");
+      return "{\"blocks\":[" + totalBuffer;
    }
 
    getBalanceForAddress(blockchainAddress) {
