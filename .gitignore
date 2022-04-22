@@ -3,4 +3,5 @@
 blockchain.json
 cache.json
 config.json
-*node_modules
+src/node_modules
+test/node_modules
