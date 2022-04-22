@@ -1,3 +1,6 @@
 .vscode
 *.pem
-*.json
+blockchain.json
+cache.json
+config.json
+*node_modules
