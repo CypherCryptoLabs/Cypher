@@ -43,6 +43,7 @@ node src/main.js
 - [ ] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
 - [ ] automatically remove ofline Nodes from Nodelist
 - [ ] check reachability of Node on registration
+- [ ] Timeouts for all TCP traffic
 
 ### License: 
 MIT License
