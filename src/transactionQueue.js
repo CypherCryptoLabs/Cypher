@@ -34,37 +34,6 @@ class transactionQueue {
 
    async worker(networkingInstance) {
       var _this = this;
-      /*setInterval(function () { // need to find alterbative to setInterval
-         
-            var packet = {potentialBlock: potentialNewBlock, unixTimestamp: Date.now(), publicKey: _this.bcrypto.getPubKey().toPem() }
-            packet.signature = _this.bcrypto.sign(JSON.stringify(packet));
-            packet.queryID = 3;
-
-            for (var i = 0; i < networkingInstance.nodeList.length; i++) {
-               let client = new net.Socket();
-
-               client.connect(networkingInstance.nodeList[i].port, networkingInstance.nodeList[i].ipAddress, () => {
-
-                  client.write(JSON.stringify(packet));
-                  client.end();
-                  client.destroy();
-
-               });
-
-               client.on('close', () => {
-                  console.log('Client closed');
-               });
-      
-               client.on('error', (err) => {
-                  console.error(err);
-                  reject();
-               });
-
-            }
-
-            //_this.Blockchain.appendBlockToBlockchain(potentialNewBlock);
-         }
-      }, 10000);*/
 
       while(true) {
          var now = Date.now();
