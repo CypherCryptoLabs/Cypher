@@ -9,27 +9,37 @@ class transactionQueue {
    }
 
    addTransaction(transaction) {
-      var senderHasPendingTransaction = false;
 
       if (this.Blockchain.getBalanceForAddress(transaction.blockchainSenderAddress) >= transaction.payload.unitsToTransfer + transaction.payload.networkFee) {
          if (this.queue && this.queue.length) {
-            for (var i = 0; i < this.queue.length && !senderHasPendingTransaction; i++) {
-               if (this.queue[i].blockchainSenderAddress == transaction.blockchainSenderAddress)
-                  senderHasPendingTransaction = true;
+
+            for(var i = 0; i < this.queue.length; i++) {
+               if(this.queue[i].signature == transaction.signature)
+               return false;
             }
-            if (!senderHasPendingTransaction) {
-               this.queue[this.queue.length] = transaction;
+
+            var unitsToTransferAlreadyInQueue = 0;
+
+            for (var i = 0; i < this.queue.length; i++) {
+               if (this.queue[i].blockchainSenderAddress == transaction.blockchainSenderAddress)
+                  unitsToTransferAlreadyInQueue += parseFloat(this.queue[i].payload.unitsToTransfer) + parseFloat(this.queue[i].payload.networkFee);
+            }
+
+            if (unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee < this.Blockchain.getBalanceForAddress(transaction.blockchainSenderAddress)) {
+               this.queue.push(transaction);
+               console.log(unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee)
+               return true
             } else {
                return false;
             }
+
          } else {
             this.queue[0] = transaction;
+            return true;
          }
       } else {
-         senderHasPendingTransaction = true;
+         return false;
       }
-
-      return !senderHasPendingTransaction;
    }
 
    async worker(networkingInstance) {
