@@ -25,7 +25,17 @@ cd ..
 rm blockchain.json private.pem
 ```
 
-If you wish, you can change the settings for the Node, by editing the ```config.json``` file.
+If you wish, you can change the settings for the Node, by editing the ```config.json``` file. This is one of my config files for testing purposes:
+```
+{
+    "host" : "192.168.178.39",
+    "port" : 1234,
+    "stableNode" : "192.168.178.40",
+    "stableNodePort" : 1234
+}
+```
+
+You will need to adjust the IP-Addresses, and in case its needed, you also need to change the ports, they can be whatevet you want, as long as its in the TCP Port range (0 - 65535), but I generally recommend something outside the "well-known" ports.
 
 Now you can start the node with a simple command:
 ```

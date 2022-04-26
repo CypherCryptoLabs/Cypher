@@ -8,11 +8,12 @@ class networking {
 
    server = net.createServer();
 
-   constructor(host, port, bcrypto, transactionQueue, stableNode, blockchain) {
+   constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain) {
       this.host = host;
       this.port = port;
       this.nodeList = new Array();
       this.stableNode = stableNode;
+      this.stableNodePort = stableNodePort;
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
       this.registerToNetwork();
@@ -196,7 +197,7 @@ class networking {
       // send it to the stableNode
       var registration = new Promise(function (resolve, reject) {
          var client = new net.Socket();
-         client.connect(_this.port, _this.stableNode, () => {
+         client.connect(_this.stableNodePort, _this.stableNode, () => {
             //console.log(`client connected to ${_this.stableNode}:${_this.port}`);
 
             client.write(JSON.stringify(packet));
