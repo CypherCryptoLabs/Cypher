@@ -44,7 +44,7 @@ node src/main.js
 - [ ] automatically remove ofline Nodes from Nodelist
 - [ ] check reachability of Node on registration
 - [ ] Timeouts for all TCP traffic
-- [ ] Allow multiple transactions per Block per Wallet
+- [x] Allow multiple transactions per Block per Wallet
 
 ### License: 
 MIT License

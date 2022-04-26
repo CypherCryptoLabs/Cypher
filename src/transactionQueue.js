@@ -9,62 +9,41 @@ class transactionQueue {
    }
 
    addTransaction(transaction) {
-      var senderHasPendingTransaction = false;
 
       if (this.Blockchain.getBalanceForAddress(transaction.blockchainSenderAddress) >= transaction.payload.unitsToTransfer + transaction.payload.networkFee) {
          if (this.queue && this.queue.length) {
-            for (var i = 0; i < this.queue.length && !senderHasPendingTransaction; i++) {
-               if (this.queue[i].blockchainSenderAddress == transaction.blockchainSenderAddress)
-                  senderHasPendingTransaction = true;
+
+            for(var i = 0; i < this.queue.length; i++) {
+               if(this.queue[i].signature == transaction.signature)
+               return false;
             }
-            if (!senderHasPendingTransaction) {
-               this.queue[this.queue.length] = transaction;
+
+            var unitsToTransferAlreadyInQueue = 0;
+
+            for (var i = 0; i < this.queue.length; i++) {
+               if (this.queue[i].blockchainSenderAddress == transaction.blockchainSenderAddress)
+                  unitsToTransferAlreadyInQueue += parseFloat(this.queue[i].payload.unitsToTransfer) + parseFloat(this.queue[i].payload.networkFee);
+            }
+
+            if (unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee < this.Blockchain.getBalanceForAddress(transaction.blockchainSenderAddress)) {
+               this.queue.push(transaction);
+               console.log(unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee)
+               return true
             } else {
                return false;
             }
+
          } else {
             this.queue[0] = transaction;
+            return true;
          }
       } else {
-         senderHasPendingTransaction = true;
+         return false;
       }
-
-      return !senderHasPendingTransaction;
    }
 
    async worker(networkingInstance) {
       var _this = this;
-      /*setInterval(function () { // need to find alterbative to setInterval
-         
-            var packet = {potentialBlock: potentialNewBlock, unixTimestamp: Date.now(), publicKey: _this.bcrypto.getPubKey().toPem() }
-            packet.signature = _this.bcrypto.sign(JSON.stringify(packet));
-            packet.queryID = 3;
-
-            for (var i = 0; i < networkingInstance.nodeList.length; i++) {
-               let client = new net.Socket();
-
-               client.connect(networkingInstance.nodeList[i].port, networkingInstance.nodeList[i].ipAddress, () => {
-
-                  client.write(JSON.stringify(packet));
-                  client.end();
-                  client.destroy();
-
-               });
-
-               client.on('close', () => {
-                  console.log('Client closed');
-               });
-      
-               client.on('error', (err) => {
-                  console.error(err);
-                  reject();
-               });
-
-            }
-
-            //_this.Blockchain.appendBlockToBlockchain(potentialNewBlock);
-         }
-      }, 10000);*/
 
       while(true) {
          var now = Date.now();

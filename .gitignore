@@ -5,3 +5,4 @@ cache.json
 config.json
 src/node_modules
 test/node_modules
+package-lock.json
