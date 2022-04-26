@@ -27,7 +27,6 @@ class transactionQueue {
 
             if (unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee < this.Blockchain.getBalanceForAddress(transaction.blockchainSenderAddress)) {
                this.queue.push(transaction);
-               console.log(unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee)
                return true
             } else {
                return false;
