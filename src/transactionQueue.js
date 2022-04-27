@@ -56,7 +56,7 @@ class transactionQueue {
          });
          await sleepPromise;
 
-         let localNodeAddress = this.bcrypto.hash(this.bcrypto.getPubKey(true));
+         let localNodeAddress = this.bcrypto.getFingerprint();
          if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             
             var sleepPromise = new Promise((resolve) => {

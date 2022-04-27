@@ -91,7 +91,7 @@ class blockchain {
          id: JSON.parse(previousBlock).id + 1,
          timestamp: Date.now(),
          previousBlockHash: this.bcrypto.hash(previousBlock),
-         rewardAddress: this.bcrypto.hash(this.bcrypto.getPubKey(true)),
+         rewardAddress: this.bcrypto.getFingerprint(),
          rewardAmount: 10,
          payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
