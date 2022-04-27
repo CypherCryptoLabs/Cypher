@@ -62,8 +62,11 @@ class bcrypto {
       return this.publicKey;
    }
 
-   getFingerprint() {
-      return this.fingerprint;
+   getFingerprint(key = undefined) {
+      if(key == undefined)
+         return this.fingerprint;
+
+      return crypto.createHash('sha256').update(crypto.createPublicKey(key).export({ type: 'spki', format: 'der' })).digest('hex');
    }
 
    hash(data) {

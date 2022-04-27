@@ -256,7 +256,7 @@ class networking {
          ipAddress: packet.payload.ipAddress,
          port: packet.payload.port,
          publicKey: packet.publicKey,
-         blockchainAddress: this.bcrypto.hash(packet.publicKey)
+         blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey)
       };
       var nodeIsAlreadyRegistered = false;
       var nodeIndex = -1;
@@ -327,7 +327,7 @@ class networking {
                         }
 
                         if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, JSON.stringify(blockToVoteOnCopy)) && senderIsValidator) {
-                           this.signatures[this.bcrypto.hash(packet.publicKey)] = packet.payload.signature;
+                           this.signatures[this.bcrypto.getFingerprint(packet.publicKey)] = packet.payload.signature;
                         }
                      }
                                
@@ -387,7 +387,7 @@ class networking {
                   packetIsValid = false;
                }
 
-               if (packet.blockchainSenderAddress != crypto.createHash('sha256').update(packet.publicKey).digest('hex'))
+               if (packet.blockchainSenderAddress != this.bcrypto.getFingerprint(packet.publicKey))
                   packetIsValid = false;
 
                break;
