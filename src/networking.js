@@ -605,7 +605,7 @@ class networking {
                   votedBlock.validators[Object.keys(votes)[i]] = votes[Object.keys(votes)[i]];
                }
                
-               votedBlock.validators[this.bcrypto.hash(this.bcrypto.getPubKey(true))] = blockVoteSignature;
+               votedBlock.validators[this.bcrypto.getFingerprint()] = blockVoteSignature;
                var broadcastPacket = {queryID:4, unixTimestamp: Date.now(), payload: {block:votedBlock},publicKey:this.bcrypto.getPubKey().toPem()};
                var broadcastPacketCopy = JSON.parse(JSON.stringify(broadcastPacket));
                delete broadcastPacketCopy.queryID;

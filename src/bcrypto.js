@@ -32,11 +32,11 @@ class bcrypto {
             fs.writeFileSync('private.pem', this.privateKey.toPem());
          }
 
-         let pubkeyDER = crypto.createPublicKey(this.publicKey).export({ type: 'spki', format: 'der' });
+         let pubkeyDER = crypto.createPublicKey(this.publicKey.toPem()).export({ type: 'spki', format: 'der' });
          this.fingerprint = crypto.createHash('sha256').update(pubkeyDER).digest('hex');
 
       } catch (err) {
-         //console.log(err);
+         console.log(err);
       }
    }
 
