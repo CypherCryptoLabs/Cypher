@@ -12,6 +12,7 @@ class bcrypto {
       this.privateKeyPath = privateKeyPath;
       this.privateKey;
       this.publicKey;
+      this.fingerprint;
       this.generateNewKey();
    }
 
@@ -21,6 +22,7 @@ class bcrypto {
          if (fs.existsSync("private.pem")) {
             this.privateKey = PrivateKey.fromPem(fs.readFileSync("private.pem").toString());
             this.publicKey = this.privateKey.publicKey();
+
          } else {
             console.log("Key not found")
 
@@ -29,6 +31,10 @@ class bcrypto {
 
             fs.writeFileSync('private.pem', this.privateKey.toPem());
          }
+
+         let pubkeyDER = crypto.createPublicKey(this.publicKey).export({ type: 'spki', format: 'der' });
+         this.fingerprint = crypto.createHash('sha256').update(pubkeyDER).digest('hex');
+
       } catch (err) {
          //console.log(err);
       }
@@ -49,10 +55,15 @@ class bcrypto {
    }
 
    getPubKey(asPem = false) {
-      if (asPem)
+      if (asPem) {
          return this.publicKey.toPem();
+      }
 
       return this.publicKey;
+   }
+
+   getFingerprint() {
+      return this.fingerprint;
    }
 
    hash(data) {
