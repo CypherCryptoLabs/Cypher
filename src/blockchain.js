@@ -30,6 +30,7 @@ class blockchain {
                let payload = blockchainCopy[i].payload;
                for(var j = 0; j < payload.length; j++) {
                   cacheObj[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+                  cacheObj[payload[j].blockchainSenderAddress].balanceChanges.push(i);
 
                   if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
                      cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
@@ -56,7 +57,7 @@ class blockchain {
    updateAddressCache(block) {
       if(this.addressCache.hasOwnProperty(block.rewardAddress)) {
          this.addressCache[block.rewardAddress].balance += block.rewardAmount;
-         this.addressCache[block.rewardAddress].balanceChanges.push[block.id];
+         this.addressCache[block.rewardAddress].balanceChanges.push(block.id);
       } else {
          this.addressCache[block.rewardAddress] = {balance: block.rewardAmount, balanceChanges: [block.id]};
       }
@@ -64,11 +65,12 @@ class blockchain {
       let payload = block.payload;
       for(var j = 0; j < payload.length; j++) {
          this.addressCache[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+         this.addressCache[payload[j].blockchainSenderAddress].balanceChanges.push(block.id);
 
          if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
             this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
-            if(this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf[block.id] == -1) {
-               this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.push[block.id];
+            if(this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf(block.id) == -1) {
+               this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.push(block.id);
             }
          } else {
             this.addressCache[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [block.id]};
