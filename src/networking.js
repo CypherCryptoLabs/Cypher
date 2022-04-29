@@ -649,6 +649,21 @@ class networking {
       return this.signatures;
    }
 
+   createPacket(queryID, payload) {
+      var packet = {
+         queryID:queryID, 
+         unixTimestamp: Date.now(),
+         payload:{payload}, 
+         publicKey: this.bcrypto.getPubKey().toPem()
+      };
+
+      var packetCopy = JSON.parse(JSON.stringify(packet));
+      delete packetCopy.queryID;
+      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+
+      return packet;
+   }
+
 }
 
 module.exports = networking;
