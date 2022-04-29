@@ -450,6 +450,9 @@ class networking {
             
             case 5:
                break;
+
+            case 6:
+               break;
             default:
                packetIsValid = false;
                break;
