@@ -55,6 +55,7 @@ node src/main.js
 - [x] check reachability of Node on registration
 - [ ] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
+- [ ] Replace starkbank-ecdsa with bitcore-mnemonic key management
 
 ### License: 
 MIT License
