@@ -52,7 +52,7 @@ node src/main.js
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
 - [ ] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
 - [ ] automatically remove ofline Nodes from Nodelist
-- [ ] check reachability of Node on registration
+- [x] check reachability of Node on registration
 - [ ] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 
