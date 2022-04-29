@@ -357,6 +357,9 @@ class networking {
                         }
 
                      break;
+                  case 6:
+                     socket.write("{timestamp:" + Date.now() + "}");
+                     break;
                }
             }
             socket.end();
