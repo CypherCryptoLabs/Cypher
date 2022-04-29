@@ -276,6 +276,48 @@ class networking {
       }
    }
 
+   async isReachable(address, port) {
+      let _this = this;
+      var isReachable = false;
+
+      var nodeIsReachablePromise = new Promise((resolve, reject) => {
+
+         var socket = new net.Socket();
+
+         socket.connect(port, address, () => {
+            let packet = _this.createPacket(6, []);
+            socket.write(packet);
+         })
+
+         socket.on('data', (data) => {
+            var timestamp = JSON.parse(data.toString()).timestamp;
+
+            if(timestamp < Date.now() && timestamp >= Date.now() - 60000) {
+               isReachable = true;
+               socket.destroy();
+               resolve();
+            } else {
+               socket.destroy();
+               resolve();
+            }
+         })
+
+         socket.on('error', (error) => {
+            console.log(error);
+            reject();
+         })
+      })
+
+      try {
+         await nodeIsReachablePromise;
+         console.log(isReachable);
+         return isReachable;
+      } catch(error) {
+         console.log(error);
+         return false;
+      }
+   }
+
    connectionHandler() {
       server.listen(this.port, this.host, () => {
          console.log(`Node listening on ${this.host}:${this.port}`);
@@ -301,8 +343,12 @@ class networking {
 
                      break;
                   case 2:
-                     this.addNodeToNodeList(packet);
-                     socket.write(JSON.stringify(this.nodeList));
+                     if(this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
+                        this.addNodeToNodeList(packet);
+                        socket.write(JSON.stringify(this.nodeList));
+                     } else {
+                        socket.write(this.createPacket(2, {status:false}));
+                     }
                      break;
 
                   case 3:
@@ -358,7 +404,7 @@ class networking {
 
                      break;
                   case 6:
-                     socket.write("{timestamp:" + Date.now() + "}");
+                     socket.write("{\"timestamp\":" + Date.now() + "}");
                      break;
                }
             }
@@ -664,7 +710,7 @@ class networking {
       delete packetCopy.queryID;
       packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
 
-      return packet;
+      return JSON.stringify(packet);
    }
 
 }
