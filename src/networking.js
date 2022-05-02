@@ -686,14 +686,6 @@ class networking {
       this.potentialBlock = {};
    }
 
-   async updateValidators(validators, potentialBlock, forger) {
-      /*this.updatePotentialBlock(potentialBlock);
-      this.forger = forger;
-      this.validators = validators;
-      this.signatures = {};*/
-      //console.log(this.potentialBlock);
-   }
-
    getVotes() {
       return this.signatures;
    }
