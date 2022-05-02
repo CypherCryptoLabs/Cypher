@@ -45,7 +45,7 @@ class networking {
                client.connect(randomNode.port, randomNode.ipAddress, () => {
                   //console.log(`client connected to ${randomNode.ipAddress}:${randomNode.port}`);
 
-                  client.write(JSON.stringify(packet));
+                  client.write(packet);
                   client.end();
                });
 
@@ -97,7 +97,7 @@ class networking {
             var blockchainSyncSuccessPromise = new Promise((resolve, reject) => {
                let client = new net.Socket();
                client.connect(this.nodeList[randomNodeIndex].port, this.nodeList[randomNodeIndex].ipAddress, () => {
-                  client.write(JSON.stringify(packet));
+                  client.write(packet);
                });
 
                client.on('data', (data) => {
@@ -117,7 +117,6 @@ class networking {
                
                var blockchainUpdate = JSON.parse(newBlocks).blocks;
                var newestBlock = JSON.stringify(blockchainUpdate[blockchainUpdate.length - 1]);
-               console.log(newestBlock);
 
                /*var validatePacket = {queryID:5, unixTimestamp: Date.now(), type: "verification", payload:{hash:this.bcrypto.hash(newestBlock)}, publicKey: this.bcrypto.getPubKey().toPem()};
                var validatePacketCopy = JSON.parse(JSON.stringify(validatePacket));
@@ -130,7 +129,7 @@ class networking {
                var blockchainValidateSuccessPromise = new Promise((resolve, reject) => {
                   let validateClient = new net.Socket();
                   validateClient.connect(this.nodeList[validationRandomNode].port, this.nodeList[validationRandomNode].ipAddress, () => {
-                     validateClient.write(JSON.stringify(validatePacket));
+                     validateClient.write(validatePacket);
                   });
    
                   validateClient.on('data', (data) => {
@@ -344,7 +343,7 @@ class networking {
                      socket.write(JSON.stringify({ status: status }));
 
                      if (status) {
-                        this.broadcastToRandomNodes(packet, 8);
+                        this.broadcastToRandomNodes(data.toString(), 8);
                      }
 
                      break;
@@ -389,7 +388,7 @@ class networking {
 
                      if(JSON.parse(this.blockchain.getNewestBlock()).id == packet.payload.block.id - 1) {
                         socket.write(JSON.stringify({ status: true }));
-                        this.broadcastToRandomNodes(packet);
+                        this.broadcastToRandomNodes(data.toString());
 
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
                            this.blockchain.appendBlockToBlockchain();
@@ -413,7 +412,10 @@ class networking {
                      socket.write("{\"timestamp\":" + Date.now() + "}");
                      break;
                }
+            } else {
+               console.log(data.toString())
             }
+
             socket.end();
             socket.destroy();
          });
@@ -581,7 +583,7 @@ class networking {
             packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));*/
             var packet = this.createPacket(3, {type: "request"});
    
-            client.write(JSON.stringify(packet))
+            client.write(packet)
          });
    
          client.on('data', (data) => {
@@ -623,7 +625,7 @@ class networking {
                   clientVote.connect(validators[z].port, validators[z].ipAddress, () => {
                      //console.log("send vote package (" + validators[z].ipAddress + ":" + validators[z].port + "): " + JSON.stringify(packetVote));
             
-                     clientVote.write(JSON.stringify(packetVote))
+                     clientVote.write(packetVote)
                   });
             
                   clientVote.on('data', (data) => {
@@ -652,11 +654,11 @@ class networking {
                }
                
                votedBlock.validators[this.bcrypto.getFingerprint()] = blockVoteSignature;
-               var broadcastPacket = {queryID:4, unixTimestamp: Date.now(), payload: {block:votedBlock},publicKey:this.bcrypto.getPubKey().toPem()};
+               /*var broadcastPacket = {queryID:4, unixTimestamp: Date.now(), payload: {block:votedBlock},publicKey:this.bcrypto.getPubKey().toPem()};
                var broadcastPacketCopy = JSON.parse(JSON.stringify(broadcastPacket));
-               delete broadcastPacketCopy.queryID;
-      
-               broadcastPacket.signature = this.bcrypto.sign(JSON.stringify(broadcastPacketCopy));
+               delete broadcastPacketCopy.queryID;*/
+
+               var broadcastPacket = this.createPacket(4, {block:votedBlock});
 
                this.broadcastToRandomNodes(broadcastPacket);
 
