@@ -421,6 +421,14 @@ class networking {
    verrifyPacket(packetJSON) {
       try {
          var packetIsValid = false;
+         let packet = JSON.parse(packetJSON);
+         var packetCopy = JSON.parse(packetJSON);
+
+         delete packetCopy.queryID;
+         delete packetCopy.signature;
+
+         packetIsValid = this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy));
+         console.log(packetIsValid);
 
          switch (packet.queryID) {
             case 1:
