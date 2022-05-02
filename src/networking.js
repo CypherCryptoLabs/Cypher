@@ -206,7 +206,7 @@ class networking {
          client.connect(_this.stableNodePort, _this.stableNode, () => {
             //console.log(`client connected to ${_this.stableNode}:${_this.port}`);
 
-            client.write(JSON.stringify(packet));
+            client.write(packet);
             client.end();
          });
 
@@ -465,7 +465,7 @@ class networking {
                   return false;
 
                if (payload.blockchainSenderAddress != this.bcrypto.getFingerprint(packet.publicKey))
-                  packetIsValid = false;
+                  return false;
 
                if(!/^[0-9a-f]{64}$/.test(payload.blockchainReceiverAddress))
                   return false;
@@ -688,7 +688,7 @@ class networking {
       var packet = {
          queryID:queryID, 
          unixTimestamp: Date.now(),
-         payload:{payload}, 
+         payload:payload, 
          publicKey: this.bcrypto.getPubKey().toPem()
       };
 
