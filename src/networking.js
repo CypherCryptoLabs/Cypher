@@ -468,6 +468,15 @@ class networking {
                
                break;
             case 2:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["ipAddress", "port"]))
+                  return false;
+
+               if(isNaN(payload.port) || payload.port < 0 || payload.port > 65535)
+                  return false;
+
+               if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(payload.ipAddress))
+                  return false;
+               
                break;
             case 3:
                break;
