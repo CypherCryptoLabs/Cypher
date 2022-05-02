@@ -485,7 +485,6 @@ class networking {
                
                break;
             case 3:
-
                if((JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type"]) && payload.type != "request") ||
                   (JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "signature"]) && payload.type != "vote"))
                   return false;
@@ -495,6 +494,28 @@ class networking {
 
                break;
             case 4:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
+                  return false;
+
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue()))
+                  return false;
+
+               var blockValidators = Object.keys(packet.payload.block.validators);
+               var invalidSignatures = 0;
+
+               for(var i = 0; i < blockValidators.length; i++) {
+                  for(var j = 0; j < this.validators.length; j++) {
+                     if(blockValidators[i] == this.validators[j].blockchainAddress) {
+                        if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.validators[j].publicKey, blockCopy))
+                           invalidSignatures++;
+                     }
+                  }
+               }
+
+               if(invalidSignatures > blockValidators.length / 2) {
+                  return false;
+               }
+
                break;
             case 5:
                break;
