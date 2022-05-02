@@ -82,10 +82,11 @@ class networking {
    async syncBlockchain() {
       var syncSuccessful = false;
 
-      var packet = {queryID:5, unixTimestamp: Date.now(), type: "request", payload:{blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id}, publicKey: this.bcrypto.getPubKey().toPem()};
+      /*var packet = {queryID:5, unixTimestamp: Date.now(), type: "request", payload:{blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id}, publicKey: this.bcrypto.getPubKey().toPem()};
       var packetCopy = JSON.parse(JSON.stringify(packet));
       delete packetCopy.queryID;
-      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));*/
+      var packet = this.createPacket(5, {type: "request", blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id});
 
       var newBlocks = "";
 
@@ -117,10 +118,12 @@ class networking {
                var newestBlock = JSON.stringify(blockchainUpdate[blockchainUpdate.length - 1]);
                console.log(newestBlock);
 
-               var validatePacket = {queryID:5, unixTimestamp: Date.now(), type: "verification", payload:{hash:this.bcrypto.hash(newestBlock)}, publicKey: this.bcrypto.getPubKey().toPem()};
+               /*var validatePacket = {queryID:5, unixTimestamp: Date.now(), type: "verification", payload:{hash:this.bcrypto.hash(newestBlock)}, publicKey: this.bcrypto.getPubKey().toPem()};
                var validatePacketCopy = JSON.parse(JSON.stringify(validatePacket));
                delete validatePacketCopy.queryID;
-               validatePacket.signature = this.bcrypto.sign(JSON.stringify(validatePacketCopy));
+               validatePacket.signature = this.bcrypto.sign(JSON.stringify(validatePacketCopy));*/
+
+               var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
 
                let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
                var blockchainValidateSuccessPromise = new Promise((resolve, reject) => {
@@ -175,7 +178,7 @@ class networking {
    async registerToNetwork() {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
-      var packet = {
+      /*var packet = {
          queryID: 2,
          unixTimestamp: Date.now(),
          payload: {
@@ -191,8 +194,10 @@ class networking {
       delete packetCopy.queryID;
       delete packetCopy.signature;
 
-      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));*/
       var _this = this;
+
+      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
 
       // send it to the stableNode
       var registration = new Promise(function (resolve, reject) {
@@ -352,10 +357,10 @@ class networking {
                      break;
 
                   case 3:
-                     if(packet.type == "request")
+                     if(packet.payload.type == "request")
                         socket.write(JSON.stringify(this.potentialBlock));
 
-                     if(packet.type == "vote") {
+                     if(packet.payload.type == "vote") {
                         var blockToVoteOnCopy;
                         if(typeof this.potentialBlock == "string") {
                            blockToVoteOnCopy = JSON.parse(this.potentialBlock);
@@ -395,10 +400,10 @@ class networking {
 
                      break;
                   case 5:
-                        if(packet.type == "request")
+                        if(packet.payload.type == "request")
                            socket.write(this.blockchain.getNewestNBlocks(packet.payload.blockHeight));
                         
-                        if(packet.type == "verification") {
+                        if(packet.payload.type == "verification") {
                            socket.write("{\"status\":" + (this.bcrypto.hash(JSON.stringify(JSON.parse(this.blockchain.getNewestBlock()))) == packet.payload.hash) + "}");
                         }
 
@@ -420,10 +425,8 @@ class networking {
 
    verrifyPacket(packetJSON) {
       try {
-         var packetIsValid = false;
          let packet = JSON.parse(packetJSON);
          var packetCopy = JSON.parse(packetJSON);
-         console.log(packet);
 
          if(JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(["queryID", "unixTimestamp", "payload", "publicKey", "signature"]))
             return false;
@@ -433,7 +436,7 @@ class networking {
 
          if(!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
             return false;
-
+         
          switch (packet.queryID) {
             case 1:
                break;
@@ -448,10 +451,11 @@ class networking {
             case 6:
                break;
             default:
-               packetIsValid = false;
+               return false;
                break;
          }
-         return packetIsValid;
+
+         return true;
       } catch (error) {
          console.log(error);
          return false;
@@ -522,11 +526,12 @@ class networking {
 
       var retrieveBlockPromise = new Promise((resolve, reject) => {
          client.connect(forger.port, forger.ipAddress, () => {
-            var packet = {queryID:3, unixTimestamp: Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
+            /*var packet = {queryID:3, unixTimestamp: Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
             var packetCopy = JSON.parse(JSON.stringify(packet));
             delete packetCopy.queryID;
    
-            packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));
+            packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));*/
+            var packet = this.createPacket(3, {type: "request"});
    
             client.write(JSON.stringify(packet))
          });
@@ -555,11 +560,12 @@ class networking {
             delete blockToVoteOnCopy.validators;
 
             var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
-            var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
+            /*var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
             var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
             delete packetVoteCopy.queryID;
    
-            packetVote.signature = this.bcrypto.sign(JSON.stringify(packetVoteCopy));
+            packetVote.signature = this.bcrypto.sign(JSON.stringify(packetVoteCopy));*/
+            var packetVote = this.createPacket(3, {type: "vote", signature: blockVoteSignature});
 
             for(var i = 0; i < validators.length; i++) {
                if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {

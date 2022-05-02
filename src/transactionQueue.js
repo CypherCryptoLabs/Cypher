@@ -10,7 +10,7 @@ class transactionQueue {
 
    addTransaction(transaction) {
 
-      if (this.Blockchain.getBalanceForAddress(transaction.blockchainSenderAddress) >= transaction.payload.unitsToTransfer + transaction.payload.networkFee) {
+      if (this.Blockchain.getBalanceForAddress(transaction.payload.blockchainSenderAddress) >= transaction.payload.unitsToTransfer + transaction.payload.networkFee) {
          if (this.queue && this.queue.length) {
 
             for(var i = 0; i < this.queue.length; i++) {
@@ -21,11 +21,11 @@ class transactionQueue {
             var unitsToTransferAlreadyInQueue = 0;
 
             for (var i = 0; i < this.queue.length; i++) {
-               if (this.queue[i].blockchainSenderAddress == transaction.blockchainSenderAddress)
+               if (this.queue[i].payload.blockchainSenderAddress == transaction.payload.blockchainSenderAddress)
                   unitsToTransferAlreadyInQueue += parseFloat(this.queue[i].payload.unitsToTransfer) + parseFloat(this.queue[i].payload.networkFee);
             }
 
-            if (unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee < this.Blockchain.getBalanceForAddress(transaction.blockchainSenderAddress)) {
+            if (unitsToTransferAlreadyInQueue + transaction.payload.unitsToTransfer + transaction.payload.networkFee < this.Blockchain.getBalanceForAddress(transaction.payload.blockchainSenderAddress)) {
                this.queue.push(transaction);
                return true
             } else {
