@@ -518,8 +518,20 @@ class networking {
 
                break;
             case 5:
+               if((JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "blockHeight"]) && payload.type != "request") ||
+                  (JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "hash"]) && payload.type != "verification"))
+                  return false;
+
+               if(payload.hasOwnProperty("blocHeight") && isNaN(payload.blockHeight) || payload.blockHeight < 0)
+                  return false;
+
+               if(payload.hasOwnProperty("hash") && !/^[0-9a-f]{64}$/.test(payload.hash))
+                  return false;
+               
                break;
             case 6:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify([]))
+                  return false;
                break;
             default:
                return false;
