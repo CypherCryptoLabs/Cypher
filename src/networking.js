@@ -3,6 +3,7 @@ const server = net.createServer();
 const crypto = require('crypto');
 const BigNumber = require('bignumber.js');
 const { resolve } = require('path');
+const { type } = require('os');
 
 class networking {
 
@@ -427,18 +428,44 @@ class networking {
       try {
          let packet = JSON.parse(packetJSON);
          var packetCopy = JSON.parse(packetJSON);
+         let payload = packet.payload;
 
+         // checking structure
          if(JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(["queryID", "unixTimestamp", "payload", "publicKey", "signature"]))
             return false;
 
          delete packetCopy.queryID;
          delete packetCopy.signature;
 
+         // checking signature
          if(!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
             return false;
+
+         // checking data types
+         if(isNaN(packet.queryID) || isNaN(packet.unixTimestamp))
+            return false;
          
+         if(typeof packet.publicKey != "string" || typeof packet.signature != "string" || typeof packet.payload != "object")
+            return false;
+         
+         // checking payload
          switch (packet.queryID) {
             case 1:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["blockchainSenderAddress", "blockchainReceiverAddress", "unitsToTransfer", "networkFee"]))
+                  return false;
+
+               if(isNaN(payload.unitsToTransfer)||
+                  isNaN(payload.networkFee) ||
+                  typeof payload.blockchainSenderAddress != "string" ||
+                  typeof payload.blockchainReceiverAddress != "string")
+                  return false;
+
+               if (payload.blockchainSenderAddress != this.bcrypto.getFingerprint(packet.publicKey))
+                  packetIsValid = false;
+
+               if(!/^[0-9a-f]{64}$/.test(payload.blockchainReceiverAddress))
+                  return false;
+               
                break;
             case 2:
                break;
