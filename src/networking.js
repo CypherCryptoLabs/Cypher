@@ -423,12 +423,16 @@ class networking {
          var packetIsValid = false;
          let packet = JSON.parse(packetJSON);
          var packetCopy = JSON.parse(packetJSON);
+         console.log(packet);
+
+         if(JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(["queryID", "unixTimestamp", "payload", "publicKey", "signature"]))
+            return false;
 
          delete packetCopy.queryID;
          delete packetCopy.signature;
 
-         packetIsValid = this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy));
-         console.log(packetIsValid);
+         if(!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
+            return false;
 
          switch (packet.queryID) {
             case 1:
