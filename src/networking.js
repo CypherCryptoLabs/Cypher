@@ -437,6 +437,10 @@ class networking {
          delete packetCopy.queryID;
          delete packetCopy.signature;
 
+         // checking timestamp
+         if (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now())
+            return false;
+
          // checking signature
          if(!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
             return false;
