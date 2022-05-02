@@ -479,6 +479,14 @@ class networking {
                
                break;
             case 3:
+
+               if((JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type"]) && payload.type != "request") ||
+                  (JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "signature"]) && payload.type != "vote"))
+                  return false;
+
+               if(payload.hasOwnProperty("signature") && !/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(payload.signature))
+                  return false;
+
                break;
             case 4:
                break;
