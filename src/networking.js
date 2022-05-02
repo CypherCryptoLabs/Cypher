@@ -420,97 +420,25 @@ class networking {
 
    verrifyPacket(packetJSON) {
       try {
-         let packet = JSON.parse(packetJSON);
-         let packetCopy = JSON.parse(packetJSON);
-         var packetIsValid = true;
-
-         if (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now())
-            packetIsValid = false;
+         var packetIsValid = false;
 
          switch (packet.queryID) {
             case 1:
-               if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'blockchainSenderAddress', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['blockchainReceiverAddress', 'unitsToTransfer', 'networkFee']))
-                  packetIsValid = false;
-
-               if (packet.payload.unitsToTransfer <= 0 || packet.payload.networkFee < 0) {
-                  packetIsValid = false;
-               }
-
-               if (packet.blockchainSenderAddress != this.bcrypto.getFingerprint(packet.publicKey))
-                  packetIsValid = false;
-
                break;
-
             case 2:
-               if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['ipAddress', 'port']))
-                  packetIsValid = false;
-
-               if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(packet.payload.ipAddress))
-                  packetIsValid = false;
-
-               if (isNaN(packet.payload.port) || packet.payload.port > 65535 || packet.payload.port < 1)
-                  packetIsValid = false;
-
                break;
             case 3:
-               if(!packet.hasOwnProperty("type") && packet.type != "request" && packet.type != "vote")
-                  packetIsValid = false;
-
-               if(packet.type == "request" && JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'publicKey', 'signature'])) {
-                  packetIsValid = false;
-               }
-
-               if(packet.type == "vote" && (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'type', 'payload', 'publicKey', 'signature']) || JSON.stringify(Object.getOwnPropertyNames(packet.payload)) != JSON.stringify(['signature']))) {
-                  packetIsValid = false;
-               }
                break;
             case 4:
-               if (JSON.stringify(Object.getOwnPropertyNames(packet)) != JSON.stringify(['queryID', 'unixTimestamp', 'payload', 'publicKey', 'signature']))
-                  packetIsValid = false;
-
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue())) {
-                  packetIsValid = false;
-               }
-
-               var blockCopy = JSON.parse(JSON.stringify(packet.payload.block));
-               delete blockCopy.validators;
-               blockCopy = JSON.stringify(blockCopy);
-
-               var blockValidators = Object.keys(packet.payload.block.validators);
-               var invalidSignatures = 0;
-
-               for(var i = 0; i < blockValidators.length; i++) {
-                  for(var j = 0; j < this.validators.length; j++) {
-                     if(blockValidators[i] == this.validators[j].blockchainAddress) {
-                        if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.validators[j].publicKey, blockCopy))
-                           invalidSignatures++;
-                     }
-                  }
-               }
-
-               if(invalidSignatures > blockValidators.length / 2) {
-                  packetIsValid = false;
-               }
-
                break;
-            
             case 5:
                break;
-
             case 6:
                break;
             default:
                packetIsValid = false;
                break;
-
          }
-
-         delete packetCopy.queryID;
-         delete packetCopy.signature;
-
-         if (!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
-            packetIsValid = false;
-
          return packetIsValid;
       } catch (error) {
          console.log(error);
