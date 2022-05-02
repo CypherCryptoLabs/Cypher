@@ -237,7 +237,7 @@ class networking {
             var registeredToNode = new Promise(function (resolve, reject) {
                var client = new net.Socket();
                client.connect(_this.nodeList[i].port, _this.nodeList[i].ipAddress, () => {
-                  client.write(JSON.stringify(packet));
+                  client.write(packet);
                   client.end();
                   resolve();
                });
@@ -291,14 +291,14 @@ class networking {
          var socket = new net.Socket();
 
          socket.connect(port, address, () => {
-            let packet = _this.createPacket(6, []);
+            let packet = _this.createPacket(6, {});
             socket.write(packet);
          })
 
          socket.on('data', (data) => {
             var timestamp = JSON.parse(data.toString()).timestamp;
 
-            if(timestamp < Date.now() && timestamp >= Date.now() - 60000) {
+            if(timestamp <= Date.now() && timestamp >= Date.now() - 60000) {
                isReachable = true;
                socket.destroy();
                resolve();
