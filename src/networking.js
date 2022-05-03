@@ -97,61 +97,20 @@ class networking {
 
    async registerToNetwork() {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
-      var _this = this;
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
+      var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
 
-      // send it to the stableNode
-      var registration = new Promise(function (resolve, reject) {
-         var client = new net.Socket();
-         client.connect(_this.stableNodePort, _this.stableNode, () => {
+      if(response != undefined) {
 
-            client.write(packet);
-            client.end();
-         });
-
-         client.on('data', (data) => {
-            data = JSON.parse(data);
-            for (var i in data) {
-               _this.addNodeToNodeList({ payload: { ipAddress: data[i].ipAddress, port: data[i].port }, publicKey: data[i].publicKey });
-            }
-
-            client.destroy();
-            resolve();
-         });
-
-         // Add a 'close' event handler for the client socket 
-         client.on('close', () => {
-            //console.log('Client closed');
-         });
-
-         client.on('error', (err) => {
-            console.error(err);
-            reject();
-         });
-      });
-
-      try {
-         await registration;
-         for (var i = 0; i < this.nodeList.length; i++) {
-            var registeredToNode = new Promise(function (resolve, reject) {
-               var client = new net.Socket();
-               client.connect(_this.nodeList[i].port, _this.nodeList[i].ipAddress, () => {
-                  client.write(packet);
-                  client.end();
-                  resolve();
-               });
-
-               client.on('error', (err) => {
-                  console.error(err);
-                  reject();
-               });
-            });
-
-            try { await registeredToNode; } catch (error) { /*console.log(error)*/ }
+         var nodes = JSON.parse(response);
+         for (var i in nodes) {
+            this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
          }
-      } catch (error) {
-         //console.log(error);
+
+         for (var i = 0; i < this.nodeList.length; i++) {
+            await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+         }
       }
 
       this.syncBlockchain();
