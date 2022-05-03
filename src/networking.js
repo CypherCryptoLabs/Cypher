@@ -142,45 +142,12 @@ class networking {
    }
 
    async isReachable(address, port) {
-      let _this = this;
-      var isReachable = false;
 
-      var nodeIsReachablePromise = new Promise((resolve, reject) => {
+      var timestamp = JSON.parse(await this.sendPacket(this.createPacket(6, {}), address, port)).timestamp;
+      if(timestamp <= Date.now() && timestamp >= Date.now() - 60000)
+         return true;
 
-         var socket = new net.Socket();
-
-         socket.connect(port, address, () => {
-            let packet = _this.createPacket(6, {});
-            socket.write(packet);
-         })
-
-         socket.on('data', (data) => {
-            var timestamp = JSON.parse(data.toString()).timestamp;
-
-            if(timestamp <= Date.now() && timestamp >= Date.now() - 60000) {
-               isReachable = true;
-               socket.destroy();
-               resolve();
-            } else {
-               socket.destroy();
-               resolve();
-            }
-         })
-
-         socket.on('error', (error) => {
-            console.log(error);
-            reject();
-         })
-      })
-
-      try {
-         await nodeIsReachablePromise;
-         console.log(isReachable);
-         return isReachable;
-      } catch(error) {
-         console.log(error);
-         return false;
-      }
+      return false;
    }
 
    connectionHandler() {
