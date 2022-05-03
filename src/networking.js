@@ -734,6 +734,40 @@ class networking {
       return JSON.stringify(packet);
    }
 
+   sendPacket(packet, ipAddress, port, waitForAnswer = true) {
+      let socket = new net.Socket();
+      var response;
+      var receivedResponsePromise = new Promise(function (resolve, reject) {
+         socket.connect(port, ipAddress, () => {
+            socket.write(packet);
+            client.end();
+         })
+
+         client.on('data', (data) => {
+            response = data.toString();
+            socket.destroy();
+            resolve();
+         })
+
+         client.on('error', (error) => {
+            console.log(error);
+            client.destroy();
+            reject();
+         })
+      })
+
+      if(waitForAnswer) {
+         try {
+            await receivedResponsePromise;
+            return response;
+         } catch (error) {
+            console.log(error);
+            return;
+         }
+      }
+
+   }
+
 }
 
 module.exports = networking;
