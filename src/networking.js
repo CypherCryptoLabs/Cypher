@@ -281,7 +281,6 @@ class networking {
          // checking payload
          switch (packet.queryID) {
             case 1:
-               console.log("TEST")
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["blockchainSenderAddress", "blockchainReceiverAddress", "unitsToTransfer", "networkFee"]))
                   return false;
 
@@ -327,6 +326,10 @@ class networking {
 
                var blockValidators = Object.keys(packet.payload.block.validators);
                var invalidSignatures = 0;
+
+               var blockCopy = JSON.parse(JSON.stringify(packet.payload.block));
+               delete blockCopy.validators;
+               blockCopy = JSON.stringify(blockCopy);
 
                for(var i = 0; i < blockValidators.length; i++) {
                   for(var j = 0; j < this.validators.length; j++) {
@@ -429,33 +432,14 @@ class networking {
    }
 
    async voteOnBlock(forger, currentVotingSlot, validators, transactionQueue) {
-      var client = new net.Socket();
-      var blockToVoteOn;
-
-      var retrieveBlockPromise = new Promise((resolve, reject) => {
-         client.connect(forger.port, forger.ipAddress, () => {
-            var packet = this.createPacket(3, {type: "request"});
-   
-            client.write(packet)
-         });
-   
-         client.on('data', (data) => {
-            blockToVoteOn = data.toString();
-            resolve();
-         });
-
-         client.on('error', (error) => {
-            reject();
-         })
-      })
-
+      var blockToVoteOn = await this.sendPacket(this.createPacket(3, {type: "request"}), forger.ipAddress, forger.port);
       var transactionQueueCopy = JSON.parse(JSON.stringify(transactionQueue));
       transactionQueueCopy.forEach(object => {
          delete object["queryID"];
       });
 
-      try {
-         await retrieveBlockPromise;
+      if(blockToVoteOn != undefined) {
+
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
             this.updatePotentialBlock(blockToVoteOn);
@@ -468,18 +452,7 @@ class networking {
             for(var i = 0; i < validators.length; i++) {
                if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {
                   let z = i;
-                  let clientVote = new net.Socket();
-                  //console.log(validators[z]);
-                  clientVote.connect(validators[z].port, validators[z].ipAddress, () => {
-            
-                     clientVote.write(packetVote)
-                  });
-            
-                  clientVote.on('data', (data) => {
-                  });
-         
-                  clientVote.on('error', (error) => {
-                  })
+                  this.sendPacket(packetVote, validators[z].ipAddress, validators[z].port, false);
                }
             }
 
@@ -507,8 +480,6 @@ class networking {
             }
 
          }
-      } catch (error) {
-         console.log(error);
       }
    }
 
