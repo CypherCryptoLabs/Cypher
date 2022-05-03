@@ -764,6 +764,8 @@ class networking {
             console.log(error);
             return;
          }
+      } else {
+         return;
       }
 
    }
