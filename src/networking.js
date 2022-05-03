@@ -39,39 +39,9 @@ class networking {
          var randomNode = this.nodeList[randomNodeIndex];
 
          if (notifiedNodes.indexOf(randomNode.ipAddress) == -1 && successfullyNotifiedNodes.indexOf(randomNode.ipAddress) == -1) {
-            let client = new net.Socket();
 
-            var randomNodeNotified = new Promise(function (resolve, reject) {
-               client.connect(randomNode.port, randomNode.ipAddress, () => {
-                  //console.log(`client connected to ${randomNode.ipAddress}:${randomNode.port}`);
-
-                  client.write(packet);
-                  client.end();
-               });
-
-               client.on('data', (data) => {
-                  data = data.toString();
-                  //console.log(data);
-                  resolve();
-                  client.destroy();
-               });
-
-               // Add a 'close' event handler for the client socket 
-               client.on('close', () => {
-                  //console.log('Client closed');
-               });
-
-               client.on('error', (err) => {
-                  console.error(err);
-                  reject();
-               });
-            });
-
-            try {
-               var x = await randomNodeNotified;
+            if(this.sendPacket(packet, randomNode.ipAddress, randomNode.port) != undefined) {
                successfullyNotifiedNodes.push(randomNode.ipAddress);
-            } catch (error) {
-               //console.log(error);
             }
 
             notifiedNodes.push(randomNode.ipAddress);
@@ -457,6 +427,7 @@ class networking {
          // checking payload
          switch (packet.queryID) {
             case 1:
+               console.log("TEST")
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["blockchainSenderAddress", "blockchainReceiverAddress", "unitsToTransfer", "networkFee"]))
                   return false;
 
@@ -734,24 +705,24 @@ class networking {
       return JSON.stringify(packet);
    }
 
-   sendPacket(packet, ipAddress, port, waitForAnswer = true) {
+   async sendPacket(packet, ipAddress, port, waitForAnswer = true) {
       let socket = new net.Socket();
       var response;
       var receivedResponsePromise = new Promise(function (resolve, reject) {
          socket.connect(port, ipAddress, () => {
             socket.write(packet);
-            client.end();
+            socket.end();
          })
 
-         client.on('data', (data) => {
+         socket.on('data', (data) => {
             response = data.toString();
             socket.destroy();
             resolve();
          })
 
-         client.on('error', (error) => {
+         socket.on('error', (error) => {
             console.log(error);
-            client.destroy();
+            socket.destroy();
             reject();
          })
       })
