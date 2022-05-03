@@ -40,7 +40,7 @@ class networking {
 
          if (notifiedNodes.indexOf(randomNode.ipAddress) == -1 && successfullyNotifiedNodes.indexOf(randomNode.ipAddress) == -1) {
 
-            if(this.sendPacket(packet, randomNode.ipAddress, randomNode.port) != undefined) {
+            if(await this.sendPacket(packet, randomNode.ipAddress, randomNode.port) != undefined) {
                successfullyNotifiedNodes.push(randomNode.ipAddress);
             }
 
@@ -52,11 +52,6 @@ class networking {
 
    async syncBlockchain() {
       var syncSuccessful = false;
-
-      /*var packet = {queryID:5, unixTimestamp: Date.now(), type: "request", payload:{blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id}, publicKey: this.bcrypto.getPubKey().toPem()};
-      var packetCopy = JSON.parse(JSON.stringify(packet));
-      delete packetCopy.queryID;
-      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));*/
       var packet = this.createPacket(5, {type: "request", blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id});
 
       var newBlocks = "";
@@ -64,82 +59,37 @@ class networking {
       while(!syncSuccessful && this.nodeList.length > 1) {
          let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
          if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
-            var blockchainSyncSuccessPromise = new Promise((resolve, reject) => {
-               let client = new net.Socket();
-               client.connect(this.nodeList[randomNodeIndex].port, this.nodeList[randomNodeIndex].ipAddress, () => {
-                  client.write(packet);
-               });
-
-               client.on('data', (data) => {
-                  newBlocks = data.toString();
-                  resolve();
-               })
-
-               client.on('error', (error) => {
-                  console.log(error);
-                  reject();
-               })
-            });
-
-            try {
-               await blockchainSyncSuccessPromise;
-               //console.log(newBlocks);
+            newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
+            if(newBlocks != undefined) {
                
                var blockchainUpdate = JSON.parse(newBlocks).blocks;
                var newestBlock = JSON.stringify(blockchainUpdate[blockchainUpdate.length - 1]);
-
-               /*var validatePacket = {queryID:5, unixTimestamp: Date.now(), type: "verification", payload:{hash:this.bcrypto.hash(newestBlock)}, publicKey: this.bcrypto.getPubKey().toPem()};
-               var validatePacketCopy = JSON.parse(JSON.stringify(validatePacket));
-               delete validatePacketCopy.queryID;
-               validatePacket.signature = this.bcrypto.sign(JSON.stringify(validatePacketCopy));*/
-
                var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
-
                let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
-               var blockchainValidateSuccessPromise = new Promise((resolve, reject) => {
-                  let validateClient = new net.Socket();
-                  validateClient.connect(this.nodeList[validationRandomNode].port, this.nodeList[validationRandomNode].ipAddress, () => {
-                     validateClient.write(validatePacket);
-                  });
-   
-                  validateClient.on('data', (data) => {
-                     if(JSON.parse(data.toString()).status) {
-                        resolve();
-                     } else {
-                        reject();
-                     }
-                  })
-   
-                  validateClient.on('error', (error) => {
-                     console.log(error);
-                     reject();
-                  })
-               });
+               
+               if(JSON.parse(await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port)).status) {
 
-               await blockchainValidateSuccessPromise;
-
-               if(blockchainUpdate.length > 1) {
-                  var syncIsInvalid = false;
-                  if(this.bcrypto.hash(this.blockchain.getNewestBlock()) != blockchainUpdate[1].previousBlockHash)
-                     syncIsInvalid = true;
-                  
-                  for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
-                     if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
+                  if(blockchainUpdate.length > 1) {
+                     var syncIsInvalid = false;
+                     if(this.bcrypto.hash(this.blockchain.getNewestBlock()) != blockchainUpdate[1].previousBlockHash)
                         syncIsInvalid = true;
+                     
+                     for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
+                        if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
+                           syncIsInvalid = true;
+                     }
+
+                     if(syncIsInvalid)
+                        throw "one or more blocks are invalid!";
+
+                     for(var i = 1; i < blockchainUpdate.length; i++) {
+                        this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
+                     }
                   }
 
-                  if(syncIsInvalid)
-                     throw "one or more blocks are invalid!";
-
-                  for(var i = 1; i < blockchainUpdate.length; i++) {
-                     this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
-                  }
+                  syncSuccessful = true;
                }
 
-               syncSuccessful = true;
-
-            } catch (error) {
-               console.log(error);
             }
          }
       }
@@ -147,24 +97,6 @@ class networking {
 
    async registerToNetwork() {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
-
-      /*var packet = {
-         queryID: 2,
-         unixTimestamp: Date.now(),
-         payload: {
-            ipAddress: this.host,
-            port: this.port
-         },
-         publicKey: this.bcrypto.getPubKey().toPem(),
-         signature: ""
-      }
-
-      var packetCopy = JSON.parse(JSON.stringify(packet));
-
-      delete packetCopy.queryID;
-      delete packetCopy.signature;
-
-      packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));*/
       var _this = this;
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
@@ -173,7 +105,6 @@ class networking {
       var registration = new Promise(function (resolve, reject) {
          var client = new net.Socket();
          client.connect(_this.stableNodePort, _this.stableNode, () => {
-            //console.log(`client connected to ${_this.stableNode}:${_this.port}`);
 
             client.write(packet);
             client.end();
@@ -302,8 +233,6 @@ class networking {
          var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
 
          socket.on('data', (data) => {
-            //console.log("received :"  + data.toString());
-            // handle incomming data
             if (this.verrifyPacket(data.toString())) {
                var packet = JSON.parse(data.toString());
 
@@ -391,7 +320,6 @@ class networking {
          });
 
          socket.on('error', (err) => {
-            //console.log(`[` + Date.now().toString + `] Error occurred in ${clientAddress}: ${err.message}`);
          });
       });
    }
@@ -580,11 +508,6 @@ class networking {
 
       var retrieveBlockPromise = new Promise((resolve, reject) => {
          client.connect(forger.port, forger.ipAddress, () => {
-            /*var packet = {queryID:3, unixTimestamp: Date.now(), type:"request", publicKey:this.bcrypto.getPubKey().toPem()};
-            var packetCopy = JSON.parse(JSON.stringify(packet));
-            delete packetCopy.queryID;
-   
-            packet.signature = this.bcrypto.sign(JSON.stringify(packetCopy));*/
             var packet = this.createPacket(3, {type: "request"});
    
             client.write(packet)
@@ -614,11 +537,6 @@ class networking {
             delete blockToVoteOnCopy.validators;
 
             var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
-            /*var packetVote = {queryID:3, unixTimestamp: Date.now(), type:"vote", payload: {signature:blockVoteSignature},publicKey:this.bcrypto.getPubKey().toPem()};
-            var packetVoteCopy = JSON.parse(JSON.stringify(packetVote));
-            delete packetVoteCopy.queryID;
-   
-            packetVote.signature = this.bcrypto.sign(JSON.stringify(packetVoteCopy));*/
             var packetVote = this.createPacket(3, {type: "vote", signature: blockVoteSignature});
 
             for(var i = 0; i < validators.length; i++) {
@@ -627,7 +545,6 @@ class networking {
                   let clientVote = new net.Socket();
                   //console.log(validators[z]);
                   clientVote.connect(validators[z].port, validators[z].ipAddress, () => {
-                     //console.log("send vote package (" + validators[z].ipAddress + ":" + validators[z].port + "): " + JSON.stringify(packetVote));
             
                      clientVote.write(packetVote)
                   });
@@ -658,12 +575,7 @@ class networking {
                }
                
                votedBlock.validators[this.bcrypto.getFingerprint()] = blockVoteSignature;
-               /*var broadcastPacket = {queryID:4, unixTimestamp: Date.now(), payload: {block:votedBlock},publicKey:this.bcrypto.getPubKey().toPem()};
-               var broadcastPacketCopy = JSON.parse(JSON.stringify(broadcastPacket));
-               delete broadcastPacketCopy.queryID;*/
-
                var broadcastPacket = this.createPacket(4, {block:votedBlock});
-
                this.broadcastToRandomNodes(broadcastPacket);
 
             }
@@ -676,7 +588,6 @@ class networking {
 
    async updatePotentialBlock(potentialBlock) {
       this.potentialBlock = potentialBlock;
-      //console.log(this.potentialBlock);
 
       var sleepPromise = new Promise((resolve) => {
          setTimeout(resolve, 15000);
