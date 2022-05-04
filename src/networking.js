@@ -62,12 +62,12 @@ class networking {
             newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
             if(newBlocks != undefined) {
                
-               var blockchainUpdate = JSON.parse(newBlocks).blocks;
+               var blockchainUpdate = JSON.parse(newBlocks).payload.blocks;
                var newestBlock = JSON.stringify(blockchainUpdate[blockchainUpdate.length - 1]);
                var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
                let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
                
-               if(JSON.parse(await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port)).status) {
+               if(JSON.parse(await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port)).payload.status) {
 
                   if(blockchainUpdate.length > 1) {
                      var syncIsInvalid = false;
@@ -103,7 +103,7 @@ class networking {
 
       if(response != undefined) {
 
-         var nodes = JSON.parse(response);
+         var nodes = JSON.parse(response).payload.nodeList;
          for (var i in nodes) {
             this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
          }
@@ -161,11 +161,12 @@ class networking {
          socket.on('data', (data) => {
             if (this.verrifyPacket(data.toString())) {
                var packet = JSON.parse(data.toString());
+               var payload = {};
 
                switch (packet.queryID) {
                   case 1:
                      let status = this.transactionQueue.addTransaction(JSON.parse(data.toString()))
-                     socket.write(JSON.stringify({ status: status }));
+                     payload.status = status
 
                      if (status) {
                         this.broadcastToRandomNodes(data.toString(), 8);
@@ -175,15 +176,15 @@ class networking {
                   case 2:
                      if(this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
                         this.addNodeToNodeList(packet);
-                        socket.write(JSON.stringify(this.nodeList));
+                        payload.nodeList = this.nodeList
                      } else {
-                        socket.write(this.createPacket(2, {status:false}));
+                        payload.status = false;
                      }
                      break;
 
                   case 3:
                      if(packet.payload.type == "request")
-                        socket.write(JSON.stringify(this.potentialBlock));
+                        payload.potentialBlock = this.potentialBlock;
 
                      if(packet.payload.type == "vote") {
                         var blockToVoteOnCopy;
@@ -212,7 +213,7 @@ class networking {
                   case 4:
 
                      if(JSON.parse(this.blockchain.getNewestBlock()).id == packet.payload.block.id - 1) {
-                        socket.write(JSON.stringify({ status: true }));
+                        payload.status = true;
                         this.broadcastToRandomNodes(data.toString());
 
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
@@ -220,27 +221,32 @@ class networking {
                            this.transactionQueue.clean(packet.payload.block.payload);
                         }
                      } else {
-                        socket.write(JSON.stringify({ status: false }));
+                        payload.status = false;
                      }
 
                      break;
                   case 5:
                         if(packet.payload.type == "request")
-                           socket.write(this.blockchain.getNewestNBlocks(packet.payload.blockHeight));
+                           payload = this.blockchain.getNewestNBlocks(packet.payload.blockHeight);
                         
                         if(packet.payload.type == "verification") {
-                           socket.write("{\"status\":" + (this.bcrypto.hash(JSON.stringify(JSON.parse(this.blockchain.getNewestBlock()))) == packet.payload.hash) + "}");
+                           payload.status = (this.bcrypto.hash(JSON.stringify(JSON.parse(this.blockchain.getNewestBlock()))) == packet.payload.hash);
                         }
 
                      break;
                   case 6:
-                     socket.write("{\"timestamp\":" + Date.now() + "}");
+                     payload.timestamp = Date.now();
                      break;
                }
+
+               var answer = this.createPacket(packet.queryID * -1, payload);
+               //console.log(answer);
+               socket.write(answer);
+            
             } else {
                console.log(data.toString())
             }
-
+            
             socket.end();
             socket.destroy();
          });
