@@ -438,13 +438,14 @@ class networking {
    }
 
    async voteOnBlock(forger, currentVotingSlot, validators, transactionQueue) {
-      var blockToVoteOn = await this.sendPacket(this.createPacket(3, {type: "request"}), forger.ipAddress, forger.port);
+      var blockToVoteOn = JSON.parse(await this.sendPacket(this.createPacket(3, {type: "request"}), forger.ipAddress, forger.port));
       var transactionQueueCopy = JSON.parse(JSON.stringify(transactionQueue));
       transactionQueueCopy.forEach(object => {
          delete object["queryID"];
       });
 
       if(blockToVoteOn != undefined) {
+         blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
 
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
