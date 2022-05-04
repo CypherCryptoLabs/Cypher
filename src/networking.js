@@ -303,6 +303,13 @@ class networking {
                   return false;
                
                break;
+            case -1:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]))
+                  return false;
+               
+               if(typeof payload.status != "boolean")
+                  return false
+               break;
             case 2:
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["ipAddress", "port"]))
                   return false;
@@ -314,6 +321,13 @@ class networking {
                   return false;
                
                break;
+            case -2:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["nodeList"]))
+                  return false;
+               
+               if(payload.status && typeof payload.status != "boolean")
+                  return false
+               break;
             case 3:
                if((JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type"]) && payload.type != "request") ||
                   (JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "signature"]) && payload.type != "vote"))
@@ -322,6 +336,10 @@ class networking {
                if(payload.hasOwnProperty("signature") && !/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(payload.signature))
                   return false;
 
+               break;
+            case -3:
+               if((JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["potentialBlock"]) && payload != {}))
+                  return false;
                break;
             case 4:
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
@@ -351,9 +369,16 @@ class networking {
                }
 
                break;
+            case -4:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]))
+                  return false;
+               
+               if(typeof payload.status != "boolean")
+                  return false;
+               break;
             case 5:
-               if((JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "blockHeight"]) && payload.type != "request") ||
-                  (JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "hash"]) && payload.type != "verification"))
+               if((JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type", "blockHeight"]) && payload.type != "request") &&
+                  (JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type", "hash"]) && payload.type != "verification"))
                   return false;
 
                if(payload.hasOwnProperty("blocHeight") && isNaN(payload.blockHeight) || payload.blockHeight < 0)
@@ -363,9 +388,23 @@ class networking {
                   return false;
                
                break;
+            case -5:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["blocks"]))
+                  return false;
+            
+               if(payload.status && typeof payload.status != "boolean")
+                  return false;
+               break;
             case 6:
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify([]))
                   return false;
+               break;
+            case -6:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["timestamp"]))
+                  return false;
+
+               if(typeof payload.timestamp != "number")
+                  return false
                break;
             default:
                return false;
@@ -445,7 +484,9 @@ class networking {
       });
 
       if(blockToVoteOn != undefined) {
+         console.log(blockToVoteOn);
          blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
+         console.log(blockToVoteOn);
 
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
@@ -541,11 +582,16 @@ class networking {
             reject();
          })
       })
+      console.log(ipAddress)
 
       if(waitForAnswer) {
          try {
             await receivedResponsePromise;
-            return response;
+            if(this.verrifyPacket(response)) {
+               return response;
+            } else {
+               return;
+            }
          } catch (error) {
             console.log(error);
             return;
