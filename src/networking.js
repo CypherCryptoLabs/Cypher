@@ -484,9 +484,7 @@ class networking {
       });
 
       if(blockToVoteOn != undefined) {
-         console.log(blockToVoteOn);
          blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
-         console.log(blockToVoteOn);
 
          if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
             // send signature to Forger
@@ -582,7 +580,6 @@ class networking {
             reject();
          })
       })
-      console.log(ipAddress)
 
       if(waitForAnswer) {
          try {
