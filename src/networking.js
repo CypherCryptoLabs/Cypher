@@ -240,8 +240,13 @@ class networking {
                }
 
                var answer = this.createPacket(packet.queryID * -1, payload);
-               //console.log(answer);
+               socket.setTimeout(3000);
                socket.write(answer);
+
+               socket.on('timeout', () => {
+                  socket.end();
+                  socket.destroy();
+               })
             
             } else {
                console.log(data.toString())
@@ -561,6 +566,7 @@ class networking {
 
    async sendPacket(packet, ipAddress, port, waitForAnswer = true) {
       let socket = new net.Socket();
+      socket.setTimeout(3000);
       var response;
       var receivedResponsePromise = new Promise(function (resolve, reject) {
          socket.connect(port, ipAddress, () => {
@@ -576,6 +582,11 @@ class networking {
 
          socket.on('error', (error) => {
             console.log(error);
+            socket.destroy();
+            reject();
+         })
+
+         socket.on('timeout', () => {
             socket.destroy();
             reject();
          })
