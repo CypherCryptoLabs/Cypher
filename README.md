@@ -43,7 +43,7 @@ node src/main.js
 ```
 
 ### TODO:
-- [ ] All TCP traffic signed
+- [x] All TCP traffic signed
 - [x] Proper way of creating a fingerprint of the public key
 - [x] Sync Blockchain with Network on startup
 - [x] verify Blockchain that is received on Network Registration
@@ -51,9 +51,9 @@ node src/main.js
 - [ ] P.o.S. Penalties and Health System
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
 - [ ] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
-- [ ] automatically remove ofline Nodes from Nodelist
+- [ ] automatically remove offline Nodes from Nodelist
 - [x] check reachability of Node on registration
-- [ ] Timeouts for all TCP traffic
+- [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 
 ### License: 

@@ -29,8 +29,8 @@ class blockchain {
 
                let payload = blockchainCopy[i].payload;
                for(var j = 0; j < payload.length; j++) {
-                  cacheObj[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-                  cacheObj[payload[j].blockchainSenderAddress].balanceChanges.push(i);
+                  cacheObj[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+                  cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.push(i);
 
                   if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
                      cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
@@ -64,8 +64,8 @@ class blockchain {
 
       let payload = block.payload;
       for(var j = 0; j < payload.length; j++) {
-         this.addressCache[payload[j].blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-         this.addressCache[payload[j].blockchainSenderAddress].balanceChanges.push(block.id);
+         this.addressCache[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+         this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.push(block.id);
 
          if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
             this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
@@ -195,7 +195,7 @@ class blockchain {
       }
 
       totalBuffer = totalBuffer.subarray(index, dataReadForIteration + ((i - 2) * 10000)).toString("utf-8");
-      return "{\"blocks\":[" + totalBuffer;
+      return JSON.parse("{\"blocks\":[" + totalBuffer);
    }
 
    getBalanceForAddress(blockchainAddress) {
@@ -210,7 +210,7 @@ class blockchain {
             }
 
             for (var j = 0; j < blockchain.blockchain[i].payload.length; j++) {
-               if (blockchain.blockchain[i].payload[j].blockchainSenderAddress == blockchainAddress) {
+               if (blockchain.blockchain[i].payload[j].payload.blockchainSenderAddress == blockchainAddress) {
                   balance -= blockchain.blockchain[i].payload[j].payload.unitsToTransfer + blockchain.blockchain[i].payload[j].payload.networkFee;
                }
 

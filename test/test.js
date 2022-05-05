@@ -51,8 +51,8 @@ client.connect(PORT, HOST, () => {
     var createTransactionPacket = {
         queryID : 1,
         unixTimestamp : Date.now(),
-        blockchainSenderAddress : crypto.createHash('sha256').update(crypto.createPublicKey(publicKey.toPem()).export({ type: 'spki', format: 'der' })).digest('hex'),
         payload : {
+            blockchainSenderAddress : crypto.createHash('sha256').update(crypto.createPublicKey(publicKey.toPem()).export({ type: 'spki', format: 'der' })).digest('hex'),
             blockchainReceiverAddress : "0000000000000000000000000000000000000000000000000000000000000000",
             unitsToTransfer : 1,
             networkFee : 0
