@@ -53,7 +53,7 @@ node src/main.js
 - [ ] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
 - [ ] automatically remove offline Nodes from Nodelist
 - [x] check reachability of Node on registration
-- [ ] Timeouts for all TCP traffic
+- [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 
 ### License: 
