@@ -90,6 +90,9 @@ class networking {
                   syncSuccessful = true;
                }
 
+            } else {
+               console.log("Could not sync Blockchain. Local Blockchain may be ahead of network!")
+               process.exit();
             }
          }
       }
