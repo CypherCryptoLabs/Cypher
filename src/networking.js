@@ -301,7 +301,7 @@ class networking {
                   typeof payload.blockchainReceiverAddress != "string")
                   return false;
 
-               if(payload.unitsToTransfer < 0 || payload.networkFee <0)
+               if(payload.unitsToTransfer <= 0 || payload.networkFee <= 0)
                   return false;
 
                if (payload.blockchainSenderAddress != this.bcrypto.getFingerprint(packet.publicKey))
