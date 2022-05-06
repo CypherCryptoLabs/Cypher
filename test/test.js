@@ -55,7 +55,7 @@ client.connect(PORT, HOST, () => {
             blockchainSenderAddress : crypto.createHash('sha256').update(crypto.createPublicKey(publicKey.toPem()).export({ type: 'spki', format: 'der' })).digest('hex'),
             blockchainReceiverAddress : "0000000000000000000000000000000000000000000000000000000000000000",
             unitsToTransfer : 1,
-            networkFee : 0
+            networkFee : 0.01
         },
         publicKey : publicKey.toPem(),
         signature : ""
