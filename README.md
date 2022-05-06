@@ -19,7 +19,7 @@ cd cypher/src
 npm install --save
 ```
 
-After installing all dependencies, you should remove the ```private.pem``` file that is used for testing, and the ```blockchain.json``` that is only used for testing as well. The node will automatically regenerate the ```private.pem```file at startup. You need to recreate the ```blockchain.json```file yourself. This functionality will be added to the ```test.js```script in the future.
+After installing all dependencies, you should remove the ```private.pem``` file that is used for testing, and the ```blockchain.json``` that is only used for testing as well. The node will automatically regenerate the ```private.pem``` file at startup. You need to recreate the ```blockchain.json``` file yourself. This functionality will be added to the ```test.js```script in the future.
 ```
 cd ..
 rm blockchain.json private.pem
