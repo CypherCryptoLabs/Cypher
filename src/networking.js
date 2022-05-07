@@ -607,7 +607,6 @@ class networking {
                return;
             }
          } catch (error) {
-            console.log(error);
             return;
          }
       } else {

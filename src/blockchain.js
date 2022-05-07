@@ -47,7 +47,6 @@ class blockchain {
          }
 
          this.addressCache = JSON.parse(fs.readFileSync("cache.json").toString());
-         console.log(this.addressCache);
       } catch (err) {
          console.log(err);
          process.exit();
