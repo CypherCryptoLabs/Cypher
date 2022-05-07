@@ -9,6 +9,8 @@ class transactionQueue {
    }
 
    addTransaction(transaction) {
+      transaction.payload.unitsToTransfer = parseFloat((Math.ceil(parseFloat(transaction.payload.unitsToTransfer) * 1000) / 1000).toFixed(3));
+      transaction.payload.networkFee = parseFloat((Math.ceil(parseFloat(transaction.payload.networkFee) * 1000) / 1000).toFixed(3));
 
       if (this.Blockchain.getBalanceForAddress(transaction.payload.blockchainSenderAddress) >= transaction.payload.unitsToTransfer + transaction.payload.networkFee) {
          if (this.queue && this.queue.length) {
