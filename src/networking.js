@@ -154,7 +154,7 @@ class networking {
    }
 
    connectionHandler() {
-      server.listen(this.port, this.host, () => {
+      server.listen(this.port, () => {
          console.log(`Node listening on ${this.host}:${this.port}`);
       });
 
