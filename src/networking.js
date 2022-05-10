@@ -31,20 +31,20 @@ class networking {
       } else {
          var numOfRandomPeers = (numOfRandomPeers > this.nodeList.length) ? this.nodeList.length - 1 : 8;
       }
-      var notifiedNodes = [this.host];
-      var successfullyNotifiedNodes = [this.host];
+      var notifiedNodes = [this.bcrypto.getFingerprint()];
+      var successfullyNotifiedNodes = [this.bcrypto.getFingerprint()];
 
       while (successfullyNotifiedNodes.length - 1 < numOfRandomPeers && notifiedNodes.length - 1 < this.nodeList.length) {
          var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
          var randomNode = this.nodeList[randomNodeIndex];
 
-         if (notifiedNodes.indexOf(randomNode.ipAddress) == -1 && successfullyNotifiedNodes.indexOf(randomNode.ipAddress) == -1) {
+         if (notifiedNodes.indexOf(randomNode.blockchainAddress) == -1 && successfullyNotifiedNodes.indexOf(randomNode.blockchainAddress) == -1) {
 
             if(await this.sendPacket(packet, randomNode.ipAddress, randomNode.port) != undefined) {
-               successfullyNotifiedNodes.push(randomNode.ipAddress);
+               successfullyNotifiedNodes.push(randomNode.blockchainAddress);
             }
 
-            notifiedNodes.push(randomNode.ipAddress);
+            notifiedNodes.push(randomNode.blockchainAddress);
          }
 
       }
