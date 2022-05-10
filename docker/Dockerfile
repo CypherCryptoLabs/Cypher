@@ -7,7 +7,7 @@ WORKDIR /cypher
 
 RUN cd /cypher/src && npm i --save
 RUN cd /cypher/setup && npm i --save
-RUN cd /cypher && node /cypher/setup/setup.js && cat private.pem
+RUN cd /cypher && node /cypher/setup/setup.js && echo '\n\n\n!!!COPY THE FOLLOWING KEY TO A SECURE LOCATION!!!' && cat private.pem && echo '\n\n\n'
 
 COPY config.json /cypher/config.json
 COPY blockchain.json /cypher/blockchain.json
