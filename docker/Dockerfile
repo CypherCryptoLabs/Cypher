@@ -11,4 +11,5 @@ COPY config.json /cypher/config.json
 COPY blockchain.json /cypher/blockchain.json
 #CMD ["bash"]
 
+EXPOSE 1234
 ENTRYPOINT ["node", "/cypher/src/main.js"]
