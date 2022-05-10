@@ -3,6 +3,8 @@
 blockchain.json
 cache.json
 config.json
+!docker/config.json
+!docker/blockchain.json
 src/node_modules
 test/node_modules
 package-lock.json
