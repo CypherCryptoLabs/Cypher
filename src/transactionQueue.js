@@ -81,7 +81,7 @@ class transactionQueue {
       let currentTimestamp = Date.now();
       for (var i = 0; i < usedQueue.length; i++) {
          for (var j = 0; j < this.queue.length; j++) {
-            if (this.queue[j].signature == usedQueue[i].signature || this.queue[j].unixTimestamp < currentTimestamp - 72000000)
+            if (this.queue[j].signature == usedQueue[i].signature || this.queue[j].unixTimestamp < currentTimestamp - 86400000)
                this.queue.splice(j, 1);
          }
       }
