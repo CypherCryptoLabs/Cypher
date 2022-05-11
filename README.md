@@ -50,7 +50,7 @@ node src/main.js
 - [x] P.o.S. Consensus Algorithm
 - [ ] P.o.S. Penalties and Health System
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
-- [ ] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
+- [x] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
 - [ ] automatically remove offline Nodes from Nodelist
 - [x] check reachability of Node on registration
 - [x] Timeouts for all TCP traffic
