@@ -437,7 +437,10 @@ class networking {
                   return false;
                break;
             case 6:
-               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify([]))
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify([]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type", "publicKey"]))
+                  return false;
+
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "publicKey"]) && payload.type != "report")
                   return false;
                break;
             case -6:
