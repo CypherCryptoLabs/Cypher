@@ -169,12 +169,16 @@ class networking {
    }
 
    async isReachable(address, port) {
+      var receivedPacket = await await this.sendPacket(this.createPacket(6, {}), address, port);
+      if(receivedPacket != undefined) {
+         var timestamp = JSON.parse(receivedPacket).payload.timestamp;
+         if(timestamp <= Date.now() && timestamp >= Date.now() - 60000)
+            return true;
 
-      var timestamp = JSON.parse(await this.sendPacket(this.createPacket(6, {}), address, port)).timestamp;
-      if(timestamp <= Date.now() && timestamp >= Date.now() - 60000)
-         return true;
-
-      return false;
+         return false;
+      } else {
+         return false;
+      }
    }
 
    connectionHandler() {
