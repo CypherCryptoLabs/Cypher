@@ -44,6 +44,7 @@ class networking {
             if(await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
                var packet = this.createPacket(6, {type:"report", publicKey:randomNode.publicKey});
                this.broadcastToRandomNodes(packet);
+               this.removeNodeFromNodeList(randomNode.publicKey);
             }
          }
       }
@@ -168,6 +169,15 @@ class networking {
       }
    }
 
+   removeNodeFromNodeList(publicKey) {
+      for(var i = 0; i < this.nodeList.length; i++) {
+         if(this.nodeList[i].publicKey == publicKey) {
+            this.nodeList.splice(i, i);
+            console.log(this.nodeList);
+         }
+      }
+   }
+
    async isReachable(address, port) {
       var receivedPacket = await await this.sendPacket(this.createPacket(6, {}), address, port);
       if(receivedPacket != undefined) {
@@ -179,6 +189,16 @@ class networking {
       } else {
          return false;
       }
+   }
+
+   async isReachableByPublicKey(publicKey) {
+      for(var i = 0; i < this.nodeList.length; i++) {
+         if(this.nodeList[i].publicKey == publicKey) {
+            return await this.isReachable(this.nodeList[i].ipAddress, this.nodeList[i].port);
+         }
+      }
+
+      return false;
    }
 
    connectionHandler() {
@@ -268,7 +288,17 @@ class networking {
 
                      break;
                   case 6:
-                     payload.timestamp = Date.now();
+                     if(packet.payload.type != undefined) {
+                        payload.timestamp = Date.now();
+                     } else {
+                        if(!this.isReachableByPublicKey(payload.publicKey)) {
+                           this.removeNodeFromNodeList(payload.publicKey);
+                           this.broadcastToRandomNodes(data.toString());
+                           payload.status = true;
+                        } else {
+                           payload.status = false;
+                        }
+                     }
                      break;
                }
 
