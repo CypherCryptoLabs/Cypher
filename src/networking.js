@@ -179,14 +179,19 @@ class networking {
    }
 
    async isReachable(address, port) {
-      var receivedPacket = await await this.sendPacket(this.createPacket(6, {}), address, port);
+      console.log(port)
+      var receivedPacket = await this.sendPacket(this.createPacket(6, {}), address, port);
       if(receivedPacket != undefined) {
          var timestamp = JSON.parse(receivedPacket).payload.timestamp;
-         if(timestamp <= Date.now() && timestamp >= Date.now() - 60000)
+         if(timestamp <= Date.now() && timestamp >= Date.now() - 60000) {
+            console.log(1)
             return true;
+         }
 
+         console-log(2)
          return false;
       } else {
+         console.log(3)
          return false;
       }
    }
@@ -227,7 +232,9 @@ class networking {
 
                      break;
                   case 2:
-                     if(this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
+                     var isReachable;
+                     this.isReachable(packet.payload.ipAddress, packet.payload.port).then((data) => {isReachable = data})
+                     if(isReachable) {
                         this.addNodeToNodeList(packet);
                         payload.nodeList = this.nodeList
                      } else {
