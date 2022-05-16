@@ -184,14 +184,11 @@ class networking {
       if(receivedPacket != undefined) {
          var timestamp = JSON.parse(receivedPacket).payload.timestamp;
          if(timestamp <= Date.now() && timestamp >= Date.now() - 60000) {
-            console.log(1)
             return true;
          }
 
-         console-log(2)
          return false;
       } else {
-         console.log(3)
          return false;
       }
    }
@@ -232,11 +229,9 @@ class networking {
 
                      break;
                   case 2:
-                     var isReachable;
-                     this.isReachable(packet.payload.ipAddress, packet.payload.port).then((data) => {isReachable = data})
-                     if(isReachable) {
+                     if(this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
                         this.addNodeToNodeList(packet);
-                        payload.nodeList = this.nodeList
+                        payload.nodeList = this.nodeList;
                      } else {
                         payload.status = false;
                      }
@@ -295,7 +290,7 @@ class networking {
 
                      break;
                   case 6:
-                     if(packet.payload.type != undefined) {
+                     if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type"])) {
                         payload.timestamp = Date.now();
                      } else {
                         if(!this.isReachableByPublicKey(payload.publicKey)) {
@@ -481,10 +476,10 @@ class networking {
                   return false;
                break;
             case -6:
-               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["timestamp"]))
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["timestamp"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]))
                   return false;
 
-               if(typeof payload.timestamp != "number")
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["timestamp"]) && typeof payload.timestamp != "number")
                   return false
                break;
             default:
