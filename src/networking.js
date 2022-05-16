@@ -210,7 +210,7 @@ class networking {
       });
 
       server.on('connection', (socket) => {
-         var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
+         var subroutineHandlesSocket = false;
 
          socket.on('data', (data) => {
             if (this.verrifyPacket(data.toString())) {
@@ -228,12 +228,7 @@ class networking {
 
                      break;
                   case 2:
-                     if(this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
-                        this.addNodeToNodeList(packet);
-                        payload.nodeList = this.nodeList;
-                     } else {
-                        payload.status = false;
-                     }
+                     this.handleRegistration(socket, packet);
                      break;
 
                   case 3:
@@ -292,37 +287,85 @@ class networking {
                      if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type"])) {
                         payload.timestamp = Date.now();
                      } else {
-                        if(!this.isReachableByPublicKey(payload.publicKey)) {
+                        /*if(!this.isReachableByPublicKey(payload.publicKey)) {
                            this.removeNodeFromNodeList(payload.publicKey);
                            this.broadcastToRandomNodes(data.toString());
                            payload.status = true;
                         } else {
                            payload.status = false;
-                        }
+                        }*/
+
+                        this.handleReachabilityCheck(socket, packet);
                      }
                      break;
                }
 
-               var answer = this.createPacket(packet.queryID * -1, payload);
-               socket.setTimeout(3000);
-               socket.write(answer);
+               if(!subroutineHandlesSocket) {
+                  var answer = this.createPacket(packet.queryID * -1, payload);
+                  socket.setTimeout(3000);
+                  socket.write(answer);
 
-               socket.on('timeout', () => {
-                  socket.end();
-                  socket.destroy();
-               })
+                  socket.on('timeout', () => {
+                     socket.end();
+                     socket.destroy();
+                  })
+               }
             
             } else {
                console.log(data.toString())
             }
             
-            socket.end();
-            socket.destroy();
+            if(!subroutineHandlesSocket) {
+               socket.end();
+               socket.destroy();
+            }
          });
 
          socket.on('error', (err) => {
          });
       });
+   }
+
+   async handleReachabilityCheck(socket, packet) {
+      var payload = {};
+
+      if(!await this.isReachableByPublicKey(packet.payload.publicKey)) {
+         this.removeNodeFromNodeList(packet.payload.publicKey);
+         this.broadcastToRandomNodes(JSON.stringify(packet));
+         payload.status = true;
+      } else {
+         payload.status = false;
+      }
+
+      var answer = this.createPacket(packet.queryID * -1, payload);
+      socket.setTimeout(3000);
+      socket.write(answer);
+
+      socket.on('timeout', () => {
+         socket.end();
+         socket.destroy();
+      })
+   }
+
+   async handleRegistration(socket, packet) {
+      var payload = {};
+      console.trace();
+
+      if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
+         this.addNodeToNodeList(packet);
+         payload.nodeList = this.nodeList;
+      } else {
+         payload.status = false;
+      }
+
+      var answer = this.createPacket(packet.queryID * -1, payload);
+      socket.setTimeout(3000);
+      socket.write(answer);
+
+      socket.on('timeout', () => {
+         socket.end();
+         socket.destroy();
+      })
    }
 
    verrifyPacket(packetJSON) {
