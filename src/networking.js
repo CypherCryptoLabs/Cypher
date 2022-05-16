@@ -25,6 +25,30 @@ class networking {
       this.blockchain = blockchain;
    }
 
+   async checkReachabilityForRandomNodes() {
+      while(true) {
+
+         var sleep = new Promise((resolve) => {
+            setTimeout(() => {
+               resolve();
+            }, 60000);
+         })
+
+         await sleep;
+
+         var numOfRandomPeers = (numOfRandomPeers > this.nodeList.length) ? this.nodeList.length - 1 : 8;
+         for(var i = 0; i < numOfRandomPeers; i++) {
+            var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
+            var randomNode = this.nodeList[randomNodeIndex];
+
+            if(await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
+               var packet = this.createPacket(6, {type:"report", publicKey:randomNode.publicKey});
+               this.broadcastToRandomNodes(packet);
+            }
+         }
+      }
+   }
+
    async broadcastToRandomNodes(packet, numOfRandomPeers = -1) {
       if (numOfRandomPeers == -1) {
          numOfRandomPeers = this.nodeList.length;
@@ -154,6 +178,8 @@ class networking {
    }
 
    connectionHandler() {
+      this.checkReachabilityForRandomNodes();
+
       server.listen(this.port, () => {
          console.log(`Node listening on Port ${this.port}`);
       });
