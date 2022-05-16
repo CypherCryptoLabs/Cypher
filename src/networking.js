@@ -179,8 +179,7 @@ class networking {
    }
 
    async isReachable(address, port) {
-      console.log(port)
-      var receivedPacket = await this.sendPacket(this.createPacket(6, {}), address, port);
+      let receivedPacket = await this.sendPacket(this.createPacket(6, {}), address, port)
       if(receivedPacket != undefined) {
          var timestamp = JSON.parse(receivedPacket).payload.timestamp;
          if(timestamp <= Date.now() && timestamp >= Date.now() - 60000) {
