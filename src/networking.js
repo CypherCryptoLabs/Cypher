@@ -128,6 +128,7 @@ class networking {
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
       var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+      console.log(response)
 
       if(response != undefined) {
 
@@ -228,6 +229,7 @@ class networking {
 
                      break;
                   case 2:
+                     subroutineHandlesSocket = true;
                      this.handleRegistration(socket, packet);
                      break;
 
@@ -294,7 +296,7 @@ class networking {
                         } else {
                            payload.status = false;
                         }*/
-
+                        subroutineHandlesSocket = true;
                         this.handleReachabilityCheck(socket, packet);
                      }
                      break;
@@ -345,11 +347,14 @@ class networking {
          socket.end();
          socket.destroy();
       })
+
+      socket.on('error', (err) => {
+         console.log(err)
+      });
    }
 
    async handleRegistration(socket, packet) {
       var payload = {};
-      console.trace();
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
          this.addNodeToNodeList(packet);
@@ -366,6 +371,10 @@ class networking {
          socket.end();
          socket.destroy();
       })
+
+      socket.on('error', (err) => {
+         console.log(err)
+      });
    }
 
    verrifyPacket(packetJSON) {
