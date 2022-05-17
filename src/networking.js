@@ -128,7 +128,6 @@ class networking {
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
       var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
-      console.log(response)
 
       if(response != undefined) {
 
@@ -136,6 +135,8 @@ class networking {
          for (var i in nodes) {
             this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
          }
+
+         console.log(this.nodeList);
 
          for (var i = 0; i < this.nodeList.length; i++) {
             await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
@@ -693,7 +694,6 @@ class networking {
       var receivedResponsePromise = new Promise(function (resolve, reject) {
          socket.connect(port, ipAddress, () => {
             socket.write(packet);
-            socket.end();
          })
 
          socket.on('data', (data) => {
