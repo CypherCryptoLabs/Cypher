@@ -41,7 +41,7 @@ class networking {
             var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
             var randomNode = this.nodeList[randomNodeIndex];
 
-            if(await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
+            if(randomNode.publicKey != this.bcrypto.getPubKey(true) && await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
                var packet = this.createPacket(6, {type:"report", publicKey:randomNode.publicKey});
                this.broadcastToRandomNodes(packet);
                this.removeNodeFromNodeList(randomNode.publicKey);
@@ -136,8 +136,6 @@ class networking {
             this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
          }
 
-         console.log(this.nodeList);
-
          for (var i = 0; i < this.nodeList.length; i++) {
             await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
          }
@@ -174,8 +172,8 @@ class networking {
    removeNodeFromNodeList(publicKey) {
       for(var i = 0; i < this.nodeList.length; i++) {
          if(this.nodeList[i].publicKey == publicKey) {
-            this.nodeList.splice(i, i);
-            console.log(this.nodeList);
+            this.nodeList.splice(i, 1);
+            break;
          }
       }
    }
