@@ -332,7 +332,6 @@ class networking {
 
       if(!await this.isReachableByPublicKey(packet.payload.publicKey)) {
          this.removeNodeFromNodeList(packet.payload.publicKey);
-         this.broadcastToRandomNodes(JSON.stringify(packet));
          payload.status = true;
       } else {
          payload.status = false;
@@ -350,6 +349,9 @@ class networking {
       socket.on('error', (err) => {
          console.log(err)
       });
+
+      if(payload.status)
+         this.broadcastToRandomNodes(JSON.stringify(packet));
    }
 
    async handleRegistration(socket, packet) {
