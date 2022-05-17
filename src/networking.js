@@ -25,6 +25,31 @@ class networking {
       this.blockchain = blockchain;
    }
 
+   async checkReachabilityForRandomNodes() {
+      while(true) {
+
+         var sleep = new Promise((resolve) => {
+            setTimeout(() => {
+               resolve();
+            }, 60000);
+         })
+
+         await sleep;
+
+         var numOfRandomPeers = (numOfRandomPeers > this.nodeList.length) ? this.nodeList.length - 1 : 8;
+         for(var i = 0; i < numOfRandomPeers; i++) {
+            var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
+            var randomNode = this.nodeList[randomNodeIndex];
+
+            if(randomNode.publicKey != this.bcrypto.getPubKey(true) && await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
+               var packet = this.createPacket(6, {type:"report", publicKey:randomNode.publicKey});
+               this.broadcastToRandomNodes(packet);
+               this.removeNodeFromNodeList(randomNode.publicKey);
+            }
+         }
+      }
+   }
+
    async broadcastToRandomNodes(packet, numOfRandomPeers = -1) {
       if (numOfRandomPeers == -1) {
          numOfRandomPeers = this.nodeList.length;
@@ -144,22 +169,48 @@ class networking {
       }
    }
 
-   async isReachable(address, port) {
+   removeNodeFromNodeList(publicKey) {
+      for(var i = 0; i < this.nodeList.length; i++) {
+         if(this.nodeList[i].publicKey == publicKey) {
+            this.nodeList.splice(i, 1);
+            break;
+         }
+      }
+   }
 
-      var timestamp = JSON.parse(await this.sendPacket(this.createPacket(6, {}), address, port)).timestamp;
-      if(timestamp <= Date.now() && timestamp >= Date.now() - 60000)
-         return true;
+   async isReachable(address, port) {
+      let receivedPacket = await this.sendPacket(this.createPacket(6, {}), address, port)
+      if(receivedPacket != undefined) {
+         var timestamp = JSON.parse(receivedPacket).payload.timestamp;
+         if(timestamp <= Date.now() && timestamp >= Date.now() - 60000) {
+            return true;
+         }
+
+         return false;
+      } else {
+         return false;
+      }
+   }
+
+   async isReachableByPublicKey(publicKey) {
+      for(var i = 0; i < this.nodeList.length; i++) {
+         if(this.nodeList[i].publicKey == publicKey) {
+            return await this.isReachable(this.nodeList[i].ipAddress, this.nodeList[i].port);
+         }
+      }
 
       return false;
    }
 
    connectionHandler() {
+      this.checkReachabilityForRandomNodes();
+
       server.listen(this.port, () => {
          console.log(`Node listening on Port ${this.port}`);
       });
 
       server.on('connection', (socket) => {
-         var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
+         var subroutineHandlesSocket = false;
 
          socket.on('data', (data) => {
             if (this.verrifyPacket(data.toString())) {
@@ -177,12 +228,8 @@ class networking {
 
                      break;
                   case 2:
-                     if(this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
-                        this.addNodeToNodeList(packet);
-                        payload.nodeList = this.nodeList
-                     } else {
-                        payload.status = false;
-                     }
+                     subroutineHandlesSocket = true;
+                     this.handleRegistration(socket, packet);
                      break;
 
                   case 3:
@@ -238,29 +285,94 @@ class networking {
 
                      break;
                   case 6:
-                     payload.timestamp = Date.now();
+                     if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type"])) {
+                        payload.timestamp = Date.now();
+                     } else {
+                        /*if(!this.isReachableByPublicKey(payload.publicKey)) {
+                           this.removeNodeFromNodeList(payload.publicKey);
+                           this.broadcastToRandomNodes(data.toString());
+                           payload.status = true;
+                        } else {
+                           payload.status = false;
+                        }*/
+                        subroutineHandlesSocket = true;
+                        this.handleReachabilityCheck(socket, packet);
+                     }
                      break;
                }
 
-               var answer = this.createPacket(packet.queryID * -1, payload);
-               socket.setTimeout(3000);
-               socket.write(answer);
+               if(!subroutineHandlesSocket) {
+                  var answer = this.createPacket(packet.queryID * -1, payload);
+                  socket.setTimeout(3000);
+                  socket.write(answer);
 
-               socket.on('timeout', () => {
-                  socket.end();
-                  socket.destroy();
-               })
+                  socket.on('timeout', () => {
+                     socket.end();
+                     socket.destroy();
+                  })
+               }
             
             } else {
                console.log(data.toString())
             }
             
-            socket.end();
-            socket.destroy();
+            if(!subroutineHandlesSocket) {
+               socket.end();
+               socket.destroy();
+            }
          });
 
          socket.on('error', (err) => {
          });
+      });
+   }
+
+   async handleReachabilityCheck(socket, packet) {
+      var payload = {};
+
+      if(!await this.isReachableByPublicKey(packet.payload.publicKey)) {
+         this.removeNodeFromNodeList(packet.payload.publicKey);
+         this.broadcastToRandomNodes(JSON.stringify(packet));
+         payload.status = true;
+      } else {
+         payload.status = false;
+      }
+
+      var answer = this.createPacket(packet.queryID * -1, payload);
+      socket.setTimeout(3000);
+      socket.write(answer);
+
+      socket.on('timeout', () => {
+         socket.end();
+         socket.destroy();
+      })
+
+      socket.on('error', (err) => {
+         console.log(err)
+      });
+   }
+
+   async handleRegistration(socket, packet) {
+      var payload = {};
+
+      if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
+         this.addNodeToNodeList(packet);
+         payload.nodeList = this.nodeList;
+      } else {
+         payload.status = false;
+      }
+
+      var answer = this.createPacket(packet.queryID * -1, payload);
+      socket.setTimeout(3000);
+      socket.write(answer);
+
+      socket.on('timeout', () => {
+         socket.end();
+         socket.destroy();
+      })
+
+      socket.on('error', (err) => {
+         console.log(err)
       });
    }
 
@@ -407,14 +519,17 @@ class networking {
                   return false;
                break;
             case 6:
-               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify([]))
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify([]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type", "publicKey"]))
+                  return false;
+
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["type", "publicKey"]) && payload.type != "report")
                   return false;
                break;
             case -6:
-               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["timestamp"]))
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["timestamp"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]))
                   return false;
 
-               if(typeof payload.timestamp != "number")
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["timestamp"]) && typeof payload.timestamp != "number")
                   return false
                break;
             default:
@@ -577,7 +692,6 @@ class networking {
       var receivedResponsePromise = new Promise(function (resolve, reject) {
          socket.connect(port, ipAddress, () => {
             socket.write(packet);
-            socket.end();
          })
 
          socket.on('data', (data) => {
