@@ -13,8 +13,8 @@
     - [Create config.json](#create-configjson)
     - [Copy the Blockchain](#copy-the-blockchain)
     - [run the Node](#run-the-node)
-    - [TODO:](#todo)
-    - [License:](#license)
+- [TODO](#todo)
+- [License](#license)
     
 # Cypher
 Cypher is an open-source Project, aiming to create a decentralized Live-Messenger. For this to work, there needs to be a Network of Computers, called "Nodes", that communicate with each other. To make it attractive for people to run a Node, there is a cryptocurrency called "Cypher". In one Cypher there are 1000 "milliCypher" or "mCypher". 1000 Cypher are refered to as one "KCypher" or "KiloCypher". Nodes can earn Cypher by contributing to the Network, and putting some amount of Cypher at risk. This process is called "staking".
@@ -134,7 +134,7 @@ node src/main.js
 It will create a file called "private.pem", copy it to a secure location, your funds will only be accessible with that file!
 Congratulations, your Node is now online!
 
-### TODO:
+### TODO
 - [x] All TCP traffic signed
 - [x] Proper way of creating a fingerprint of the public key
 - [x] Sync Blockchain with Network on startup
@@ -148,7 +148,7 @@ Congratulations, your Node is now online!
 - [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 
-### License: 
+### License
 MIT License
 
 Copyright (c) 2022 Michel Barnich
