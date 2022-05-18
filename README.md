@@ -1,7 +1,7 @@
 # Cypher
 Cypher is an open-source Project, aiming to create a decentralized Live-Messenger. For this to work, there needs to be a Network of Computers, called "Nodes", that communicate with each other. To make it attractive for people to run a Node, there is a cryptocurrency called "Cypher". In one Cypher there are 1000 "milliCypher" or "mCypher". 1000 Cypher are refered to as one "KCypher" or "KiloCypher". Nodes can earn Cypher by contributing to the Network, and putting some amount of Cypher at risk. This process is called "staking".
 
-The Cypher Project does not stop with providing this decentralized infrastructure and Live-Messenger. There are already more projects in the works, that will be revieled as a ceertain progress is reached.
+The Cypher Project does not stop with providing this decentralized infrastructure and Live-Messenger. There are already more projects in the works, that will be released as a certain progress is reached.
 
 # Contribute
 Contributing to the Cypher Project should be as easy as possible, which is why we use GitHub Pull Requests.There are only 2 rules.
@@ -40,7 +40,7 @@ This is what the file looks originally:
 }
 ```
 
-If you are familier with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
+If you are familiar with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
 
 ### Setting up the Docker container
 After changing the config.json file, run the following command to build a Docker Image:
@@ -97,7 +97,7 @@ This is what the file looks originally (copied from the docker directory):
 }
 ```
 
-If you are familier with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
+If you are familiar with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
 
 ### Copy the Blockchain
 The easiest way to do that is to copy it from the docker directory.
@@ -113,7 +113,7 @@ Finally you can run this command:
 node src/main.js
 ```
 
-It will crete a file called "private.pem", copy it to a secure location, cour funds will only be accessible with that file!
+It will create a file called "private.pem", copy it to a secure location, your funds will only be accessible with that file!
 Congratulations, your Node is now online!
 
 ### TODO:
