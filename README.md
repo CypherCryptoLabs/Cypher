@@ -1,3 +1,21 @@
+# Table of contents
+
+- [Cypher](#cypher)
+- [Contribute](#contribute)
+- [Installation](#installation)
+  - [Docker](#docker)
+    - [Download the Node](#download-the-node)
+    - [Change config.json](#change-configjson)
+    - [Setting up the Docker container](#setting-up-the-docker-container)
+  - [Manual Installation](#manual-installation)
+    - [Download the Node](#download-the-node)
+    - [Install NodeJS modules](#install-nodejs-modules)
+    - [Create config.json](#create-configjson)
+    - [Copy the Blockchain](#copy-the-blockchain)
+    - [run the Node](#run-the-node)
+    - [TODO:](#todo)
+    - [License:](#license)
+    
 # Cypher
 Cypher is an open-source Project, aiming to create a decentralized Live-Messenger. For this to work, there needs to be a Network of Computers, called "Nodes", that communicate with each other. To make it attractive for people to run a Node, there is a cryptocurrency called "Cypher". In one Cypher there are 1000 "milliCypher" or "mCypher". 1000 Cypher are refered to as one "KCypher" or "KiloCypher". Nodes can earn Cypher by contributing to the Network, and putting some amount of Cypher at risk. This process is called "staking".
 
