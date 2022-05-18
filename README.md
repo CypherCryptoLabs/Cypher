@@ -1,46 +1,120 @@
-### Cypher:
-Cypher is a new Blockchain, that aims to provide a decentralized live messenger service. To make it attractive for people to run a "Node" to support the Cypher Network, there is a Cryptocurrency that will be based on the Cypher Blockchain called "Cypher".
+# Cypher
+Cypher is an open-source Project, aiming to create a decentralized Live-Messenger. For this to work, there needs to be a Network of Computers, called "Nodes", that communicate with each other. To make it attractive for people to run a Node, there is a cryptocurrency called "Cypher". In one Cypher there are 1000 "milliCypher" or "mCypher". 1000 Cypher are refered to as one "KCypher" or "KiloCypher". Nodes can earn Cypher by contributing to the Network, and putting some amount of Cypher at risk. This process is called "staking".
 
-### Contribute:
-You can simply create a Pull request, I will take a look at your code, and either accept your PR, or give you feedback. Your Pull request should only contain Bug-fixes, or complete a feature/goal in the "TODO" list. All Pull requests that do not follow these 2 simple rules will NOT be accepted!
+The Cypher Project does not stop with providing this decentralized infrastructure and Live-Messenger. There are already more projects in the works, that will be revieled as a ceertain progress is reached.
 
-### Installation:
-This tutorial uses the commands for GNU/Linux, if you are using anything different, the commands may not work as expected. I assume you have ```git``` installed on your system, if that's not the case, please do that now.
+# Contribute
+Contributing to the Cypher Project should be as easy as possible, which is why we use GitHub Pull Requests.There are only 2 rules.
 
-Download the Codebase:
-```
-git clone https://github.com/michelbarnich/cypher.git
-```
+1. Your Pull Requests contains a bug-fix
+2. Your Pull Requests completes one of the goals in the TODO list
 
-Next you need Node.js and NPM. The instructions on how to install these 2 components depends on the OS that you are using.
-Finally, you can install all dependencies:
-```
-cd cypher/src
-npm install --save
-```
+If your Pull Request does not contain one of these, it will be rejected. If you want to suggest an improvement, you can open a new Issue.
 
-After installing all dependencies, you should remove the ```private.pem``` file that is used for testing, and the ```blockchain.json``` that is only used for testing as well. The node will automatically regenerate the ```private.pem``` file at startup. You need to recreate the ```blockchain.json``` file yourself. This functionality will be added to the ```test.js```script in the future.
+# Installation
+There are 2 ways of installing the Cypher Node. Either you choose the easy way (Docker) or the painful one (manual installation). For both methods I assume you are using GNU/Linux and have Git as well as Docker installed. If thats not the case, please do it now.
+
+## Docker
+This is the easy way of installing Cypher Node.
+
+### Download the Node
+First you need to download the Source Code. You do this by running the following command:
 ```
-cd ..
-rm blockchain.json private.pem
+git clone https://github.com/michelbarnich/cypher
 ```
 
-If you wish, you can change the settings for the Node, by editing the ```config.json``` file. This is one of my config files for testing purposes:
+Change your directory to the Cypher Docker directory:
+```
+cd ./cypher/docker
+```
+
+### Change config.json
+You need to adjust the config.json file. It is pretty simple. There are only 4 configurations to modify.
+This is what the file looks originally:
 ```
 {
-    "host" : "192.168.178.39",
+    "host" : "192.168.178.22",
     "port" : 1234,
     "stableNode" : "192.168.178.40",
     "stableNodePort" : 1234
 }
 ```
 
-You will need to adjust the IP-Addresses, and in case its needed, you also need to change the ports, they can be whatevet you want, as long as its in the TCP Port range (0 - 65535), but I generally recommend something outside the "well-known" ports.
+If you are familier with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
 
-Now you can start the node with a simple command:
+### Setting up the Docker container
+After changing the config.json file, run the following command to build a Docker Image:
+```
+docker build -t cypher .
+```
+
+This might take some time, after a while, you should see a message similar to this one:
+```
+!!!COPY THE FOLLOWING KEY TO A SECURE LOCATION!!!
+-----BEGIN EC PRIVATE KEY-----
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+-----END EC PRIVATE KEY-----
+```
+
+Copy the key to a secure place. All your rewards will be ONLY accessible with this key!
+The last step is to run the Node. Type the following command:
+```
+docker run -d -p<your port>:<your port> cypher
+```
+
+Replace the \<your port\> with the port you set for the "port" field when you edited the config.json file.
+
+Congratulations, your Node is now online!
+
+## Manual Installation
+Installing the Cypher Node this way is not necessarily harder, but a lot more can go wrong.
+
+### Download the Node
+First you need to download the Source Code. You do this by running the following command:
+```
+git clone https://github.com/michelbarnich/cypher
+```
+
+### Install NodeJS modules
+In the next step, you need to download the Cypher Node dependencies. 
+```
+cd src # change directory to the source code of Cypher Node
+npm install --save # install all dependencies
+cd .. # change directory back to the Cypher Node root
+```
+
+### Create config.json
+You need to create the config.json file. It is pretty simple. There are only 4 configurations to modify.
+This is what the file looks originally (copied from the docker directory):
+```
+{
+    "host" : "192.168.178.22",
+    "port" : 1234,
+    "stableNode" : "192.168.178.40",
+    "stableNodePort" : 1234
+}
+```
+
+If you are familier with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
+
+### Copy the Blockchain
+The easiest way to do that is to copy it from the docker directory.
+```
+cp docker/blockchain.json blockchain.json
+```
+
+Alternatively, if you find a source somewhere online with a copy of the Blockchain, and you trust that source, you could download it from there.
+
+### run the Node
+Finally you can run this command:
 ```
 node src/main.js
 ```
+
+It will crete a file called "private.pem", copy it to a secure location, cour funds will only be accessible with that file!
+Congratulations, your Node is now online!
 
 ### TODO:
 - [x] All TCP traffic signed
