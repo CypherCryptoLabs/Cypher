@@ -1,6 +1,7 @@
 # Table of contents
 
 - [Cypher](#cypher)
+- [State of the Project](#state-of-the-project)
 - [Contribute](#contribute)
 - [Installation](#installation)
   - [Docker](#docker)
@@ -20,6 +21,9 @@
 Cypher is an open-source Project, aiming to create a decentralized Live-Messenger. For this to work, there needs to be a Network of Computers, called "Nodes", that communicate with each other. To make it attractive for people to run a Node, there is a cryptocurrency called "Cypher". In one Cypher there are 1000 "milliCypher" or "mCypher". 1000 Cypher are refered to as one "KCypher" or "KiloCypher". Nodes can earn Cypher by contributing to the Network, and putting some amount of Cypher at risk. This process is called "staking".
 
 The Cypher Project does not stop with providing this decentralized infrastructure and Live-Messenger. There are already more projects in the works, that will be released as a certain progress is reached.
+
+# State of the Project
+Currently Cypher is still in development. It does not have a public Network, so running a Node is completely useless right now. The website that this document refers to does not exist yet. You can track progress on the "TODO" list. Currently development is only focused on the Blockchain and Crypto-currenty. When this part is stable enough, the Live-Messenger will be implemented.
 
 # Contribute
 Contributing to the Cypher Project should be as easy as possible, which is why we use GitHub Pull Requests.There are only 2 rules.
