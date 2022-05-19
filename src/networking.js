@@ -605,7 +605,11 @@ class networking {
    }
 
    async voteOnBlock(forger, currentVotingSlot, validators, transactionQueue) {
-      var blockToVoteOn = JSON.parse(await this.sendPacket(this.createPacket(3, {type: "request"}), forger.ipAddress, forger.port));
+      var blockToVoteOnData = await this.sendPacket(this.createPacket(3, {type: "request"}), forger.ipAddress, forger.port);
+      if(blockToVoteOnData == undefined)
+         return;
+
+      var blockToVoteOn = JSON.parse(blockToVoteOnData);
       var transactionQueueCopy = JSON.parse(JSON.stringify(transactionQueue));
       transactionQueueCopy.forEach(object => {
          delete object["queryID"];
