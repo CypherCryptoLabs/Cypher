@@ -145,10 +145,15 @@ Congratulations, your Node is now online!
 - [x] verify Blockchain that is received on Network Registration
 - [x] P.o.S. Consensus Algorithm
 - [ ] P.o.S. Penalties and Health System
+  - [ ] Netowrk Diff saved in Blocks
+  - [ ] Auto generate Nodelist from Blocks
+  - [ ] Take part of stake away from Nodes that go offline
+  - [ ] Take part of stake away that falsely voted on a Block
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
 - [x] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
 - [x] automatically remove offline Nodes from Nodelist
-- [x] check reachability of Node on registration
+- [ ] check reachability of Node on registration
+  - [ ] Nodes kick other Nodes out of the Network after 1 Voting slot (may be related to Docker setup)
 - [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 
