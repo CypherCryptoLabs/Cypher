@@ -59,7 +59,7 @@ class networking {
       var notifiedNodes = [this.bcrypto.getFingerprint()];
       var successfullyNotifiedNodes = [this.bcrypto.getFingerprint()];
 
-      while (successfullyNotifiedNodes.length - 1 < numOfRandomPeers && notifiedNodes.length - 1 < this.nodeList.length) {
+      while (successfullyNotifiedNodes.length - 1 < numOfRandomPeers && notifiedNodes.length - 1 < this.nodeList.length - 1) {
          var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
          var randomNode = this.nodeList[randomNodeIndex];
 
