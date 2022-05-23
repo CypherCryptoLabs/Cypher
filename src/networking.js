@@ -203,7 +203,7 @@ class networking {
    }
 
    connectionHandler() {
-      //this.checkReachabilityForRandomNodes();
+      this.checkReachabilityForRandomNodes();
 
       server.listen(this.port, () => {
          console.log(`Node listening on Port ${this.port}`);
