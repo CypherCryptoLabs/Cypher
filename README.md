@@ -50,7 +50,7 @@ Change your directory to the Cypher Docker directory:
 cd ./cypher/docker
 ```
 
-### Change config.json
+### Modify config.json
 You need to adjust the config.json file. It is pretty simple. There are only 4 configurations to modify.
 This is what the file looks originally:
 ```
@@ -63,6 +63,14 @@ This is what the file looks originally:
 ```
 
 If you are familiar with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
+
+### Modify Dockerfile
+The next step is to modify the port which the Docker container should expose. Edit the Dockerfile file, and search for this string:
+```
+EXPOSE 1234
+```
+
+Replace "1234" with the port that you chose when modifying the config.json file ("port" field).
 
 ### Setting up the Docker container
 After changing the config.json file, run the following command to build a Docker Image:
