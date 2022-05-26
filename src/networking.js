@@ -127,7 +127,11 @@ class networking {
       var packet = this.createPacket(7, {});
       var transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
 
-      console.log(transactionQueue);
+      if(transactionQueue == undefined)
+         process.exit(2);
+      
+      transactionQueue = JSON.parse(transactionQueue).payload.queue;
+      console.log(transactionQueue)
    }
 
    async registerToNetwork() {
@@ -146,9 +150,10 @@ class networking {
          for (var i = 0; i < this.nodeList.length; i++) {
             await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
          }
+
+         this.syncBlockchain().then(this.syncTransactionQueue());
       }
 
-      this.syncBlockchain().then(this.syncTransactionQueue());
    }
 
    addNodeToNodeList(packet) {
