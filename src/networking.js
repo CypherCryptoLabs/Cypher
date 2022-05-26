@@ -123,6 +123,13 @@ class networking {
       }
    }
 
+   async syncTransactionQueue() {
+      var packet = this.createPacket(7, {});
+      var transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+
+      console.log(transactionQueue);
+   }
+
    async registerToNetwork() {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
@@ -141,7 +148,7 @@ class networking {
          }
       }
 
-      this.syncBlockchain();
+      this.syncBlockchain().then(this.syncTransactionQueue());
    }
 
    addNodeToNodeList(packet) {
@@ -298,6 +305,9 @@ class networking {
                         subroutineHandlesSocket = true;
                         this.handleReachabilityCheck(socket, packet);
                      }
+                     break;
+                  case 7:
+                     payload = JSON.stringify(this.transactionQueue.getQueue());
                      break;
                }
 
