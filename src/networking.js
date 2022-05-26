@@ -59,7 +59,7 @@ class networking {
       var notifiedNodes = [this.bcrypto.getFingerprint()];
       var successfullyNotifiedNodes = [this.bcrypto.getFingerprint()];
 
-      while (successfullyNotifiedNodes.length - 1 < numOfRandomPeers && notifiedNodes.length - 1 < this.nodeList.length) {
+      while (successfullyNotifiedNodes.length - 1 < numOfRandomPeers && notifiedNodes.length - 1 < this.nodeList.length - 1) {
          var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
          var randomNode = this.nodeList[randomNodeIndex];
 
@@ -203,7 +203,7 @@ class networking {
    }
 
    connectionHandler() {
-      //this.checkReachabilityForRandomNodes();
+      this.checkReachabilityForRandomNodes();
 
       server.listen(this.port, () => {
          console.log(`Node listening on Port ${this.port}`);
@@ -332,6 +332,7 @@ class networking {
 
       if(!await this.isReachableByPublicKey(packet.payload.publicKey)) {
          this.removeNodeFromNodeList(packet.payload.publicKey);
+         this.broadcastToRandomNodes(JSON.stringify(packet));
          payload.status = true;
       } else {
          payload.status = false;
@@ -349,9 +350,6 @@ class networking {
       socket.on('error', (err) => {
          console.log(err)
       });
-
-      if(payload.status)
-         this.broadcastToRandomNodes(JSON.stringify(packet));
    }
 
    async handleRegistration(socket, packet) {
