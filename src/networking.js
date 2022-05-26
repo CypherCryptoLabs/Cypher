@@ -131,7 +131,11 @@ class networking {
          process.exit(2);
       
       transactionQueue = JSON.parse(transactionQueue).payload.queue;
-      console.log(transactionQueue)
+
+      for(var i = 0; i < transactionQueue.length; i++) {
+         if(this.verrifyPacket(JSON.stringify(transactionQueue[i])))
+            this.transactionQueue.addTransaction(transactionQueue[i])
+      }
    }
 
    async registerToNetwork() {
