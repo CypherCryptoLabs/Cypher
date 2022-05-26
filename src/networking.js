@@ -123,6 +123,21 @@ class networking {
       }
    }
 
+   async syncTransactionQueue() {
+      var packet = this.createPacket(7, {});
+      var transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+
+      if(transactionQueue == undefined)
+         process.exit(2);
+      
+      transactionQueue = JSON.parse(transactionQueue).payload.queue;
+
+      for(var i = 0; i < transactionQueue.length; i++) {
+         if(this.verrifyPacket(JSON.stringify(transactionQueue[i])))
+            this.transactionQueue.addTransaction(transactionQueue[i])
+      }
+   }
+
    async registerToNetwork() {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
@@ -139,9 +154,10 @@ class networking {
          for (var i = 0; i < this.nodeList.length; i++) {
             await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
          }
+
+         this.syncBlockchain().then(this.syncTransactionQueue());
       }
 
-      this.syncBlockchain();
    }
 
    addNodeToNodeList(packet) {
@@ -298,6 +314,9 @@ class networking {
                         subroutineHandlesSocket = true;
                         this.handleReachabilityCheck(socket, packet);
                      }
+                     break;
+                  case 7:
+                     payload.queue = this.transactionQueue.getQueue();
                      break;
                }
 
@@ -531,6 +550,10 @@ class networking {
 
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["timestamp"]) && typeof payload.timestamp != "number")
                   return false
+               break;
+            case 7:
+               break;
+            case -7:
                break;
             default:
                return false;
