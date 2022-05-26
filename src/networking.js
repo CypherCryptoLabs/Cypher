@@ -552,8 +552,11 @@ class networking {
                   return false
                break;
             case 7:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify([]))
+                  return false;
                break;
             case -7:
+               // no checks needed since each received transaction will be chacked later on anyways
                break;
             default:
                return false;
