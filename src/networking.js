@@ -307,7 +307,7 @@ class networking {
                      }
                      break;
                   case 7:
-                     payload = JSON.stringify(this.transactionQueue.getQueue());
+                     payload.queue = this.transactionQueue.getQueue();
                      break;
                }
 
@@ -541,6 +541,10 @@ class networking {
 
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["timestamp"]) && typeof payload.timestamp != "number")
                   return false
+               break;
+            case 7:
+               break;
+            case -7:
                break;
             default:
                return false;
