@@ -297,7 +297,7 @@ class networking {
                            payload = this.blockchain.getNewestNBlocks(packet.payload.blockHeight);
                         
                         if(packet.payload.type == "verification") {
-                           payload.status = (this.bcrypto.hash(JSON.stringify(JSON.parse(this.blockchain.getNewestBlock()))) == packet.payload.hash);
+                           payload.status = (this.bcrypto.hash(JSON.stringify(JSON.parse(this.blockchain.getNewestBlock(true)))) == packet.payload.hash);
                         }
 
                      break;
