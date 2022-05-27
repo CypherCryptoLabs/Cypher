@@ -86,7 +86,7 @@ class blockchain {
          });
       }
 
-      var previousBlock = this.getNewestBlock();
+      var previousBlock = this.getNewestBlock(true);
 
       var block = {
          id: JSON.parse(previousBlock).id + 1,
