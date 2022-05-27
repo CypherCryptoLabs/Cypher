@@ -96,10 +96,11 @@ class networking {
 
                   if(blockchainUpdate.length > 1) {
                      var syncIsInvalid = false;
-                     if(this.bcrypto.hash(this.blockchain.getNewestBlock()) != blockchainUpdate[1].previousBlockHash)
+                     if(this.bcrypto.hash(this.blockchain.getNewestBlock(true)) != blockchainUpdate[1].previousBlockHash)
                         syncIsInvalid = true;
                      
                      for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
+                        delete blockchainUpdate[i-1].validators;
                         if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
                            syncIsInvalid = true;
                      }
