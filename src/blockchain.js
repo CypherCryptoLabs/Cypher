@@ -86,7 +86,7 @@ class blockchain {
          });
       }
 
-      var previousBlock = this.getNewestBlock();
+      var previousBlock = this.getNewestBlock(true);
 
       var block = {
          id: JSON.parse(previousBlock).id + 1,
@@ -141,7 +141,7 @@ class blockchain {
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(block) + "]}");
    }
 
-   getNewestBlock() {
+   getNewestBlock(removeValidatorSignatures = false) {
       var blockchainFd = fs.openSync("blockchain.json", "r");
       var blockchainFileSize = fs.statSync("blockchain.json").size;
       var stringNotFound = true;
@@ -169,8 +169,13 @@ class blockchain {
       fs.readSync(blockchainFd, lastBlockBuffer, 0, lastBlockBuffer.length, blockchainFileSize - lastBlockBuffer.length - 2);
       lastBlockBuffer = lastBlockBuffer.toString("utf-8");
 
-      return lastBlockBuffer;
+      if(!removeValidatorSignatures)
+         return lastBlockBuffer;
 
+      var parsedBlock = JSON.parse(lastBlockBuffer);
+      delete parsedBlock.validators
+
+      return JSON.stringify(parsedBlock);
    }
 
    getNewestNBlocks(n) {
@@ -274,7 +279,7 @@ class blockchain {
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
          blockIsValid = true;
 
-      let previousBlock = this.getNewestBlock();
+      let previousBlock = this.getNewestBlock(true);
       let previousBlockHash = this.bcrypto.hash(previousBlock);
 
       if(block.previousBlockHash != previousBlockHash)

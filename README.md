@@ -14,7 +14,7 @@
     - [Install NodeJS modules](#install-nodejs-modules)
     - [Create config.json](#create-configjson)
     - [Copy the Blockchain](#copy-the-blockchain)
-    - [run the Node](#run-the-node)
+    - [Run the Node](#run-the-node)
 - [TODO](#todo)
 - [License](#license)
     
@@ -138,7 +138,7 @@ cp docker/blockchain.json blockchain.json
 
 Alternatively, if you find a source somewhere online with a copy of the Blockchain, and you trust that source, you could download it from there.
 
-### run the Node
+### Run the Node
 Finally you can run this command:
 ```
 node src/main.js
@@ -160,9 +160,9 @@ Congratulations, your Node is now online!
   - [ ] Take part of stake away that falsely voted on a Block
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
 - [x] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
-- [ ] automatically remove offline Nodes from Nodelist
+- [x] automatically remove offline Nodes from Nodelist
   - [x] Nodes kick other Nodes out of the Network after 1 Voting slot (may be related to Docker setup)
-  - [ ] Fix Block validation (Block invalid due to different Nodelist during forging and validation)
+  - [x] Fix Block validation (Block invalid due to different Nodelist during forging and validation)
 - [x] check reachability of Node on registration
 - [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet

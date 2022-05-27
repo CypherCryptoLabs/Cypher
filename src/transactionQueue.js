@@ -50,7 +50,7 @@ class transactionQueue {
          var now = Date.now();
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
 
-         let validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock()), nextVoteSlotTimestamp.toString());
+         let validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
          var timeToWait = nextVoteSlotTimestamp - Date.now();
 
          var sleepPromise = new Promise((resolve) => {
