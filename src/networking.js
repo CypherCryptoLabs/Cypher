@@ -17,6 +17,7 @@ class networking {
       this.stableNodePort = stableNodePort;
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
+      this.networkDiff = {registered:[], left:[]};
       this.registerToNetwork();
       this.potentialBlock;
       this.forger;
@@ -168,6 +169,7 @@ class networking {
          publicKey: packet.publicKey,
          blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey)
       };
+
       var nodeIsAlreadyRegistered = false;
       var nodeIndex = -1;
 
@@ -183,7 +185,17 @@ class networking {
       } else {
          this.nodeList.splice(nodeIndex, 1);
          this.nodeList.push(newNode);
+
+         for(var i = 0; i < this.networkDiff.registered.length; i++) {
+            if(this.networkDiff.registered[i].publicKey == newNode.publicKey)
+            this.networkDiff.registered.splice(i,1);
+
+         }
       }
+
+      this.networkDiff.registered.push(newNode);
+      console.log(this.networkDiff);
+
    }
 
    removeNodeFromNodeList(publicKey) {
