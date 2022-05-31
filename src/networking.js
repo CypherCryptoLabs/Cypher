@@ -220,6 +220,7 @@ class networking {
    removeNodeFromNodeList(publicKey) {
       for(var i = 0; i < this.nodeList.length; i++) {
          if(this.nodeList[i].publicKey == publicKey) {
+            this.updateNetworkDiff("leave", this.nodeList[i]);
             this.nodeList.splice(i, 1);
             break;
          }
