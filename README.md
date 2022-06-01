@@ -16,6 +16,8 @@
     - [Copy the Blockchain](#copy-the-blockchain)
     - [Run the Node](#run-the-node)
 - [TODO](#todo)
+  - [First Release](#first-release)
+  - [Future Releases and Improvements](#future-releases-and-improvements)
 - [License](#license)
     
 # Cypher
@@ -150,7 +152,7 @@ Congratulations, your Node is now online!
 # TODO
 
 
-## First release
+## First Release
 - [x] All TCP traffic signed
 - [x] Proper way of creating a fingerprint of the public key
 - [x] Sync Blockchain with Network on startup
@@ -170,7 +172,7 @@ Congratulations, your Node is now online!
 - [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 
-## Improvements
+## Future Releases and Improvements
 - [ ] Migrating Codebase to TypeScript for better readability
 - [ ] implementing Messenger Protocol
   - [ ] pick communication parter Nodes
