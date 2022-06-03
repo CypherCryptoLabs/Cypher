@@ -16,6 +16,8 @@
     - [Copy the Blockchain](#copy-the-blockchain)
     - [Run the Node](#run-the-node)
 - [TODO](#todo)
+  - [First Release](#first-release)
+  - [Future Releases and Improvements](#future-releases-and-improvements)
 - [License](#license)
     
 # Cypher
@@ -147,7 +149,10 @@ node src/main.js
 It will create a file called "private.pem", copy it to a secure location, your funds will only be accessible with that file!
 Congratulations, your Node is now online!
 
-### TODO
+# TODO
+
+
+## First Release
 - [x] All TCP traffic signed
 - [x] Proper way of creating a fingerprint of the public key
 - [x] Sync Blockchain with Network on startup
@@ -167,7 +172,16 @@ Congratulations, your Node is now online!
 - [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 
-### License
+## Future Releases and Improvements
+- [ ] Migrating Codebase to TypeScript for better readability
+- [ ] implementing Messenger Protocol
+  - [ ] pick communication parter Nodes
+  - [ ] Implement Proof of Work for Nodes forwarding Messages
+  - [ ] Integrate PoW for forwarding Messages into PoS Pentalties and health system
+- [ ] Alert Network of offline Nodes in Networking.sendPacket() if a Timeout occures
+- [ ] Split Networking Class into Networking and Consensus
+
+# License
 MIT License
 
 Copyright (c) 2022 Michel Barnich
