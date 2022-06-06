@@ -99,6 +99,7 @@ class blockchain {
          validators: {},
          forgerSignature: ""
       }
+
       if(validators) {
          for(var i = 0; i < validators.validators.length; i++) {
             block.validators[validators.validators[i].blockchainAddress] = "";
@@ -252,6 +253,16 @@ class blockchain {
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
          blockIsValid = false;
+
+      for(var i = 0; i < block.payload.length; i++) {
+         var signatureTmp = block.payload[i].signature;
+
+         for(var j = 0; j < block.payload.length; j++) {
+            if(j!=i) {
+               if(signatureTmp == block.payload[j].signature) blockIsValid = false;
+            }
+         }
+      }
 
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
          var transactionFound = false;
