@@ -159,7 +159,7 @@ Congratulations, your Node is now online!
 - [x] verify Blockchain that is received on Network Registration
 - [x] P.o.S. Consensus Algorithm
 - [ ] P.o.S. Penalties and Health System
-  - [ ] Netowrk Diff saved in Blocks
+  - [x] Netowrk Diff saved in Blocks
   - [ ] Auto generate Nodelist from Blocks
   - [ ] Take part of stake away from Nodes that go offline
   - [ ] Take part of stake away that falsely voted on a Block

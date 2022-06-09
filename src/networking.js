@@ -26,6 +26,14 @@ class networking {
       this.blockchain = blockchain;
    }
 
+   getNetworkDiff() {
+      return JSON.parse(JSON.stringify(this.networkDiff));
+   }
+
+   clearNetworkDiff() {
+      this.networkDiff = {registered:[], left:[]};
+   }
+
    updateNetworkDiff(mode, node) {
 
       var nodeAlreadyInDiff = false;
@@ -318,6 +326,8 @@ class networking {
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
                            this.blockchain.appendBlockToBlockchain();
                            this.transactionQueue.clean(packet.payload.block.payload);
+                           this.clearNetworkDiff();
+
                         }
                      } else {
                         payload.status = false;

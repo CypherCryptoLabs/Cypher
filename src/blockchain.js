@@ -79,7 +79,7 @@ class blockchain {
       fs.writeFileSync("cache.json", JSON.stringify(this.addressCache));
    }
 
-   generateBlock(sortedQueue, validators) {
+   generateBlock(sortedQueue, validators, networkDiff) {
       if(sortedQueue.length) {
          sortedQueue.forEach(object => {
             delete object["queryID"];
@@ -96,6 +96,7 @@ class blockchain {
          rewardAmount: 10,
          payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
+         networkDiff: networkDiff,
          validators: {},
          forgerSignature: ""
       }
@@ -239,7 +240,7 @@ class blockchain {
       block = JSON.parse(block);
       var blockIsValid = true;
       
-      if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "validators", "forgerSignature"]))
+      if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
          blockIsValid = false;
 
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
