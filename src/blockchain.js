@@ -268,9 +268,20 @@ class blockchain {
       if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
          return false;;
 
-      console.log(block.networkDiff.registered.length);
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
          var fakePacketSource = block.networkDiff.registered[i];
+         var fakePacket = {
+            queryID: 2,
+            unixTimestamp: fakePacketSource.unixTimestamp,
+            payload: {
+               ipAddress:fakePacketSource.ipAddress,
+               port: fakePacketSource.port
+            },
+            publicKey: fakePacketSource.publicKey,
+            signature: fakePacketSource.signature 
+         }
+
+         //console.log(networkingInstance.verrifyPacket(JSON.stringify(fakePacket), false, true));
       }
 
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
@@ -297,7 +308,7 @@ class blockchain {
       }
 
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
-         blockIsValid = true;
+         return false
 
       let previousBlock = this.getNewestBlock(true);
       let previousBlockHash = this.bcrypto.hash(previousBlock);

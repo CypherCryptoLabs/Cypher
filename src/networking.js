@@ -211,7 +211,9 @@ class networking {
          ipAddress: packet.payload.ipAddress,
          port: packet.payload.port,
          publicKey: packet.publicKey,
-         blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey)
+         blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey),
+         registrationSignature: packet.signature,
+         registrationTimestamp: packet.unixTimestamp
       };
       var nodeIsAlreadyRegistered = false;
       var nodeIndex = -1;
@@ -447,7 +449,7 @@ class networking {
       });
    }
 
-   verrifyPacket(packetJSON, checkTimestamp = true) {
+   verrifyPacket(packetJSON, checkTimestamp = true, checkSignature = true) {
       try {
          let packet = JSON.parse(packetJSON);
          var packetCopy = JSON.parse(packetJSON);
@@ -465,7 +467,7 @@ class networking {
             return false;
 
          // checking signature
-         if(!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
+         if(checkSignature && !this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
             return false;
 
          // checking data types
