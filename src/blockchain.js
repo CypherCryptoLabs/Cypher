@@ -241,32 +241,32 @@ class blockchain {
       var blockIsValid = true;
       
       if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
-         blockIsValid = false;
+         return false;;
 
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
          blockIsValid =false;
       
       if(block.rewardAddress != forger.blockchainAddress) 
-         blockIsValid = false;
+         return false;;
       
       if(block.rewardAmount != 10)
-         blockIsValid = false;
+         return false;;
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
-         blockIsValid = false;
+         return false;;
 
       for(var i = 0; i < block.payload.length; i++) {
          var signatureTmp = block.payload[i].signature;
 
          for(var j = 0; j < block.payload.length; j++) {
             if(j!=i) {
-               if(signatureTmp == block.payload[j].signature) blockIsValid = false;
+               if(signatureTmp == block.payload[j].signature) return false;;
             }
          }
       }
 
       if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
-         blockIsValid = false;
+         return false;;
 
       console.log(block.networkDiff.registered.length);
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
@@ -286,15 +286,15 @@ class blockchain {
             }
          }
          if(!transactionFound)
-            blockIsValid = false;
+            return false;;
       }
       
       if(Object.keys(block.validators).length != validators.length)
-         blockIsValid = false;
+         return false;;
       
       for(var i = 0; i < block.validators.length && blockIsValid; i++) {
          if(block.validators[validators[i]] == undefined) {
-            blockIsValid = false;
+            return false;;
          }
       }
 
@@ -305,10 +305,10 @@ class blockchain {
       let previousBlockHash = this.bcrypto.hash(previousBlock);
 
       if(block.previousBlockHash != previousBlockHash)
-            blockIsValid = false;
+            return false;;
 
       if(block.id != JSON.parse(previousBlock).id + 1)
-         blockIsValid = false;
+         return false;;
 
       console.log(blockIsValid)
       return blockIsValid;
