@@ -386,7 +386,7 @@ class networking {
                }
             
             } else {
-               console.log(data.toString())
+               //console.log(data.toString())
             }
             
             if(!subroutineHandlesSocket) {
@@ -542,7 +542,7 @@ class networking {
                   return false;
 
                if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue(), this))
-                  return false;
+                  return false; console.log("rip")
 
                var blockValidators = Object.keys(packet.payload.block.validators);
                var invalidSignatures = 0;
