@@ -212,8 +212,8 @@ class networking {
          port: packet.payload.port,
          publicKey: packet.publicKey,
          blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey),
-         registrationSignature: packet.signature,
-         registrationTimestamp: packet.unixTimestamp
+         /*registrationSignature: packet.signature,
+         registrationTimestamp: packet.unixTimestamp*/
       };
       var nodeIsAlreadyRegistered = false;
       var nodeIndex = -1;

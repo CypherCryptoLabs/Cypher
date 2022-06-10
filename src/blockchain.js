@@ -244,7 +244,7 @@ class blockchain {
          return false;;
 
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
-         blockIsValid =false;
+         return false;
       
       if(block.rewardAddress != forger.blockchainAddress) 
          return false;;
@@ -288,7 +288,7 @@ class blockchain {
          var transactionFound = false;
          for(var j = 0; j < transactionQueue.length && !transactionFound; j++) {
             let transactionQueueEntryString = JSON.stringify(transactionQueue[j]);
-            let blockPayloadEntryString = JSON.stringify(block.payload[j]);
+            let blockPayloadEntryString = JSON.stringify(block.payload[i]);
 
             if(blockPayloadEntryString == transactionQueueEntryString) {
                transactionFound = true;
@@ -308,7 +308,7 @@ class blockchain {
       }
 
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
-         return false
+         return false;
 
       let previousBlock = this.getNewestBlock(true);
       let previousBlockHash = this.bcrypto.hash(previousBlock);
