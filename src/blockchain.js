@@ -270,9 +270,7 @@ class blockchain {
 
       console.log(block.networkDiff.registered.length);
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         var transactionPacket = block.networkDiff.registered[i]
-         transactionPacket.queryID = 1;
-         console.log(networkingInstance.verrifyPacket(JSON.stringify(transactionPacket), false));
+         var fakePacketSource = block.networkDiff.registered[i];
       }
 
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
