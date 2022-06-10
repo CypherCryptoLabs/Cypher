@@ -232,7 +232,7 @@ class blockchain {
       }
    }
 
-   validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {
+   validateBlock(block, currentVotingSlot, validators, forger, transactionQueue, networkingInstance) {
       var blockCopy = JSON.parse(block);
       delete blockCopy.forgerSignature;
       blockCopy = JSON.stringify(blockCopy);
@@ -263,6 +263,16 @@ class blockchain {
                if(signatureTmp == block.payload[j].signature) blockIsValid = false;
             }
          }
+      }
+
+      if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
+         blockIsValid = false;
+
+      console.log(block.networkDiff.registered.length);
+      for(var i = 0; i < block.networkDiff.registered.length; i++) {
+         var transactionPacket = block.networkDiff.registered[i]
+         transactionPacket.queryID = 1;
+         console.log(networkingInstance.verrifyPacket(JSON.stringify(transactionPacket), false));
       }
 
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {

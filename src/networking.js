@@ -120,41 +120,50 @@ class networking {
       while(!syncSuccessful && this.nodeList.length > 1) {
          let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
          if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
-            newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
-            if(newBlocks != undefined) {
-               
-               var blockchainUpdate = JSON.parse(newBlocks).payload.blocks;
-               var newestBlock = JSON.stringify(blockchainUpdate[blockchainUpdate.length - 1]);
-               var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
-               let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
-               
-               if(JSON.parse(await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port)).payload.status) {
+            try {
+               newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
+               if(newBlocks != undefined) {
+                  
+                  var blockchainUpdate = JSON.parse(newBlocks).payload.blocks;
+                  var newestBlock = blockchainUpdate[blockchainUpdate.length - 1];
+                  delete newestBlock.validators;
+                  newestBlock = JSON.stringify(newestBlock);
+                  var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
+                  let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
+                  let validationAnswer = await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port);
 
-                  if(blockchainUpdate.length > 1) {
-                     var syncIsInvalid = false;
-                     if(this.bcrypto.hash(this.blockchain.getNewestBlock(true)) != blockchainUpdate[1].previousBlockHash)
-                        syncIsInvalid = true;
-                     
-                     for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
-                        delete blockchainUpdate[i-1].validators;
-                        if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
+                  if(JSON.parse(validationAnswer).payload.status) {
+                     if(blockchainUpdate.length > 1) {
+                        var syncIsInvalid = false;
+                        if(this.bcrypto.hash(this.blockchain.getNewestBlock(true)) != blockchainUpdate[1].previousBlockHash)
                            syncIsInvalid = true;
+                        
+                        for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
+                           delete blockchainUpdate[i-1].validators;
+                           if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
+                              syncIsInvalid = true;
+                        }
+
+                        if(syncIsInvalid)
+                           throw "one or more blocks are invalid!";
+
+                        for(var i = 1; i < blockchainUpdate.length; i++) {
+                           this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
+                        }
                      }
 
-                     if(syncIsInvalid)
-                        throw "one or more blocks are invalid!";
-
-                     for(var i = 1; i < blockchainUpdate.length; i++) {
-                        this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
-                     }
+                     syncSuccessful = true;
+                  } else {
+                     console.log("Could not sync Blockchain. Local Blockchain may be ahead of network!")
+                     process.exit();
                   }
 
-                  syncSuccessful = true;
+               } else {
+                  console.log("Could not sync Blockchain. Node did not answer (or send faulty packet)")
+                  process.exit();
                }
-
-            } else {
-               console.log("Could not sync Blockchain. Local Blockchain may be ahead of network!")
-               process.exit();
+            } catch (error) {
+               console.log(error)
             }
          }
       }
@@ -438,7 +447,7 @@ class networking {
       });
    }
 
-   verrifyPacket(packetJSON) {
+   verrifyPacket(packetJSON, checkTimestamp = true) {
       try {
          let packet = JSON.parse(packetJSON);
          var packetCopy = JSON.parse(packetJSON);
@@ -452,7 +461,7 @@ class networking {
          delete packetCopy.signature;
 
          // checking timestamp
-         if (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now())
+         if (checkTimestamp && (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now()))
             return false;
 
          // checking signature
@@ -530,7 +539,7 @@ class networking {
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
                   return false;
 
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue()))
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue(), this))
                   return false;
 
                var blockValidators = Object.keys(packet.payload.block.validators);
@@ -685,7 +694,7 @@ class networking {
       if(blockToVoteOn != undefined) {
          blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
 
-         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
+         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this)) {
             // send signature to Forger
             this.updatePotentialBlock(blockToVoteOn);
             var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
