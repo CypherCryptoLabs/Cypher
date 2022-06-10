@@ -110,10 +110,6 @@ class blockchain {
       var blockCopy = JSON.parse(JSON.stringify(block));
       delete blockCopy["forgerSignature"];
 
-      console.log("\n\n\nGENERATE")
-      console.log(JSON.stringify(blockCopy))
-      console.log("\n\n\n")
-
       block.forgerSignature = this.bcrypto.sign(JSON.stringify(blockCopy));
 
       /*var block = {
@@ -245,10 +241,11 @@ class blockchain {
       }
       blockCopy = JSON.stringify(blockCopy);
 
-      console.log(transactionQueue)
-      console.log("\n\n\nVALIDATE")
-      console.log(blockCopy)
-      console.log("\n\n\n")
+      if(transactionQueue.length) {
+         transactionQueue.forEach(object => {
+            delete object["queryID"];
+         });
+      }
 
       block = JSON.parse(block);
       var blockIsValid = true;

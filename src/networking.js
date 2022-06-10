@@ -386,7 +386,7 @@ class networking {
                }
             
             } else {
-               //console.log(data.toString())
+               console.log(data.toString())
             }
             
             if(!subroutineHandlesSocket) {
@@ -541,8 +541,9 @@ class networking {
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
                   return false;
 
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue(), this))
-                  return false; console.log("rip")
+               let validatorsAndForger = this.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this))
+                  return false;
 
                var blockValidators = Object.keys(packet.payload.block.validators);
                var invalidSignatures = 0;
