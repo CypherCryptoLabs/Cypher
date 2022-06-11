@@ -293,8 +293,22 @@ class blockchain {
          }
 
          if(!registrationFound)
-            console.log(registrationInBlock)
-            //return false;
+            return false;
+      }
+
+      for(var i = 0; i < block.networkDiff.left.length; i++) {
+         var leaveFound = false;
+         var leaveInBlock = JSON.stringify(block.networkDiff.left[i]);
+         for(var j = 0; j < networkDiff.left.length; j++) {
+            var leaveLocal = JSON.stringify(networkDiff.left[i]);
+            if(leaveInBlock == leaveLocal) {
+               leaveFound = true;
+               break;
+            }
+         }
+
+         if(!registrationFound)
+            return false;
       }
 
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
