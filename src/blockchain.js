@@ -281,11 +281,15 @@ class blockchain {
       if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
          return false;
 
+      console.log(JSON.stringify(networkDiff) + "\n")
+      console.log(JSON.stringify(block.networkDiff) + "\n")
+      console.log("---------");
+
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
          var registrationFound = false;
          var registrationInBlock = JSON.stringify(block.networkDiff.registered[i]);
          for(var j = 0; j < networkDiff.registered.length; j++) {
-            var registrationLocal = JSON.stringify(networkDiff.registered[i]);
+            var registrationLocal = JSON.stringify(networkDiff.registered[j]);
             if(registrationInBlock == registrationLocal) {
                registrationFound = true;
                break;
@@ -300,7 +304,7 @@ class blockchain {
          var leaveFound = false;
          var leaveInBlock = JSON.stringify(block.networkDiff.left[i]);
          for(var j = 0; j < networkDiff.left.length; j++) {
-            var leaveLocal = JSON.stringify(networkDiff.left[i]);
+            var leaveLocal = JSON.stringify(networkDiff.left[j]);
             if(leaveInBlock == leaveLocal) {
                leaveFound = true;
                break;
