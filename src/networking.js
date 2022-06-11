@@ -211,9 +211,7 @@ class networking {
          ipAddress: packet.payload.ipAddress,
          port: packet.payload.port,
          publicKey: packet.publicKey,
-         blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey),
-         /*registrationSignature: packet.signature,
-         registrationTimestamp: packet.unixTimestamp*/
+         blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey)
       };
       var nodeIsAlreadyRegistered = false;
       var nodeIndex = -1;
@@ -542,7 +540,7 @@ class networking {
                   return false;
 
                let validatorsAndForger = this.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this))
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.getNetworkDiff()))
                   return false;
 
                var blockValidators = Object.keys(packet.payload.block.validators);
@@ -697,7 +695,7 @@ class networking {
       if(blockToVoteOn != undefined) {
          blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
 
-         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this)) {
+         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.getNetworkDiff())) {
             // send signature to Forger
             this.updatePotentialBlock(blockToVoteOn);
             var blockToVoteOnCopy = JSON.parse(blockToVoteOn);

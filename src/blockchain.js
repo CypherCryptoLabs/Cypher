@@ -232,7 +232,7 @@ class blockchain {
       }
    }
 
-   validateBlock(block, currentVotingSlot, validators, forger, transactionQueue, networkingInstance) {
+   validateBlock(block, currentVotingSlot, validators, forger, transactionQueue, networkDiff) {
       var blockCopy = JSON.parse(block);
       delete blockCopy.forgerSignature;
       var blockCopyValidators = Object.keys(blockCopy.validators);
@@ -276,22 +276,25 @@ class blockchain {
       }
 
       if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
-         return false;;
+         return false;
+      
+      if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
+         return false;
 
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         var fakePacketSource = block.networkDiff.registered[i];
-         var fakePacket = {
-            queryID: 2,
-            unixTimestamp: fakePacketSource.unixTimestamp,
-            payload: {
-               ipAddress:fakePacketSource.ipAddress,
-               port: fakePacketSource.port
-            },
-            publicKey: fakePacketSource.publicKey,
-            signature: fakePacketSource.signature 
+         var registrationFound = false;
+         var registrationInBlock = JSON.stringify(block.networkDiff.registered[i]);
+         for(var j = 0; j < networkDiff.registered.length; j++) {
+            var registrationLocal = JSON.stringify(networkDiff.registered[i]);
+            if(registrationInBlock == registrationLocal) {
+               registrationFound = true;
+               break;
+            }
          }
 
-         //console.log(networkingInstance.verrifyPacket(JSON.stringify(fakePacket), false, true));
+         if(!registrationFound)
+            console.log(registrationInBlock)
+            //return false;
       }
 
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
