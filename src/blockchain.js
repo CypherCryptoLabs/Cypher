@@ -181,6 +181,9 @@ class blockchain {
    }
 
    getNewestNBlocks(n) {
+      if(n > JSON.parse(this.getNewestBlock()).id)
+         return;
+      
       var nBlocks = "";
 
       var blockchainFd = fs.openSync("blockchain.json", "r");
