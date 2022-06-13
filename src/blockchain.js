@@ -284,10 +284,6 @@ class blockchain {
       if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
          return false;
 
-      console.log(JSON.stringify(networkDiff) + "\n")
-      console.log(JSON.stringify(block.networkDiff) + "\n")
-      console.log("---------");
-
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
          var registrationFound = false;
          var registrationInBlock = JSON.stringify(block.networkDiff.registered[i]);
