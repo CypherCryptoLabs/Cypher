@@ -362,6 +362,28 @@ class blockchain {
       }
    }
 
+   generateNodeList() {
+      var nodeList = [];
+      var blockchainCopy = JSON.parse(fs.readFileSync("blockchain.json").toString()).blockchain;
+
+      for(var i = 0; i < blockchainCopy.length; i++) {
+         var networkDiff = blockchainCopy[i].networkDiff;
+
+         for(var j = 0; j < networkDiff.registered.length; j++) {
+            var nodeUpdated = false;
+            for(var k = 0; k < nodeList.length; k++) {
+               if(nodeList[k].publicKey == networkDiff.registered[j].publicKey) {
+                  nodeList.splice(k, 1);
+                  nodeList.push(networkDiff.registered[j].publicKey);
+                  nodeUpdated = true;
+               }
+            }
+
+            if(!nodeUpdated) nodeList.push(networkDiff.registered[j].publicKey);
+         }
+      }
+   }
+
 }
 
 module.exports = blockchain;
