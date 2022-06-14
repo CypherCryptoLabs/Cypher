@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const BigNumber = require('bignumber.js');
 const { resolve } = require('path');
 const { type } = require('os');
+const fs = require("fs");
+
 
 class networking {
 
@@ -185,23 +187,27 @@ class networking {
    }
 
    async registerToNetwork() {
-      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      /**/
 
-      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
-      var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+      if(!fs.existsSync("network_cache.json")) {
+         this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
-      if(response != undefined) {
-
-         var nodes = JSON.parse(response).payload.nodeList;
-         for (var i in nodes) {
-            this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
+         var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
+         var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+   
+         if(response != undefined) {
+   
+            var nodes = JSON.parse(response).payload.nodeList;
+            for (var i in nodes) {
+               this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
+            }
+   
+            for (var i = 0; i < this.nodeList.length; i++) {
+               await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+            }
+   
+            this.syncBlockchain().then(this.syncTransactionQueue());
          }
-
-         for (var i = 0; i < this.nodeList.length; i++) {
-            await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
-         }
-
-         this.syncBlockchain().then(this.syncTransactionQueue());
       }
 
    }
