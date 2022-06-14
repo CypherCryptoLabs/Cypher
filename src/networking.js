@@ -189,7 +189,7 @@ class networking {
    async registerToNetwork() {
       /**/
 
-      if(!fs.existsSync("network_cache.json") || !fs.existsSync("blockchain.json")) {
+      if(!fs.existsSync("blockchain.json")) {
          this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
          var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
@@ -208,6 +208,10 @@ class networking {
    
             this.syncBlockchain().then(this.syncTransactionQueue());
          }
+      } else if(!fs.existsSync("network_cache.json")) {
+         this.nodeList = this.blockchain.generateNodeList();
+      } else {
+         // load network cache
       }
 
    }
