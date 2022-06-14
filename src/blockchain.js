@@ -381,6 +381,14 @@ class blockchain {
 
             if(!nodeUpdated) nodeList.push(networkDiff.registered[j].publicKey);
          }
+
+         for(var j = 0; j < networkDiff.left.length; j++) {
+            for(var k = 0; k < nodeList.length; k++) {
+               if(nodeList[k].publicKey == networkDiff.left[j].publicKey) {
+                  nodeList.splice(k, 1);
+               }
+            }
+         }
       }
    }
 
