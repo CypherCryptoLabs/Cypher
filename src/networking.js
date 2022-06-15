@@ -20,12 +20,12 @@ class networking {
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
       this.networkDiff = {registered:[], left:[]};
+      this.blockchain = blockchain;
+      this.registerToNetwork();
       this.potentialBlock;
       this.forger;
       this.validators;
       this.signatures = {};
-      this.blockchain = blockchain;
-      this.registerToNetwork();
    }
 
    getNetworkDiff() {
@@ -175,8 +175,10 @@ class networking {
       var packet = this.createPacket(7, {});
       var transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
 
-      if(transactionQueue == undefined)
+      if(transactionQueue == undefined) {
+         console.log("Could not sync transaction Queue!")
          process.exit(2);
+      }
       
       transactionQueue = JSON.parse(transactionQueue).payload.queue;
 
@@ -190,10 +192,10 @@ class networking {
       /**/
 
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
 
       var nodes = [];
       if(!fs.existsSync("blockchain.json")) {
-         var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
          var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
    
          if(response == undefined) return;
