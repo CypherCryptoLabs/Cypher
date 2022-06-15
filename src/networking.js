@@ -20,12 +20,12 @@ class networking {
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
       this.networkDiff = {registered:[], left:[]};
-      this.registerToNetwork();
       this.potentialBlock;
       this.forger;
       this.validators;
       this.signatures = {};
       this.blockchain = blockchain;
+      this.registerToNetwork();
    }
 
    getNetworkDiff() {
@@ -189,29 +189,28 @@ class networking {
    async registerToNetwork() {
       /**/
 
-      if(!fs.existsSync("blockchain.json")) {
-         this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
 
+      var nodes = [];
+      if(!fs.existsSync("blockchain.json")) {
          var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
          var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
    
-         if(response != undefined) {
-   
-            var nodes = JSON.parse(response).payload.nodeList;
-            for (var i in nodes) {
-               this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
-            }
-   
-            for (var i = 0; i < this.nodeList.length; i++) {
-               await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
-            }
-   
-         }
+         if(response == undefined) return;
+         nodes = JSON.parse(response).payload.nodeList;
       } else if(!fs.existsSync("network_cache.json")) {
-         this.nodeList = this.blockchain.generateNodeList();
+         nodes = this.blockchain.generateNodeList();
          fs.writeFileSync("network_cache.json", JSON.stringify(this.nodeList));
       } else {
-         this.nodeList = JSON.parse(fs.readFileSync("network_cache.json").toString());
+         nodes = JSON.parse(fs.readFileSync("network_cache.json").toString());
+      }
+      
+      for (var i in nodes) {
+         this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
+      }
+
+      for (var i = 0; i < this.nodeList.length; i++) {
+         await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
       }
 
       this.syncBlockchain().then(this.syncTransactionQueue());
