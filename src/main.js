@@ -9,8 +9,8 @@ var BCrypto = new bcrypto();
 var blockchainInstance = new blockchain(BCrypto);
 const TransactionQueue = new transactionQueue(BCrypto,blockchainInstance);
 let netInstance = new networking(config.host, config.port, BCrypto, TransactionQueue, config.stableNode, config.stableNodePort, blockchainInstance);
+netInstance.connectionHandler();
 
 netInstance.registerToNetwork().then(() => {
     TransactionQueue.worker(netInstance);
-    netInstance.connectionHandler();
 })
