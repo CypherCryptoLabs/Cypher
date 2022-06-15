@@ -210,6 +210,7 @@ class networking {
          }
       } else if(!fs.existsSync("network_cache.json")) {
          this.nodeList = this.blockchain.generateNodeList();
+         fs.writeFileSync("network_cache.json", JSON.stringify(this.nodeList));
       } else {
          // load network cache
       }
