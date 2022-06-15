@@ -212,7 +212,7 @@ class networking {
          this.nodeList = this.blockchain.generateNodeList();
          fs.writeFileSync("network_cache.json", JSON.stringify(this.nodeList));
       } else {
-         // load network cache
+         this.nodeList = JSON.parse(fs.readFileSync("network_cache.json").toString());
       }
 
    }
