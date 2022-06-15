@@ -189,14 +189,14 @@ class networking {
    }
 
    async registerToNetwork() {
-      /**/
 
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
+      var response;
 
       var nodes = [];
       if(!fs.existsSync("blockchain.json")) {
-         var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+         response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
    
          if(response == undefined) return;
          nodes = JSON.parse(response).payload.nodeList;
@@ -215,7 +215,7 @@ class networking {
          await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
       }
 
-      this.syncBlockchain().then(this.syncTransactionQueue());
+      if(response != undefined) this.syncBlockchain().then(this.syncTransactionQueue());
 
    }
 
