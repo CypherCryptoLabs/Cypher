@@ -206,7 +206,6 @@ class networking {
                await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
             }
    
-            this.syncBlockchain().then(this.syncTransactionQueue());
          }
       } else if(!fs.existsSync("network_cache.json")) {
          this.nodeList = this.blockchain.generateNodeList();
@@ -214,6 +213,8 @@ class networking {
       } else {
          this.nodeList = JSON.parse(fs.readFileSync("network_cache.json").toString());
       }
+
+      this.syncBlockchain().then(this.syncTransactionQueue());
 
    }
 
