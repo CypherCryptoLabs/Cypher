@@ -374,12 +374,12 @@ class blockchain {
             for(var k = 0; k < nodeList.length; k++) {
                if(nodeList[k].publicKey == networkDiff.registered[j].publicKey) {
                   nodeList.splice(k, 1);
-                  nodeList.push(networkDiff.registered[j].publicKey);
+                  nodeList.push(networkDiff.registered[j]);
                   nodeUpdated = true;
                }
             }
 
-            if(!nodeUpdated) nodeList.push(networkDiff.registered[j].publicKey);
+            if(!nodeUpdated) nodeList.push(networkDiff.registered[j]);
          }
 
          for(var j = 0; j < networkDiff.left.length; j++) {
