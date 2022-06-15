@@ -390,6 +390,8 @@ class blockchain {
             }
          }
       }
+
+      return nodeList;
    }
 
 }
