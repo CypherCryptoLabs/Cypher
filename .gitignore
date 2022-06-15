@@ -2,6 +2,7 @@
 *.pem
 blockchain.json
 cache.json
+network_cache.json
 config.json
 !docker/config.json
 !docker/blockchain.json
