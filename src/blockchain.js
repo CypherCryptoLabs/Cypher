@@ -123,7 +123,7 @@ class blockchain {
       return block;
    }
 
-   appendBlockToBlockchain(block = undefined) {
+   appendBlockToBlockchain(networkingInstance, block = undefined) {
       var blockchainFilePath = "blockchain.json";
       var blockchainFileSize = fs.statSync(blockchainFilePath).size;
 

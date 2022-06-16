@@ -150,7 +150,7 @@ class networking {
                            throw "one or more blocks are invalid!";
 
                         for(var i = 1; i < blockchainUpdate.length; i++) {
-                           this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
+                           this.blockchain.appendBlockToBlockchain(this, blockchainUpdate[i]);
                         }
                      }
 
@@ -346,7 +346,7 @@ class networking {
                         this.broadcastToRandomNodes(data.toString());
 
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
-                           this.blockchain.appendBlockToBlockchain();
+                           this.blockchain.appendBlockToBlockchain(this);
                            this.transactionQueue.clean(packet.payload.block.payload);
                            this.clearNetworkDiff();
 
