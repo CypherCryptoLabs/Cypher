@@ -21,7 +21,6 @@ class networking {
       this.transactionQueue = transactionQueue;
       this.networkDiff = {registered:[], left:[]};
       this.blockchain = blockchain;
-      this.registerToNetwork();
       this.potentialBlock;
       this.forger;
       this.validators;
