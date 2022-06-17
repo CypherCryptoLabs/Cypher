@@ -241,7 +241,7 @@ class networking {
          await this.syncBlockchain();
       } else {
          console.log("Stable Node is not reachable, continuing with random Node. This may not be as secure!");
-         this.syncBlockchain(true);
+         await this.syncBlockchain(true);
       }
 
    }
