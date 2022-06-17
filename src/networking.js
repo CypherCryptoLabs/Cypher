@@ -467,8 +467,6 @@ class networking {
          payload.status = false;
       }
 
-      console.log(this.nodeList);
-
       var answer = this.createPacket(packet.queryID * -1, payload);
       socket.setTimeout(3000);
       socket.write(answer);
