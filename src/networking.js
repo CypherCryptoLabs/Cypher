@@ -226,7 +226,11 @@ class networking {
       this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
 
       if(!fs.existsSync("blockchain.json")) process.exit(1);
-      await this.syncBlockchain();
+      if(await this.isReachable(this.stableNode, this.stableNodePort)) {
+         await this.syncBlockchain();
+      } else {
+         
+      }
 
       if(fs.existsSync("network_cache.json")) {
          cache = JSON.parse(fs.readFileSync("network_cache.json").toString());
@@ -234,9 +238,6 @@ class networking {
          cache = this.blockchain.generateNodeList();
          fs.writeFileSync("network_cache.json", JSON.stringify(cache));
       }
-
-      console.log(cache);
-      console.log(this.nodeList)
 
    }
 
