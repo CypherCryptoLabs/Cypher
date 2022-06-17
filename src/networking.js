@@ -207,7 +207,7 @@ class networking {
 
    async registerToNetwork() {
       var cache;
-      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) }, false);
+      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
       this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
 
       if(fs.existsSync("network_cache.json")) {
@@ -233,7 +233,7 @@ class networking {
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
       for (var i = 0; i < this.nodeList.length; i++) {
-         await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+         if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
       }
 
       this.syncTransactionQueue(randomMode)
