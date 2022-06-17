@@ -206,33 +206,6 @@ class networking {
    }
 
    async registerToNetwork() {
-
-      /*this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
-      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
-      var response;
-
-      var nodes = [];
-      if(!fs.existsSync("blockchain.json")) {
-         response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
-   
-         if(response == undefined) return;
-         nodes = JSON.parse(response).payload.nodeList;
-      } else if(!fs.existsSync("network_cache.json")) {
-         nodes = this.blockchain.generateNodeList();
-         fs.writeFileSync("network_cache.json", JSON.stringify(nodes));
-      } else {
-         nodes = JSON.parse(fs.readFileSync("network_cache.json").toString());
-      }
-      
-      for (var i in nodes) {
-         this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
-      }
-
-      for (var i = 0; i < this.nodeList.length; i++) {
-         await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
-      }
-
-      if(response != undefined) this.syncBlockchain().then(this.syncTransactionQueue());*/
       var cache;
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) }, false);
       this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
@@ -257,8 +230,6 @@ class networking {
          await this.syncBlockchain(true);
          randomMode = true;
       }
-
-      /*TODO: register to Network*/
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
       for (var i = 0; i < this.nodeList.length; i++) {
