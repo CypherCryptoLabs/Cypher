@@ -256,9 +256,9 @@ class networking {
          }
       }
 
-      /*for (var i = 0; i < this.nodeList.length; i++) {
+      for (var i = 0; i < this.nodeList.length; i++) {
          if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true) && (randomMode && this.nodeList[i].publicKey != this.stableNodePubKey)) await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
-      }*/
+      }
 
       this.syncTransactionQueue(randomMode);
    }
