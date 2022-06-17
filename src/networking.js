@@ -232,11 +232,35 @@ class networking {
       }
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
+      var networkDiff;
+
+      if(!randomMode) {
+         networkDiff = JSON.parse(await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port)).payload.nodeList;
+      } else {
+         var receivedSuccessfully = false;
+         for(var i = 0; i < this.nodeList.length && !receivedSuccessfully; i++) {
+            if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) {
+               networkDiff = JSON.parse(await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port)).payload.nodeList;
+            }
+
+            if(networkDiff != undefined) receivedSuccessfully = true;;
+         }
+      }
+
+      console.log(networkDiff)
+
+      if(networkDiff != undefined) {
+         for(var i in networkDiff.registered) {
+            let node = networkDiff.registered[i];
+            this.addNodeToNodeList({ payload: { ipAddress: node.host, port: node.port }, publicKey: node.publicKey });
+         }
+      }
+
       for (var i = 0; i < this.nodeList.length; i++) {
          if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
       }
 
-      this.syncTransactionQueue(randomMode)
+      this.syncTransactionQueue(randomMode);
    }
 
    addNodeToNodeList(packet, updateNetworkDiff = true) {
@@ -458,11 +482,12 @@ class networking {
    }
 
    async handleRegistration(socket, packet) {
+      console.log("tset")
       var payload = {};
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
          this.addNodeToNodeList(packet);
-         payload.nodeList = this.nodeList;
+         payload.nodeList = this.networkDiff;
       } else {
          payload.status = false;
       }
