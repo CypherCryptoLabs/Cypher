@@ -11,12 +11,13 @@ class networking {
 
    server = net.createServer();
 
-   constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain) {
+   constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain, stableNodePubKey) {
       this.host = host;
       this.port = port;
       this.nodeList = new Array();
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
+      this.stableNodePubKey = stableNodePubKey;
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
       this.networkDiff = {registered:[], left:[]};
@@ -112,17 +113,22 @@ class networking {
       }
    }
 
-   async syncBlockchain() {
+   async syncBlockchain(randomNode = false) {
       var syncSuccessful = false;
       var packet = this.createPacket(5, {type: "request", blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id});
 
       var newBlocks = "";
 
-      while(!syncSuccessful && this.nodeList.length > 1) {
+      while(!syncSuccessful && (randomNode || this.nodeList.length > 1)) {
          let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
          if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
             try {
-               newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
+               if(randomNode) {
+                  newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
+               } else {
+                  newBlocks = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+               }
+
                if(newBlocks != undefined) {
                   
                   var blockchainUpdate = JSON.parse(newBlocks).payload.blocks;
@@ -160,8 +166,8 @@ class networking {
                   }
 
                } else {
-                  console.log("Could not sync Blockchain. Node did not answer (or send faulty packet)")
-                  process.exit();
+                  console.log("Could not sync Blockchain. Node is offline or send faulty packet!")
+                  break;
                }
             } catch (error) {
                console.log(error)
@@ -189,7 +195,7 @@ class networking {
 
    async registerToNetwork() {
 
-      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      /*this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
       var response;
 
@@ -214,11 +220,27 @@ class networking {
          await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
       }
 
-      if(response != undefined) this.syncBlockchain().then(this.syncTransactionQueue());
+      if(response != undefined) this.syncBlockchain().then(this.syncTransactionQueue());*/
+      var cache;
+      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) }, false);
+      this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
+
+      if(!fs.existsSync("blockchain.json")) process.exit(1);
+      await this.syncBlockchain();
+
+      if(fs.existsSync("network_cache.json")) {
+         cache = JSON.parse(fs.readFileSync("network_cache.json").toString());
+      } else {
+         cache = this.blockchain.generateNodeList();
+         fs.writeFileSync("network_cache.json", JSON.stringify(cache));
+      }
+
+      console.log(cache);
+      console.log(this.nodeList)
 
    }
 
-   addNodeToNodeList(packet) {
+   addNodeToNodeList(packet, updateNetworkDiff = true) {
       var newNode = {
          ipAddress: packet.payload.ipAddress,
          port: packet.payload.port,
@@ -242,7 +264,8 @@ class networking {
          this.nodeList.push(newNode);
       }
 
-      this.updateNetworkDiff("register", newNode);
+      if(updateNetworkDiff)
+         this.updateNetworkDiff("register", newNode);
 
    }
 

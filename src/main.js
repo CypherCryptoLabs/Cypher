@@ -8,7 +8,7 @@ let config = JSON.parse(fs.readFileSync("config.json", "utf-8"));
 var BCrypto = new bcrypto();
 var blockchainInstance = new blockchain(BCrypto);
 const TransactionQueue = new transactionQueue(BCrypto,blockchainInstance);
-let netInstance = new networking(config.host, config.port, BCrypto, TransactionQueue, config.stableNode, config.stableNodePort, blockchainInstance);
+let netInstance = new networking(config.host, config.port, BCrypto, TransactionQueue, config.stableNode, config.stableNodePort, blockchainInstance, config.stableNodePubKey);
 netInstance.connectionHandler();
 
 netInstance.registerToNetwork().then(() => {
