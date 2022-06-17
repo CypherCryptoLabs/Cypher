@@ -235,7 +235,7 @@ class networking {
       var networkDiff;
 
       if(!randomMode) {
-         let data = await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port)
+         let data = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
          if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
       } else {
          var receivedSuccessfully = false;
@@ -256,9 +256,9 @@ class networking {
          }
       }
 
-      for (var i = 0; i < this.nodeList.length; i++) {
-         if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
-      }
+      /*for (var i = 0; i < this.nodeList.length; i++) {
+         if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true) && (randomMode && this.nodeList[i].publicKey != this.stableNodePubKey)) await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+      }*/
 
       this.syncTransactionQueue(randomMode);
    }
