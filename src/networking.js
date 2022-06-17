@@ -225,18 +225,23 @@ class networking {
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) }, false);
       this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
 
-      if(!fs.existsSync("blockchain.json")) process.exit(1);
-      if(await this.isReachable(this.stableNode, this.stableNodePort)) {
-         await this.syncBlockchain();
-      } else {
-         
-      }
-
       if(fs.existsSync("network_cache.json")) {
          cache = JSON.parse(fs.readFileSync("network_cache.json").toString());
       } else {
          cache = this.blockchain.generateNodeList();
          fs.writeFileSync("network_cache.json", JSON.stringify(cache));
+      }
+
+      for(var i in cache.nodeList) {
+         this.addNodeToNodeList({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
+      }
+
+      if(!fs.existsSync("blockchain.json")) process.exit(1);
+      if(await this.isReachable(this.stableNode, this.stableNodePort)) {
+         await this.syncBlockchain();
+      } else {
+         console.log("Stable Node is not reachable, continuing with random Node. This may not be as secure!");
+         this.syncBlockchain(true);
       }
 
    }
