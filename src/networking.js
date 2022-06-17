@@ -5,6 +5,7 @@ const BigNumber = require('bignumber.js');
 const { resolve } = require('path');
 const { type } = require('os');
 const fs = require("fs");
+const { formatWithOptions } = require('util');
 
 
 class networking {
@@ -176,9 +177,20 @@ class networking {
       }
    }
 
-   async syncTransactionQueue() {
+   async syncTransactionQueue(randomNode = false) {
       var packet = this.createPacket(7, {});
-      var transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+      var transactionQueue;
+      if(!randomNode){
+         transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+      } else {
+         let nodePool = JSON.parse(JSON.stringify(this.nodeList));
+         for(var i in nodePool) {
+            if(nodePool[i].publicKey == this.stableNodePubKey) nodePool.splice(i, 1);
+         }
+
+         let randomNodeIndex = Math.floor(Math.random() * (nodePool.length));
+         transactionQueue = await this.sendPacket(packet, nodePool[randomNodeIndex].ipAddress, nodePool[randomNodeIndex].port);
+      }
 
       if(transactionQueue == undefined) {
          console.log("Could not sync transaction Queue!")
@@ -236,14 +248,24 @@ class networking {
          this.addNodeToNodeList({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
       }
 
+      var randomMode = false;
       if(!fs.existsSync("blockchain.json")) process.exit(1);
       if(await this.isReachable(this.stableNode, this.stableNodePort)) {
          await this.syncBlockchain();
       } else {
          console.log("Stable Node is not reachable, continuing with random Node. This may not be as secure!");
          await this.syncBlockchain(true);
+         randomMode = true;
       }
 
+      /*TODO: register to Network*/
+
+      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
+      for (var i = 0; i < this.nodeList.length; i++) {
+         await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+      }
+
+      this.syncTransactionQueue(randomMode)
    }
 
    addNodeToNodeList(packet, updateNetworkDiff = true) {
@@ -473,6 +495,8 @@ class networking {
       } else {
          payload.status = false;
       }
+
+      console.log(this.nodeList);
 
       var answer = this.createPacket(packet.queryID * -1, payload);
       socket.setTimeout(3000);
@@ -850,6 +874,38 @@ class networking {
       } else {
          return;
       }
+
+   }
+
+   updateNetworkCache(block) {
+      var cache = {blockHeight: block.id, nodeList:JSON.parse(JSON.stringify(this.nodeList))};
+
+      for(var i = 0; i < block.networkDiff.registered.length; i++) {
+         var node = block.networkDiff.registered[i];
+         var nodeIndex = -1;
+         for(var j = 0; j < cache.nodeList.length; j++) {
+            if(node.publicKey == cache.nodeList[j].publicKey) {
+               nodeAlreadyRegistered = j;
+               cache.nodeList.splice(j, 1);
+               cache.nodeList.push(node);
+               break;
+            }
+         }
+
+         if(nodeIndex == -1) cache.nodeList.push(node);
+      }
+
+      for(var i = 0; i < block.networkDiff.registered.length; i++) {
+         var node = block.networkDiff.registered[i];
+         for(var j = 0; j < cache.nodeList.length; j++) {
+            if(node.publicKey == cache.nodeList[j].publicKey) {
+               cache.nodeList.splice(j, 1);
+               break;
+            }
+         }
+      }
+
+      fs.writeFileSync("network_cache.json", JSON.stringify(cache));
 
    }
 

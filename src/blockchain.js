@@ -139,8 +139,10 @@ class blockchain {
       if(block == undefined)
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(this.blockQueue) + "]}");
 
-      if(block != undefined)
+      if(block != undefined) {
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(block) + "]}");
+         networkingInstance.updateNetworkCache(block);
+      }
    }
 
    getNewestBlock(removeValidatorSignatures = false) {
