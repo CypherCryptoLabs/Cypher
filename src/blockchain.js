@@ -391,7 +391,11 @@ class blockchain {
          }
       }
 
-      return nodeList;
+      return {blockHeight:JSON.parse(this.getNewestBlock()).id, nodeList: nodeList};
+   }
+
+   updateNetworkCache(blocks) {
+
    }
 
 }
