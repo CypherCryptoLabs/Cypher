@@ -256,26 +256,26 @@ class blockchain {
       var blockIsValid = true;
       
       if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
-         return false;;
+         return false;
 
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
          return false;
       
       if(block.rewardAddress != forger.blockchainAddress) 
-         return false;;
+         return false;
       
       if(block.rewardAmount != 10)
-         return false;;
+         return false;
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
-         return false;;
+         return false;
 
       for(var i = 0; i < block.payload.length; i++) {
          var signatureTmp = block.payload[i].signature;
 
          for(var j = 0; j < block.payload.length; j++) {
             if(j!=i) {
-               if(signatureTmp == block.payload[j].signature) return false;;
+               if(signatureTmp == block.payload[j].signature) return false;
             }
          }
       }
@@ -327,15 +327,15 @@ class blockchain {
             }
          }
          if(!transactionFound)
-            return false;;
+            return false;
       }
       
       if(Object.keys(block.validators).length != validators.length)
-         return false;;
+         return false;
       
       for(var i = 0; i < block.validators.length && blockIsValid; i++) {
          if(block.validators[validators[i]] == undefined) {
-            return false;;
+            return false;
          }
       }
 
@@ -346,10 +346,10 @@ class blockchain {
       let previousBlockHash = this.bcrypto.hash(previousBlock);
 
       if(block.previousBlockHash != previousBlockHash)
-            return false;;
+            return false;
 
       if(block.id != JSON.parse(previousBlock).id + 1)
-         return false;;
+         return false;
 
       return blockIsValid;
 
