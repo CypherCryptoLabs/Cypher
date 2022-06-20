@@ -4,25 +4,64 @@ const crypto = require('crypto');
 const BigNumber = require('bignumber.js');
 const { resolve } = require('path');
 const { type } = require('os');
+const fs = require("fs");
+const { formatWithOptions } = require('util');
+
 
 class networking {
 
    server = net.createServer();
 
-   constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain) {
+   constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain, stableNodePubKey) {
       this.host = host;
       this.port = port;
       this.nodeList = new Array();
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
+      this.stableNodePubKey = stableNodePubKey;
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
-      this.registerToNetwork();
+      this.networkDiff = {registered:[], left:[]};
+      this.blockchain = blockchain;
       this.potentialBlock;
       this.forger;
       this.validators;
       this.signatures = {};
-      this.blockchain = blockchain;
+   }
+
+   getNetworkDiff() {
+      return JSON.parse(JSON.stringify(this.networkDiff));
+   }
+
+   clearNetworkDiff() {
+      this.networkDiff = {registered:[], left:[]};
+   }
+
+   updateNetworkDiff(mode, node) {
+
+      var nodeAlreadyInDiff = false;
+
+      if(mode == "register") {
+         for(var i = 0; i < this.networkDiff.registered.length; i++) {
+            if(this.networkDiff.registered[i].publicKey == node.publicKey) {
+               nodeAlreadyInDiff = true;
+               break;
+            }
+         }
+
+         if(!nodeAlreadyInDiff)
+            this.networkDiff.registered.push(node);
+      } else if(mode == "leave") {
+         for(var i = 0; i < this.networkDiff.left.length; i++) {
+            if(this.networkDiff.left[i].publicKey == node.publicKey) {
+               nodeAlreadyInDiff = true;
+               break;
+            }
+         }
+
+         if(!nodeAlreadyInDiff)
+            this.networkDiff.left.push(node);
+      }
    }
 
    async checkReachabilityForRandomNodes() {
@@ -75,61 +114,88 @@ class networking {
       }
    }
 
-   async syncBlockchain() {
+   async syncBlockchain(randomNode = false) {
       var syncSuccessful = false;
       var packet = this.createPacket(5, {type: "request", blockHeight:JSON.parse(this.blockchain.getNewestBlock()).id});
 
       var newBlocks = "";
 
-      while(!syncSuccessful && this.nodeList.length > 1) {
+      while(!syncSuccessful && (randomNode || this.nodeList.length > 1)) {
          let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
          if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
-            newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
-            if(newBlocks != undefined) {
-               
-               var blockchainUpdate = JSON.parse(newBlocks).payload.blocks;
-               var newestBlock = JSON.stringify(blockchainUpdate[blockchainUpdate.length - 1]);
-               var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
-               let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
-               
-               if(JSON.parse(await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port)).payload.status) {
-
-                  if(blockchainUpdate.length > 1) {
-                     var syncIsInvalid = false;
-                     if(this.bcrypto.hash(this.blockchain.getNewestBlock(true)) != blockchainUpdate[1].previousBlockHash)
-                        syncIsInvalid = true;
-                     
-                     for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
-                        delete blockchainUpdate[i-1].validators;
-                        if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
-                           syncIsInvalid = true;
-                     }
-
-                     if(syncIsInvalid)
-                        throw "one or more blocks are invalid!";
-
-                     for(var i = 1; i < blockchainUpdate.length; i++) {
-                        this.blockchain.appendBlockToBlockchain(blockchainUpdate[i]);
-                     }
-                  }
-
-                  syncSuccessful = true;
+            try {
+               if(randomNode) {
+                  newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
+               } else {
+                  newBlocks = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
                }
 
-            } else {
-               console.log("Could not sync Blockchain. Local Blockchain may be ahead of network!")
-               process.exit();
+               if(newBlocks != undefined) {
+                  
+                  var blockchainUpdate = JSON.parse(newBlocks).payload.blocks;
+                  var newestBlock = blockchainUpdate[blockchainUpdate.length - 1];
+                  delete newestBlock.validators;
+                  newestBlock = JSON.stringify(newestBlock);
+                  var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
+                  let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
+                  let validationAnswer = await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port);
+
+                  if(JSON.parse(validationAnswer).payload.status) {
+                     if(blockchainUpdate.length > 1) {
+                        var syncIsInvalid = false;
+                        if(this.bcrypto.hash(this.blockchain.getNewestBlock(true)) != blockchainUpdate[1].previousBlockHash)
+                           syncIsInvalid = true;
+                        
+                        for(var i = 2; i < blockchainUpdate.length && !syncIsInvalid; i++) {
+                           delete blockchainUpdate[i-1].validators;
+                           if(this.bcrypto.hash(JSON.stringify(blockchainUpdate[i-1])) != blockchainUpdate[i].previousBlockHash)
+                              syncIsInvalid = true;
+                        }
+
+                        if(syncIsInvalid)
+                           throw "one or more blocks are invalid!";
+
+                        for(var i = 1; i < blockchainUpdate.length; i++) {
+                           this.blockchain.appendBlockToBlockchain(this, blockchainUpdate[i]);
+                        }
+                     }
+
+                     syncSuccessful = true;
+                  } else {
+                     console.log("Could not sync Blockchain. Local Blockchain may be ahead of network!")
+                     process.exit();
+                  }
+
+               } else {
+                  console.log("Could not sync Blockchain. Node is offline or send faulty packet!")
+                  break;
+               }
+            } catch (error) {
+               console.log(error)
             }
          }
       }
    }
 
-   async syncTransactionQueue() {
+   async syncTransactionQueue(randomNode = false) {
       var packet = this.createPacket(7, {});
-      var transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+      var transactionQueue;
+      if(!randomNode){
+         transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+      } else {
+         let nodePool = JSON.parse(JSON.stringify(this.nodeList));
+         for(var i in nodePool) {
+            if(nodePool[i].publicKey == this.stableNodePubKey) nodePool.splice(i, 1);
+         }
 
-      if(transactionQueue == undefined)
+         let randomNodeIndex = Math.floor(Math.random() * (nodePool.length));
+         transactionQueue = await this.sendPacket(packet, nodePool[randomNodeIndex].ipAddress, nodePool[randomNodeIndex].port);
+      }
+
+      if(transactionQueue == undefined) {
+         console.log("Could not sync transaction Queue!")
          process.exit(2);
+      }
       
       transactionQueue = JSON.parse(transactionQueue).payload.queue;
 
@@ -140,28 +206,71 @@ class networking {
    }
 
    async registerToNetwork() {
+      var cache;
       this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
 
-      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
-      var response = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
-
-      if(response != undefined) {
-
-         var nodes = JSON.parse(response).payload.nodeList;
-         for (var i in nodes) {
-            this.addNodeToNodeList({ payload: { ipAddress: nodes[i].ipAddress, port: nodes[i].port }, publicKey: nodes[i].publicKey });
-         }
-
-         for (var i = 0; i < this.nodeList.length; i++) {
-            await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
-         }
-
-         this.syncBlockchain().then(this.syncTransactionQueue());
+      if(fs.existsSync("network_cache.json")) {
+         cache = JSON.parse(fs.readFileSync("network_cache.json").toString());
+      } else {
+         cache = this.blockchain.generateNodeList();
+         fs.writeFileSync("network_cache.json", JSON.stringify(cache));
       }
 
+      for(var i in cache.nodeList) {
+         this.addNodeToNodeList({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
+      }
+
+      var randomMode = false;
+      if(!fs.existsSync("blockchain.json")) process.exit(1);
+      if(await this.isReachable(this.stableNode, this.stableNodePort)) {
+         await this.syncBlockchain();
+      } else {
+         console.log("Stable Node is not reachable, continuing with random Node. This may not be as secure!");
+         await this.syncBlockchain(true);
+         randomMode = true;
+      }
+
+      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
+      var networkDiff;
+
+      if(!randomMode) {
+         let data = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
+         if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
+      } else {
+         var receivedSuccessfully = false;
+         for(var i = 0; i < this.nodeList.length && !receivedSuccessfully; i++) {
+            if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) {
+               let data = await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+               if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
+            }
+
+            if(networkDiff != undefined) receivedSuccessfully = true;;
+         }
+      }
+
+      if(networkDiff != undefined) {
+         for(var i in networkDiff.registered) {
+            let node = networkDiff.registered[i];
+            this.addNodeToNodeList({ payload: { ipAddress: node.ipAddress, port: node.port }, publicKey: node.publicKey });
+         }
+
+         for(var i in networkDiff.left) {
+            let node = networkDiff.registered[i];
+            this.removeNodeFromNodeList(node.publicKey)
+         }
+      }
+
+      for (var i = 0; i < this.nodeList.length; i++) {
+         if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true) && (!randomMode && this.nodeList[i].publicKey != this.stableNodePubKey)){
+            await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+         }
+      }
+
+      this.syncTransactionQueue(randomMode);
    }
 
-   addNodeToNodeList(packet) {
+   addNodeToNodeList(packet, updateNetworkDiff = true) {
       var newNode = {
          ipAddress: packet.payload.ipAddress,
          port: packet.payload.port,
@@ -184,11 +293,16 @@ class networking {
          this.nodeList.splice(nodeIndex, 1);
          this.nodeList.push(newNode);
       }
+
+      if(updateNetworkDiff)
+         this.updateNetworkDiff("register", newNode);
+
    }
 
    removeNodeFromNodeList(publicKey) {
       for(var i = 0; i < this.nodeList.length; i++) {
          if(this.nodeList[i].publicKey == publicKey) {
+            this.updateNetworkDiff("leave", this.nodeList[i]);
             this.nodeList.splice(i, 1);
             break;
          }
@@ -260,6 +374,8 @@ class networking {
                         } else if(typeof this.potentialBlock == "object") {
                            blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
                         }
+
+                        if(blockToVoteOnCopy == undefined) break;
                         delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
@@ -284,8 +400,10 @@ class networking {
                         this.broadcastToRandomNodes(data.toString());
 
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
-                           this.blockchain.appendBlockToBlockchain();
+                           this.blockchain.appendBlockToBlockchain(this);
                            this.transactionQueue.clean(packet.payload.block.payload);
+                           this.clearNetworkDiff();
+
                         }
                      } else {
                         payload.status = false;
@@ -377,7 +495,7 @@ class networking {
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
          this.addNodeToNodeList(packet);
-         payload.nodeList = this.nodeList;
+         payload.nodeList = this.networkDiff;
       } else {
          payload.status = false;
       }
@@ -396,7 +514,7 @@ class networking {
       });
    }
 
-   verrifyPacket(packetJSON) {
+   verrifyPacket(packetJSON, checkTimestamp = true, checkSignature = true) {
       try {
          let packet = JSON.parse(packetJSON);
          var packetCopy = JSON.parse(packetJSON);
@@ -410,11 +528,11 @@ class networking {
          delete packetCopy.signature;
 
          // checking timestamp
-         if (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now())
+         if (checkTimestamp && (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now()))
             return false;
 
          // checking signature
-         if(!this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
+         if(checkSignature && !this.bcrypto.verrifySignature(packet.signature, packet.publicKey, JSON.stringify(packetCopy)))
             return false;
 
          // checking data types
@@ -488,7 +606,8 @@ class networking {
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
                   return false;
 
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.validators, this.forger, this.transactionQueue.getQueue()))
+               let validatorsAndForger = this.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.getNetworkDiff()))
                   return false;
 
                var blockValidators = Object.keys(packet.payload.block.validators);
@@ -643,7 +762,7 @@ class networking {
       if(blockToVoteOn != undefined) {
          blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
 
-         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy)) {
+         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.getNetworkDiff())) {
             // send signature to Forger
             this.updatePotentialBlock(blockToVoteOn);
             var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
@@ -757,6 +876,38 @@ class networking {
       } else {
          return;
       }
+
+   }
+
+   updateNetworkCache(block) {
+      var cache = {blockHeight: block.id, nodeList:JSON.parse(JSON.stringify(this.nodeList))};
+
+      for(var i = 0; i < block.networkDiff.registered.length; i++) {
+         var node = block.networkDiff.registered[i];
+         var nodeIndex = -1;
+         for(var j = 0; j < cache.nodeList.length; j++) {
+            if(node.publicKey == cache.nodeList[j].publicKey) {
+               nodeAlreadyRegistered = j;
+               cache.nodeList.splice(j, 1);
+               cache.nodeList.push(node);
+               break;
+            }
+         }
+
+         if(nodeIndex == -1) cache.nodeList.push(node);
+      }
+
+      for(var i = 0; i < block.networkDiff.registered.length; i++) {
+         var node = block.networkDiff.registered[i];
+         for(var j = 0; j < cache.nodeList.length; j++) {
+            if(node.publicKey == cache.nodeList[j].publicKey) {
+               cache.nodeList.splice(j, 1);
+               break;
+            }
+         }
+      }
+
+      fs.writeFileSync("network_cache.json", JSON.stringify(cache));
 
    }
 

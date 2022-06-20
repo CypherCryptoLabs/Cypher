@@ -58,14 +58,15 @@ You need to adjust the config.json file. It is pretty simple. There are only 4 c
 This is what the file looks originally:
 ```
 {
-    "host" : "192.168.178.22",
+    "host" : "192.168.178.39",
     "port" : 1234,
-    "stableNode" : "192.168.178.40",
-    "stableNodePort" : 1234
+    "stableNode" : "192.168.178.39",
+    "stableNodePort" : 1235,
+    "stableNodePubKey" : "-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE6x9RJRVMnhvYlrPtX7Nt5aDNoQp9gkv0\nZC7uDgXYEFDwK8vOYjhLIC+VIoGNYtPhS0XWUK9kiJyzCqLdgmiR0g==\n-----END PUBLIC KEY-----\n"
 }
 ```
 
-If you are familiar with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
+If you are familiar with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The ```host``` field needs to have your IP-Address as value. The ```port``` field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The ```stableNode``` and ```stableNodePort``` fields are the IP-Address and TCP port for a Node you trust. The ```stableNodePubKey``` field refers to the trusted Nodes PublicKey. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
 
 ### Modify Dockerfile
 The next step is to modify the port which the Docker container should expose. Edit the Dockerfile file, and search for this string:
@@ -119,18 +120,19 @@ cd .. # change directory back to the Cypher Node root
 ```
 
 ### Create config.json
-You need to create the config.json file. It is pretty simple. There are only 4 configurations to modify.
-This is what the file looks originally (copied from the docker directory):
+You need to adjust the config.json file. It is pretty simple. There are only 4 configurations to modify.
+This is what the file looks originally:
 ```
 {
-    "host" : "192.168.178.22",
+    "host" : "192.168.178.39",
     "port" : 1234,
-    "stableNode" : "192.168.178.40",
-    "stableNodePort" : 1234
+    "stableNode" : "192.168.178.39",
+    "stableNodePort" : 1235,
+    "stableNodePubKey" : "-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE6x9RJRVMnhvYlrPtX7Nt5aDNoQp9gkv0\nZC7uDgXYEFDwK8vOYjhLIC+VIoGNYtPhS0XWUK9kiJyzCqLdgmiR0g==\n-----END PUBLIC KEY-----\n"
 }
 ```
 
-If you are familiar with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The "host" field needs to have your IP-Address as value. The "port" field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The "stableNode" and "stableNodePort" fields are the IP-Address and TCP port for a Node you trust. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
+If you are familiar with the IP protocol, you will realize the IP-Addresses are local Addresses, which is a problem if you want to contribute to a global network. The ```host``` field needs to have your IP-Address as value. The ```port``` field can be anything you want as long as it is inside the TCP port range, and not already used by some other service. The ```stableNode``` and ```stableNodePort``` fields are the IP-Address and TCP port for a Node you trust. The ```stableNodePubKey``` field refers to the trusted Nodes PublicKey. If you dont trust any specific Node, enter the values of the Node run by Cypher, you can find the information on [cyphercrypto.io](https://cyphercrypto.io/stable-node).
 
 ### Copy the Blockchain
 The easiest way to do that is to copy it from the docker directory.
@@ -159,8 +161,8 @@ Congratulations, your Node is now online!
 - [x] verify Blockchain that is received on Network Registration
 - [x] P.o.S. Consensus Algorithm
 - [ ] P.o.S. Penalties and Health System
-  - [ ] Netowrk Diff saved in Blocks
-  - [ ] Auto generate Nodelist from Blocks
+  - [x] Netowrk Diff saved in Blocks
+  - [x] Auto generate Nodelist from Blocks
   - [ ] Take part of stake away from Nodes that go offline
   - [ ] Take part of stake away that falsely voted on a Block
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network

@@ -79,7 +79,7 @@ class blockchain {
       fs.writeFileSync("cache.json", JSON.stringify(this.addressCache));
    }
 
-   generateBlock(sortedQueue, validators) {
+   generateBlock(sortedQueue, validators, networkDiff) {
       if(sortedQueue.length) {
          sortedQueue.forEach(object => {
             delete object["queryID"];
@@ -96,9 +96,11 @@ class blockchain {
          rewardAmount: 10,
          payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
+         networkDiff: networkDiff,
          validators: {},
          forgerSignature: ""
       }
+
       if(validators) {
          for(var i = 0; i < validators.validators.length; i++) {
             block.validators[validators.validators[i].blockchainAddress] = "";
@@ -121,7 +123,7 @@ class blockchain {
       return block;
    }
 
-   appendBlockToBlockchain(block = undefined) {
+   appendBlockToBlockchain(networkingInstance, block = undefined) {
       var blockchainFilePath = "blockchain.json";
       var blockchainFileSize = fs.statSync(blockchainFilePath).size;
 
@@ -137,8 +139,10 @@ class blockchain {
       if(block == undefined)
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(this.blockQueue) + "]}");
 
-      if(block != undefined)
+      if(block != undefined) {
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(block) + "]}");
+         networkingInstance.updateNetworkCache(block);
+      }
    }
 
    getNewestBlock(removeValidatorSignatures = false) {
@@ -233,65 +237,120 @@ class blockchain {
       }
    }
 
-   validateBlock(block, currentVotingSlot, validators, forger, transactionQueue) {
+   validateBlock(block, currentVotingSlot, validators, forger, transactionQueue, networkDiff) {
       var blockCopy = JSON.parse(block);
       delete blockCopy.forgerSignature;
+      var blockCopyValidators = Object.keys(blockCopy.validators);
+      for(var i = 0; i < blockCopyValidators.length; i++) {
+         blockCopy.validators[blockCopyValidators[i]] = "";
+      }
       blockCopy = JSON.stringify(blockCopy);
+
+      if(transactionQueue.length) {
+         transactionQueue.forEach(object => {
+            delete object["queryID"];
+         });
+      }
 
       block = JSON.parse(block);
       var blockIsValid = true;
       
-      if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "validators", "forgerSignature"]))
-         blockIsValid = false;
+      if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
+         return false;
 
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
-         blockIsValid =false;
+         return false;
       
       if(block.rewardAddress != forger.blockchainAddress) 
-         blockIsValid = false;
+         return false;
       
       if(block.rewardAmount != 10)
-         blockIsValid = false;
+         return false;
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
-         blockIsValid = false;
+         return false;
+
+      for(var i = 0; i < block.payload.length; i++) {
+         var signatureTmp = block.payload[i].signature;
+
+         for(var j = 0; j < block.payload.length; j++) {
+            if(j!=i) {
+               if(signatureTmp == block.payload[j].signature) return false;
+            }
+         }
+      }
+
+      if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
+         return false;
+      
+      if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
+         return false;
+
+      for(var i = 0; i < block.networkDiff.registered.length; i++) {
+         var registrationFound = false;
+         var registrationInBlock = JSON.stringify(block.networkDiff.registered[i]);
+         for(var j = 0; j < networkDiff.registered.length; j++) {
+            var registrationLocal = JSON.stringify(networkDiff.registered[j]);
+            if(registrationInBlock == registrationLocal) {
+               registrationFound = true;
+               break;
+            }
+         }
+
+         if(!registrationFound)
+            return false;
+      }
+
+      for(var i = 0; i < block.networkDiff.left.length; i++) {
+         var leaveFound = false;
+         var leaveInBlock = JSON.stringify(block.networkDiff.left[i]);
+         for(var j = 0; j < networkDiff.left.length; j++) {
+            var leaveLocal = JSON.stringify(networkDiff.left[j]);
+            if(leaveInBlock == leaveLocal) {
+               leaveFound = true;
+               break;
+            }
+         }
+
+         if(!leaveFound)
+            return false;
+      }
 
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
          var transactionFound = false;
          for(var j = 0; j < transactionQueue.length && !transactionFound; j++) {
             let transactionQueueEntryString = JSON.stringify(transactionQueue[j]);
-            let blockPayloadEntryString = JSON.stringify(block.payload[j]);
+            let blockPayloadEntryString = JSON.stringify(block.payload[i]);
 
             if(blockPayloadEntryString == transactionQueueEntryString) {
                transactionFound = true;
             }
          }
          if(!transactionFound)
-            blockIsValid = false;
+            return false;
       }
       
       if(Object.keys(block.validators).length != validators.length)
-         blockIsValid = false;
+         return false;
       
       for(var i = 0; i < block.validators.length && blockIsValid; i++) {
          if(block.validators[validators[i]] == undefined) {
-            blockIsValid = false;
+            return false;
          }
       }
 
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
-         blockIsValid = true;
+         return false;
 
       let previousBlock = this.getNewestBlock(true);
       let previousBlockHash = this.bcrypto.hash(previousBlock);
 
       if(block.previousBlockHash != previousBlockHash)
-            blockIsValid = false;
+            return false;
 
       if(block.id != JSON.parse(previousBlock).id + 1)
-         blockIsValid = false;
+         return false;
 
-      console.log(blockIsValid)
       return blockIsValid;
 
    }
@@ -303,6 +362,38 @@ class blockchain {
       } else {
          return false
       }
+   }
+
+   generateNodeList() {
+      var nodeList = [];
+      var blockchainCopy = JSON.parse(fs.readFileSync("blockchain.json").toString()).blockchain;
+
+      for(var i = 0; i < blockchainCopy.length; i++) {
+         var networkDiff = blockchainCopy[i].networkDiff;
+
+         for(var j = 0; j < networkDiff.registered.length; j++) {
+            var nodeUpdated = false;
+            for(var k = 0; k < nodeList.length; k++) {
+               if(nodeList[k].publicKey == networkDiff.registered[j].publicKey) {
+                  nodeList.splice(k, 1);
+                  nodeList.push(networkDiff.registered[j]);
+                  nodeUpdated = true;
+               }
+            }
+
+            if(!nodeUpdated) nodeList.push(networkDiff.registered[j]);
+         }
+
+         for(var j = 0; j < networkDiff.left.length; j++) {
+            for(var k = 0; k < nodeList.length; k++) {
+               if(nodeList[k].publicKey == networkDiff.left[j].publicKey) {
+                  nodeList.splice(k, 1);
+               }
+            }
+         }
+      }
+
+      return {blockHeight:JSON.parse(this.getNewestBlock()).id, nodeList: nodeList};
    }
 
 }

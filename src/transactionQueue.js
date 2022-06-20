@@ -69,7 +69,7 @@ class transactionQueue {
             networkingInstance.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-            await networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators));
+            await networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.getNetworkDiff()));
          } else {
             networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock({}));
          }
