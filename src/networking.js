@@ -254,6 +254,11 @@ class networking {
             let node = networkDiff.registered[i];
             this.addNodeToNodeList({ payload: { ipAddress: node.host, port: node.port }, publicKey: node.publicKey });
          }
+
+         for(var i in networkDiff.left) {
+            let node = networkDiff.registered[i];
+            this.removeNodeFromNodeList(node.publicKey)
+         }
       }
 
       for (var i = 0; i < this.nodeList.length; i++) {
