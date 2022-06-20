@@ -2,5 +2,6 @@
     "host" : "192.168.178.22",
     "port" : 1234,
     "stableNode" : "192.168.178.40",
-    "stableNodePort" : 1234
+    "stableNodePort" : 1234,
+    "stableNodePubKey" : "-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE6x9RJRVMnhvYlrPtX7Nt5aDNoQp9gkv0\nZC7uDgXYEFDwK8vOYjhLIC+VIoGNYtPhS0XWUK9kiJyzCqLdgmiR0g==\n-----END PUBLIC KEY-----\n"
 }
