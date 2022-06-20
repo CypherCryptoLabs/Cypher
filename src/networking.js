@@ -252,7 +252,7 @@ class networking {
       if(networkDiff != undefined) {
          for(var i in networkDiff.registered) {
             let node = networkDiff.registered[i];
-            this.addNodeToNodeList({ payload: { ipAddress: node.host, port: node.port }, publicKey: node.publicKey });
+            this.addNodeToNodeList({ payload: { ipAddress: node.ipAddress, port: node.port }, publicKey: node.publicKey });
          }
 
          for(var i in networkDiff.left) {
@@ -374,6 +374,8 @@ class networking {
                         } else if(typeof this.potentialBlock == "object") {
                            blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
                         }
+
+                        if(blockToVoteOnCopy == undefined) break;
                         delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
