@@ -312,7 +312,7 @@ class blockchain {
             }
          }
 
-         if(!registrationFound)
+         if(!leaveFound)
             return false;
       }
 
