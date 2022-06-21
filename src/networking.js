@@ -585,6 +585,37 @@ class networking {
             case -2:
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["nodeList"]))
                   return false;
+
+               if(JSON.stringify(Object.getOwnPropertyNames(payload.nodeList)) != JSON.stringify(["registered", "left"]))
+                  return false;
+
+               for(var i in payload.nodeList.registered) {
+                  var entry = payload.nodeList.registered[i];
+
+                  if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress"]))
+                     return false
+
+                  if(isNaN(entry.port) || entry.port < 0 || entry.port > 65535)
+                     return false;
+   
+                  if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(entry.ipAddress))
+                     return false;
+
+               }
+
+               for(var i in payload.nodeList.left) {
+                  var entry = payload.nodeList.left[i];
+
+                  if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress"]))
+                     return false
+
+                  if(isNaN(entry.port) || entry.port < 0 || entry.port > 65535)
+                     return false;
+   
+                  if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(entry.ipAddress))
+                     return false;
+
+               }
                
                if(payload.status && typeof payload.status != "boolean")
                   return false
