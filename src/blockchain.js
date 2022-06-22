@@ -87,13 +87,19 @@ class blockchain {
       }
 
       var previousBlock = this.getNewestBlock(true);
+      var transactionQueueNetworkFeeSum = 0;
+
+      for(var i in sortedQueue) {
+         let transaction = sortedQueue[i];
+         transactionQueueNetworkFeeSum += transaction.payload.networkFee;
+      }
 
       var block = {
          id: JSON.parse(previousBlock).id + 1,
          timestamp: Date.now(),
          previousBlockHash: this.bcrypto.hash(previousBlock),
          rewardAddress: this.bcrypto.getFingerprint(),
-         rewardAmount: 10,
+         rewardAmount: (transactionQueueNetworkFeeSum > 1) ? transactionQueueNetworkFeeSum : 1,
          payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
          networkDiff: networkDiff,
@@ -263,9 +269,6 @@ class blockchain {
       
       if(block.rewardAddress != forger.blockchainAddress) 
          return false;
-      
-      if(block.rewardAmount != 10)
-         return false;
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
          return false;
@@ -316,8 +319,11 @@ class blockchain {
             return false;
       }
 
+      var expectedRewardAmount = 0;
+
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
          var transactionFound = false;
+         expectedRewardAmount += block.payload[i].payload.networkFee;
          for(var j = 0; j < transactionQueue.length && !transactionFound; j++) {
             let transactionQueueEntryString = JSON.stringify(transactionQueue[j]);
             let blockPayloadEntryString = JSON.stringify(block.payload[i]);
@@ -329,6 +335,9 @@ class blockchain {
          if(!transactionFound)
             return false;
       }
+      
+      if(block.rewardAmount != expectedRewardAmount)
+         return false;
       
       if(Object.keys(block.validators).length != validators.length)
          return false;
