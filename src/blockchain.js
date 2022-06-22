@@ -36,10 +36,16 @@ class blockchain {
                            cacheObj[validators[j]].balance -= 15;
                            if(cacheObj[validators[j]].balanceChanges.lastIndexOf(i) == -1)
                               cacheObj[validators[j]].balanceChanges.push(i);
-                        } else {
-                           cacheObj[blockchainCopy[i].rewardAddress] = {balance: 0, balanceChanges: [i]};
                         }
                      }
+                  }
+               }
+
+               for(var j in blockchainCopy[i].networkDiff.left) {
+                  if(cacheObj.hasOwnProperty(blockchainCopy[i].networkDiff.left[j].blockchainAddress)) {
+                     cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balance -= 1;
+                     if(cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(i) == -1)
+                        cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.push(i);
                   }
                }
 
@@ -85,12 +91,18 @@ class blockchain {
             if(block.validators[validators[j]] == "") {
                if(this.addressCache.hasOwnProperty(validators[j])) {
                   this.addressCache[validators[j]].balance -= 15;
-                  if(this.addressCache[validators[j]].balanceChanges.lastIndexOf(i) == -1)
-                  this.addressCache[validators[j]].balanceChanges.push(i);
-               } else {
-                  this.addressCache[block.rewardAddress] = {balance: 0, balanceChanges: [i]};
+                  if(this.addressCache[validators[j]].balanceChanges.lastIndexOf(block.id) == -1)
+                  this.addressCache[validators[j]].balanceChanges.push(block.id);
                }
             }
+         }
+      }
+
+      for(var j in block.networkDiff.left) {
+         if(this.addressCache.hasOwnProperty(block.networkDiff.left[j].blockchainAddress)) {
+            this.addressCache[block.networkDiff.left[j].blockchainAddress].balance -= 1;
+            if(this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(block.id) == -1)
+            this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.push(block.id);
          }
       }
 

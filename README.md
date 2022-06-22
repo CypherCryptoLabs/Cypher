@@ -160,11 +160,11 @@ Congratulations, your Node is now online!
 - [x] Sync Blockchain with Network on startup
 - [x] verify Blockchain that is received on Network Registration
 - [x] P.o.S. Consensus Algorithm
-- [ ] P.o.S. Penalties and Health System
+- [x] P.o.S. Penalties and Health System
   - [x] Netowrk Diff saved in Blocks
   - [x] Auto generate Nodelist from Blocks
   - [x] Take part of stake away from Nodes that go offline
-  - [ ] Take part of stake away that falsely voted on a Block
+  - [x] Take part of stake away that falsely voted on a Block
 - [x] Address Balance Cache that is automatically updated when a Block is appended/snycing with Network
 - [x] Only Nodes that have been registered longer than one Voting Slot can be selected as Validator
 - [x] automatically remove offline Nodes from Nodelist
