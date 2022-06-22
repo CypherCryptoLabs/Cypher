@@ -27,10 +27,33 @@ class blockchain {
                   cacheObj[blockchainCopy[i].rewardAddress] = {balance: blockchainCopy[i].rewardAmount, balanceChanges: [i]};
                }
 
+               if(blockchainCopy[i].hasOwnProperty("validators")) {
+                  let validators = Object.keys(blockchainCopy[i].validators);
+
+                  for(var j in validators) {
+                     if(blockchainCopy[i].validators[validators[j]] == "") {
+                        if(cacheObj.hasOwnProperty(validators[j])) {
+                           cacheObj[validators[j]].balance -= 15;
+                           if(cacheObj[validators[j]].balanceChanges.lastIndexOf(i) == -1)
+                              cacheObj[validators[j]].balanceChanges.push(i);
+                        }
+                     }
+                  }
+               }
+
+               for(var j in blockchainCopy[i].networkDiff.left) {
+                  if(cacheObj.hasOwnProperty(blockchainCopy[i].networkDiff.left[j].blockchainAddress)) {
+                     cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balance -= 1;
+                     if(cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(i) == -1)
+                        cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.push(i);
+                  }
+               }
+
                let payload = blockchainCopy[i].payload;
                for(var j = 0; j < payload.length; j++) {
                   cacheObj[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-                  cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.push(i);
+                  if(cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(i) == -1)
+                     cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.push(i);
 
                   if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
                      cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
@@ -61,10 +84,33 @@ class blockchain {
          this.addressCache[block.rewardAddress] = {balance: block.rewardAmount, balanceChanges: [block.id]};
       }
 
+      if(block.hasOwnProperty("validators")) {
+         let validators = Object.keys(block.validators);
+
+         for(var j in validators) {
+            if(block.validators[validators[j]] == "") {
+               if(this.addressCache.hasOwnProperty(validators[j])) {
+                  this.addressCache[validators[j]].balance -= 15;
+                  if(this.addressCache[validators[j]].balanceChanges.lastIndexOf(block.id) == -1)
+                  this.addressCache[validators[j]].balanceChanges.push(block.id);
+               }
+            }
+         }
+      }
+
+      for(var j in block.networkDiff.left) {
+         if(this.addressCache.hasOwnProperty(block.networkDiff.left[j].blockchainAddress)) {
+            this.addressCache[block.networkDiff.left[j].blockchainAddress].balance -= 1;
+            if(this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(block.id) == -1)
+            this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.push(block.id);
+         }
+      }
+
       let payload = block.payload;
       for(var j = 0; j < payload.length; j++) {
          this.addressCache[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-         this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.push(block.id);
+         if(this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(block.id) == -1)
+            this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.push(block.id);
 
          if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
             this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
@@ -87,13 +133,19 @@ class blockchain {
       }
 
       var previousBlock = this.getNewestBlock(true);
+      var transactionQueueNetworkFeeSum = 0;
+
+      for(var i in sortedQueue) {
+         let transaction = sortedQueue[i];
+         transactionQueueNetworkFeeSum += transaction.payload.networkFee;
+      }
 
       var block = {
          id: JSON.parse(previousBlock).id + 1,
          timestamp: Date.now(),
          previousBlockHash: this.bcrypto.hash(previousBlock),
          rewardAddress: this.bcrypto.getFingerprint(),
-         rewardAmount: 10,
+         rewardAmount: (transactionQueueNetworkFeeSum > 1) ? transactionQueueNetworkFeeSum : 1,
          payloadHash: this.bcrypto.hash(JSON.stringify(sortedQueue)),
          payload: sortedQueue,
          networkDiff: networkDiff,
@@ -263,9 +315,6 @@ class blockchain {
       
       if(block.rewardAddress != forger.blockchainAddress) 
          return false;
-      
-      if(block.rewardAmount != 10)
-         return false;
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
          return false;
@@ -316,8 +365,11 @@ class blockchain {
             return false;
       }
 
+      var expectedRewardAmount = 0;
+
       for(var i = 0; i < block.payload.length && blockIsValid; i++) {
          var transactionFound = false;
+         expectedRewardAmount += block.payload[i].payload.networkFee;
          for(var j = 0; j < transactionQueue.length && !transactionFound; j++) {
             let transactionQueueEntryString = JSON.stringify(transactionQueue[j]);
             let blockPayloadEntryString = JSON.stringify(block.payload[i]);
@@ -329,6 +381,9 @@ class blockchain {
          if(!transactionFound)
             return false;
       }
+
+      if(block.rewardAmount != expectedRewardAmount)
+         return false;
       
       if(Object.keys(block.validators).length != validators.length)
          return false;
