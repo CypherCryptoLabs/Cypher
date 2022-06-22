@@ -27,6 +27,22 @@ class blockchain {
                   cacheObj[blockchainCopy[i].rewardAddress] = {balance: blockchainCopy[i].rewardAmount, balanceChanges: [i]};
                }
 
+               if(blockchainCopy[i].hasOwnProperty("validators")) {
+                  let validators = Object.keys(blockchainCopy[i].validators);
+
+                  for(var j in validators) {
+                     if(blockchainCopy[i].validators[validators[j]] == "") {
+                        if(cacheObj.hasOwnProperty(validators[j])) {
+                           cacheObj[validators[j]].balance -= 15;
+                           if(cacheObj[validators[j]].balanceChanges.lastIndexOf(i) == -1)
+                              cacheObj[validators[j]].balanceChanges.push(i);
+                        } else {
+                           cacheObj[blockchainCopy[i].rewardAddress] = {balance: 0, balanceChanges: [i]};
+                        }
+                     }
+                  }
+               }
+
                let payload = blockchainCopy[i].payload;
                for(var j = 0; j < payload.length; j++) {
                   cacheObj[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
@@ -60,6 +76,22 @@ class blockchain {
          this.addressCache[block.rewardAddress].balanceChanges.push(block.id);
       } else {
          this.addressCache[block.rewardAddress] = {balance: block.rewardAmount, balanceChanges: [block.id]};
+      }
+
+      if(block.hasOwnProperty("validators")) {
+         let validators = Object.keys(block.validators);
+
+         for(var j in validators) {
+            if(block.validators[validators[j]] == "") {
+               if(this.addressCache.hasOwnProperty(validators[j])) {
+                  this.addressCache[validators[j]].balance -= 15;
+                  if(this.addressCache[validators[j]].balanceChanges.lastIndexOf(i) == -1)
+                  this.addressCache[validators[j]].balanceChanges.push(i);
+               } else {
+                  this.addressCache[block.rewardAddress] = {balance: 0, balanceChanges: [i]};
+               }
+            }
+         }
       }
 
       let payload = block.payload;
