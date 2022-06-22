@@ -30,7 +30,8 @@ class blockchain {
                let payload = blockchainCopy[i].payload;
                for(var j = 0; j < payload.length; j++) {
                   cacheObj[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-                  cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.push(i);
+                  if(cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(i) == -1)
+                     cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.push(i);
 
                   if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
                      cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
@@ -64,7 +65,8 @@ class blockchain {
       let payload = block.payload;
       for(var j = 0; j < payload.length; j++) {
          this.addressCache[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-         this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.push(block.id);
+         if(this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(block.id) == -1)
+            this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.push(block.id);
 
          if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
             this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
@@ -335,7 +337,7 @@ class blockchain {
          if(!transactionFound)
             return false;
       }
-      
+
       if(block.rewardAmount != expectedRewardAmount)
          return false;
       
