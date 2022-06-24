@@ -267,7 +267,7 @@ class networking {
          }
       }
 
-      this.syncTransactionQueue(randomMode);
+      await this.syncTransactionQueue(randomMode);
    }
 
    addNodeToNodeList(packet, updateNetworkDiff = true) {
