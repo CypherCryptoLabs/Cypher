@@ -173,6 +173,7 @@ Congratulations, your Node is now online!
 - [x] check reachability of Node on registration
 - [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
+- [ ] Multithreading (for each connection a new thread, seperate thread for transactionQueue.worker())
 
 ## Future Releases and Improvements
 - [ ] Migrating Codebase to TypeScript for better readability
