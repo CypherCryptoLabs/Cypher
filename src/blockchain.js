@@ -260,7 +260,6 @@ class blockchain {
       }
 
       totalBuffer = totalBuffer.subarray(index, dataReadForIteration + ((i - 2) * 10000)).toString("utf-8");
-      console.log("{\"blocks\":[" + totalBuffer);
       return JSON.parse("{\"blocks\":[" + totalBuffer);
    }
 
