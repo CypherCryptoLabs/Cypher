@@ -249,8 +249,10 @@ class blockchain {
       var dataReadForIteration = 0;
 
       while(index == -1) {
-         var buffer = Buffer.alloc(10000);
-         dataReadForIteration = fs.readSync(blockchainFd, buffer, 0, buffer.length, blockchainFileSize - (buffer.length * i));
+         let position = blockchainFileSize - (10000 * i);
+         var buffer = Buffer.alloc((position >= 0) ? 10000 : position + 10000);
+
+         dataReadForIteration = fs.readSync(blockchainFd, buffer, 0, (position >= 0) ? 10000 : position + 10000, blockchainFileSize - (10000 * i));
          i++;
 
          index = buffer.toString().lastIndexOf('{"id":' + n + ',');
