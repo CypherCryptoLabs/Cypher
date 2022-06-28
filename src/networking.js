@@ -442,7 +442,7 @@ class networking {
                if(!subroutineHandlesSocket) {
                   var answer = this.createPacket(packet.queryID * -1, payload);
                   socket.setTimeout(3000);
-                  socket.write(answer);
+                  socket.write(answer + Buffer.from([0x00]).toString("utf8"));
 
                   socket.on('timeout', () => {
                      socket.end();
@@ -478,7 +478,7 @@ class networking {
 
       var answer = this.createPacket(packet.queryID * -1, payload);
       socket.setTimeout(3000);
-      socket.write(answer);
+      socket.write(answer + Buffer.from([0x00]).toString("utf8"));
 
       socket.on('timeout', () => {
          socket.end();
@@ -502,7 +502,7 @@ class networking {
 
       var answer = this.createPacket(packet.queryID * -1, payload);
       socket.setTimeout(3000);
-      socket.write(answer);
+      socket.write(answer + Buffer.from([0x00]).toString("utf8"));
 
       socket.on('timeout', () => {
          socket.end();
@@ -869,16 +869,19 @@ class networking {
    async sendPacket(packet, ipAddress, port, waitForAnswer = true) {
       let socket = new net.Socket();
       socket.setTimeout(3000);
-      var response;
+      var response = "";
       var receivedResponsePromise = new Promise(function (resolve, reject) {
          socket.connect(port, ipAddress, () => {
             socket.write(packet);
          })
 
          socket.on('data', (data) => {
-            response = data.toString();
-            socket.destroy();
-            resolve();
+            response += data.toString();
+            if(response.slice(-1) ==  Buffer.from([0x00]).toString("utf-8")) {
+               response = response.slice(0, -1);
+               socket.destroy();
+               resolve();
+            }
          })
 
          socket.on('error', (error) => {
