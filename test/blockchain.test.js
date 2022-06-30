@@ -32,6 +32,10 @@ test("getting balance for wallet", ()=> {
     expect(blockchain.getBalanceForAddress("01b364f173998197db2d4924d00ea41c38c0693245826502c78b5493e2e46936")).toBe(24999994.999);
 })
 
+test("generating Node List", ()=> {
+    expect(blockchain.generateNodeList()).toStrictEqual(JSON.parse("{\"blockHeight\":2,\"nodeList\":[{\"ipAddress\":\"192.168.178.39\",\"port\":1236,\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEKK5CHMpnX7y9MIVnND3vZLkNGJb9vGyK\\nyqI7i63SrwRsBzJhA5HThTItF4hkJppswskZya0tK3XUQe7D5EUFaw==\\n-----END PUBLIC KEY-----\\n\",\"blockchainAddress\":\"e12a31ecaf53389b7ed9063dd48292a50015414466fc9777c0a45cb6d5e59233\"},{\"ipAddress\":\"192.168.178.39\",\"port\":1234,\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEJ7QBCmN0/iIzTGwzQ5yKoO1dErex/mOj\\nXxs2K/gEjndXVhLU5+SbIqegAU1KKY9Xjh+AS+YNMbSYgF901gz7YQ==\\n-----END PUBLIC KEY-----\\n\",\"blockchainAddress\":\"01b364f173998197db2d4924d00ea41c38c0693245826502c78b5493e2e46936\"},{\"ipAddress\":\"192.168.178.39\",\"port\":1235,\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE6x9RJRVMnhvYlrPtX7Nt5aDNoQp9gkv0\\nZC7uDgXYEFDwK8vOYjhLIC+VIoGNYtPhS0XWUK9kiJyzCqLdgmiR0g==\\n-----END PUBLIC KEY-----\\n\",\"blockchainAddress\":\"1b9e59b69808320df10583bbb4d3204ac2a8c78a377348010c65ac671c8909ea\"},{\"ipAddress\":\"192.168.178.39\",\"port\":1237,\"publicKey\":\"-----BEGIN PUBLIC KEY-----\\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAETYQkPHlXaARBt11Km3DMoTn04wvlECSi\\nDf8e5t2mAaba+hXyuh1UjGlWj6K19UjYthq+nXKUCYHY7vUQ+8Higw==\\n-----END PUBLIC KEY-----\\n\",\"blockchainAddress\":\"7d68452d72d1de28c250b6a26150b2080f673b77b4477652228a1df5b4ebffe1\"}]}"))
+})
+
 afterAll(() => {
     fs.rmSync("cache.json");
 })
