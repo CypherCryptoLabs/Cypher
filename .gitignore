@@ -9,4 +9,5 @@ config.json
 src/node_modules
 test/node_modules
 !test/private.pem
+!test/blockchain.json
 package-lock.json
