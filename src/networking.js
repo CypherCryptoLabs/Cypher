@@ -731,13 +731,13 @@ class networking {
       var forgerAddress = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
       var forgerAddressDifference = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
 
-      for(var i = 0; i < numOfValidators; i++) {
+      for(var i = 0; i <= numOfValidators; i++) {
 
          var difference = forgerAproximateAddress.minus(this.nodeList[i].blockchainAddress, 16);
          if(difference.isNegative())
             difference = difference.negated();
 
-         if(difference.lt(forgerAddressDifference)) {
+         if(forgerAddressDifference.lt(difference)) {
             validators.forger = this.nodeList[i];
             forgerAddress = new BigNumber(this.nodeList[i].blockchainAddress, 16);
             forgerAddressDifference = difference;
