@@ -174,7 +174,7 @@ Congratulations, your Node is now online!
 - [x] Timeouts for all TCP traffic
 - [x] Allow multiple transactions per Block per Wallet
 - [ ] Multithreading (for each connection a new thread, seperate thread for transactionQueue.worker())
-- [ ] Unit Tests
+- [x] Unit Tests
 
 ## Future Releases and Improvements
 - [ ] Migrating Codebase to TypeScript for better readability
