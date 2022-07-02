@@ -310,32 +310,32 @@ class blockchain {
       var blockIsValid = true;
       
       if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
-         return 1;
+         return false;
 
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
-         return 2;
+         return false;
       
       if(block.rewardAddress != forger.blockchainAddress) 
-         return 3;
+         return false;
 
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
-         return 4;
+         return false;
 
       for(var i = 0; i < block.payload.length; i++) {
          var signatureTmp = block.payload[i].signature;
 
          for(var j = 0; j < block.payload.length; j++) {
             if(j!=i) {
-               if(signatureTmp == block.payload[j].signature) return 5;
+               if(signatureTmp == block.payload[j].signature) return false;
             }
          }
       }
 
       if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
-         return 6;
+         return false;
       
       if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
-         return 7;
+         return false;
 
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
          var registrationFound = false;
@@ -349,7 +349,7 @@ class blockchain {
          }
 
          if(!registrationFound)
-            return 8;
+            return false;
       }
 
       for(var i = 0; i < block.networkDiff.left.length; i++) {
@@ -364,7 +364,7 @@ class blockchain {
          }
 
          if(!leaveFound)
-            return 9;
+            return false;
       }
 
       var expectedRewardAmount = 0;
@@ -381,32 +381,32 @@ class blockchain {
             }
          }
          if(!transactionFound)
-            return 10;
+            return false;
       }
 
       if(block.rewardAmount != expectedRewardAmount)
-         return 11;
+         return false;
       
       if(Object.keys(block.validators).length != validators.length)
-         return 12;
+         return false;
       
       for(var i = 0; i < block.validators.length && blockIsValid; i++) {
          if(block.validators[validators[i]] == undefined) {
-            return 13;
+            return false;
          }
       }
 
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
-         return 14;
+         return false;
 
       let previousBlock = this.getNewestBlock(true);
       let previousBlockHash = this.bcrypto.hash(previousBlock);
 
       if(block.previousBlockHash != previousBlockHash)
-            return 15;
+            return false;
 
       if(block.id != JSON.parse(previousBlock).id + 1)
-         return 16;
+         return false;
 
       return blockIsValid;
 
