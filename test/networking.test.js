@@ -96,7 +96,6 @@ test("create Packet", ()=> {
     delete packet.signature;
     delete packet.unixTimestamp;
 
-    console.log(JSON.stringify(packet))
     expect(packet).toStrictEqual({"queryID":1,"payload":{},"publicKey":"-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE0eh+AvR+We2qTcRyxHBxMhSZEYGjbeQz\nrhWsrJ6uw3PiwtpEaYOP24QXai23F/DQdWL0GkhRfsdTMyeqr3Kh9A==\n-----END PUBLIC KEY-----\n"});
 })
 
