@@ -1,5 +1,3 @@
-const net = require('net');
-
 class transactionQueue {
 
    constructor(bcrypto, blockchain) {
@@ -53,7 +51,7 @@ class transactionQueue {
          let validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
          var timeToWait = nextVoteSlotTimestamp - Date.now();
 
-         var sleepPromise = new Promise((resolve) => {
+         let sleepPromise = new Promise((resolve) => {
             setTimeout(resolve, timeToWait);
          });
          await sleepPromise;
@@ -61,7 +59,7 @@ class transactionQueue {
          let localNodeAddress = this.bcrypto.getFingerprint();
          if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             
-            var sleepPromise = new Promise((resolve) => {
+            let sleepPromise = new Promise((resolve) => {
                setTimeout(resolve, 100);
             });
             await sleepPromise;
@@ -81,8 +79,10 @@ class transactionQueue {
       let currentTimestamp = Date.now();
       for (var i = 0; i < usedQueue.length; i++) {
          for (var j = 0; j < this.queue.length; j++) {
-            if (this.queue[j].signature == usedQueue[i].signature || this.queue[j].unixTimestamp < currentTimestamp - 86400000)
+            if (this.queue[j].signature == usedQueue[i].signature || this.queue[j].unixTimestamp < currentTimestamp - 86400000) {
                this.queue.splice(j, 1);
+               j--;
+            }
          }
       }
    }

@@ -1,7 +1,4 @@
 const fs = require("fs");
-const crypto = require('crypto');
-const { formatWithOptions } = require("util");
-const { exit } = require("process");
 
 class blockchain {
 
@@ -30,7 +27,7 @@ class blockchain {
                if(blockchainCopy[i].hasOwnProperty("validators")) {
                   let validators = Object.keys(blockchainCopy[i].validators);
 
-                  for(var j in validators) {
+                  for(var j = 0; j < validators.length; j++) {
                      if(blockchainCopy[i].validators[validators[j]] == "") {
                         if(cacheObj.hasOwnProperty(validators[j])) {
                            cacheObj[validators[j]].balance -= 15;
@@ -87,7 +84,7 @@ class blockchain {
       if(block.hasOwnProperty("validators")) {
          let validators = Object.keys(block.validators);
 
-         for(var j in validators) {
+         for(var j = 0; j < validators.length; j++) {
             if(block.validators[validators[j]] == "") {
                if(this.addressCache.hasOwnProperty(validators[j])) {
                   this.addressCache[validators[j]].balance -= 15;
@@ -204,7 +201,6 @@ class blockchain {
       var buffer1 = Buffer.alloc(10000);
       var buffer2 = Buffer.alloc(10000);
 
-      var i = 1;
       var index = 0;
       while (stringNotFound) {
          buffer1.copy(buffer2);
@@ -221,7 +217,7 @@ class blockchain {
 
       }
 
-      var lastBlockBuffer = Buffer.alloc(10000 - index - 2 - ((blockchainFileSize < 10000 ? 10000 - blockchainFileSize : 0)));
+      var lastBlockBuffer = Buffer.alloc(10000 - index - 2 - (blockchainFileSize < 10000 ? 10000 - blockchainFileSize : 0));
       fs.readSync(blockchainFd, lastBlockBuffer, 0, lastBlockBuffer.length, blockchainFileSize - lastBlockBuffer.length - 2);
       lastBlockBuffer = lastBlockBuffer.toString("utf-8");
 
@@ -451,6 +447,7 @@ class blockchain {
             for(var k = 0; k < nodeList.length; k++) {
                if(nodeList[k].publicKey == networkDiff.left[j].publicKey) {
                   nodeList.splice(k, 1);
+                  k--;
                }
             }
          }
