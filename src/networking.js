@@ -1,11 +1,7 @@
 const net = require('net');
 const server = net.createServer();
-const crypto = require('crypto');
 const BigNumber = require('bignumber.js');
-const { resolve } = require('path');
-const { type } = require('os');
 const fs = require("fs");
-const { formatWithOptions } = require('util');
 
 
 class networking {
@@ -590,7 +586,7 @@ class networking {
                   return false;
 
                for(var i in payload.nodeList.registered) {
-                  var entry = payload.nodeList.registered[i];
+                  let entry = payload.nodeList.registered[i];
 
                   if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress"]))
                      return false
@@ -604,7 +600,7 @@ class networking {
                }
 
                for(var i in payload.nodeList.left) {
-                  var entry = payload.nodeList.left[i];
+                  let entry = payload.nodeList.left[i];
 
                   if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress"]))
                      return false
@@ -917,7 +913,7 @@ class networking {
       var cache = {blockHeight: block.id, nodeList:JSON.parse(JSON.stringify(this.nodeList))};
 
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         var node = block.networkDiff.registered[i];
+         let node = block.networkDiff.registered[i];
          var nodeIndex = -1;
          for(var j = 0; j < cache.nodeList.length; j++) {
             if(node.publicKey == cache.nodeList[j].publicKey) {
@@ -932,7 +928,7 @@ class networking {
       }
 
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         var node = block.networkDiff.registered[i];
+         let node = block.networkDiff.registered[i];
          for(var j = 0; j < cache.nodeList.length; j++) {
             if(node.publicKey == cache.nodeList[j].publicKey) {
                cache.nodeList.splice(j, 1);
