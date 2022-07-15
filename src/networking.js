@@ -724,20 +724,20 @@ class networking {
    pickValidators(latestBlockHash, nextVotingSlot) {
       var validators = {validators:[], forger:{}};
 
-      let numOfValidators = (this.nodeList.length - 1 < 128) ? this.nodeList.length - 1 : 128;
+      let numOfValidators = (this.nodeList.length - 1 < 128) ? this.nodeList.length : 128;
       var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
 
 
       var forgerAddress = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
       var forgerAddressDifference = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
 
-      for(var i = 0; i <= numOfValidators; i++) {
+      for(var i = 0; i < numOfValidators; i++) {
 
          var difference = forgerAproximateAddress.minus(this.nodeList[i].blockchainAddress, 16);
          if(difference.isNegative())
             difference = difference.negated();
 
-         if(forgerAddressDifference.lt(difference)) {
+         if(difference.lt(forgerAddressDifference)) {
             validators.forger = this.nodeList[i];
             forgerAddress = new BigNumber(this.nodeList[i].blockchainAddress, 16);
             forgerAddressDifference = difference;
@@ -745,7 +745,7 @@ class networking {
       }
 
       var validatorAproximateAddress = forgerAproximateAddress;
-      while(validators.validators.length < numOfValidators) {
+      while(validators.validators.length < numOfValidators - 1) {
          validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16));
 
          var nodeListCopy = JSON.parse(JSON.stringify(this.nodeList));
@@ -775,6 +775,7 @@ class networking {
       this.validators = validators.validators;
       this.forger = validators.forger;
       
+      console.log(validators)
       return validators;
 
    }
