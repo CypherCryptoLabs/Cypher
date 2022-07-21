@@ -771,7 +771,6 @@ class networking {
       this.validators = validators.validators;
       this.forger = validators.forger;
       
-      console.log(validators)
       return validators;
 
    }

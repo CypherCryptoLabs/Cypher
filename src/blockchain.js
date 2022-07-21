@@ -383,9 +383,6 @@ class blockchain {
             return false;
       }
 
-      console.log(expectedRewardAmount)
-      console.log(block.rewardAmount)
-
       if(block.rewardAmount != expectedRewardAmount)
          return false;
       
