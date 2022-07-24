@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "bignumber.js": "^9.0.2",
-    "starkbank-ecdsa": "^1.1.4"
-  }
-}
