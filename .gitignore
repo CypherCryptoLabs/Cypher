@@ -1,0 +1,13 @@
+.vscode
+*.pem
+blockchain.json
+cache.json
+network_cache.json
+config.json
+!docker/config.json
+!docker/blockchain.json
+src/node_modules
+test/node_modules
+!test/private.pem
+!test/blockchain.json
+package-lock.json
