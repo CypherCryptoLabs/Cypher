@@ -330,7 +330,7 @@ class blockchain {
       if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
          return false;
       
-      if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
+      /*if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
          return false;
 
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
@@ -361,7 +361,7 @@ class blockchain {
 
          if(!leaveFound)
             return false;
-      }
+      }*/
 
       var expectedRewardAmount = 0;
 
