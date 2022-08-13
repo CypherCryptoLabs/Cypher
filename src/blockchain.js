@@ -304,16 +304,16 @@ class blockchain {
 
       block = JSON.parse(block);
       var blockIsValid = true;
-      
+      console.log(1)
       if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
          return false;
-
+         console.log(2)
       if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
          return false;
-      
+         console.log(3)
       if(block.rewardAddress != forger.blockchainAddress) 
          return false;
-
+      console.log(4)
       if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
          return false;
 
@@ -326,7 +326,7 @@ class blockchain {
             }
          }
       }
-
+      console.log(5)
       if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
          return false;
       
@@ -378,32 +378,32 @@ class blockchain {
          }
 
          if(expectedRewardAmount < 1) expectedRewardAmount = 1;
-
+         console.log(6)
          if(!transactionFound)
             return false;
       }
-
+      console.log(7)
       if(block.rewardAmount != expectedRewardAmount)
          return false;
-      
+      console.log(8)
       if(Object.keys(block.validators).length != validators.length)
          return false;
-      
+      console.log(9)
       for(var i = 0; i < block.validators.length && blockIsValid; i++) {
          if(block.validators[validators[i]] == undefined) {
             return false;
          }
       }
-
+      console.log(10)
       if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
          return false;
 
       let previousBlock = this.getNewestBlock(true);
       let previousBlockHash = this.bcrypto.hash(previousBlock);
-
+      console.log(11)
       if(block.previousBlockHash != previousBlockHash)
             return false;
-
+      console.log(12)
       if(block.id != JSON.parse(previousBlock).id + 1)
          return false;
 
