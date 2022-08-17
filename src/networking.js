@@ -34,6 +34,7 @@ class networking {
    }
 
    updateNetworkDiff(mode, node) {
+      return;
 
       var nodeAlreadyInDiff = false;
 
