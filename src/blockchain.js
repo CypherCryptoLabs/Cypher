@@ -290,6 +290,10 @@ class blockchain {
    validateBlock(block, currentVotingSlot, validators, forger, transactionQueue, networkDiff) {
       var blockCopy = JSON.parse(block);
       delete blockCopy.forgerSignature;
+
+      if(blockCopy.validators == undefined)
+         return false
+
       var blockCopyValidators = Object.keys(blockCopy.validators);
       for(var i = 0; i < blockCopyValidators.length; i++) {
          blockCopy.validators[blockCopyValidators[i]] = "";
