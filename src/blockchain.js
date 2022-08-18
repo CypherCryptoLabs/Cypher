@@ -190,7 +190,7 @@ class blockchain {
 
       if(block != undefined) {
          fs.appendFileSync(blockchainFilePath, "," + JSON.stringify(block) + "]}");
-         networkingInstance.updateNetworkCache(block);
+         //networkingInstance.updateNetworkCache(block);
       }
    }
 
@@ -389,6 +389,7 @@ class blockchain {
       if(block.rewardAmount != expectedRewardAmount)
          return false;
       
+      console.log(Object.keys(block.validators))
       if(Object.keys(block.validators).length != validators.length)
          return false;
       

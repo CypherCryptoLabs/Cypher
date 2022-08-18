@@ -191,7 +191,8 @@ class networking {
 
       if(transactionQueue == undefined) {
          console.log("Could not sync transaction Queue!")
-         process.exit(2);
+         //process.exit(2);
+         return
       }
       
       transactionQueue = JSON.parse(transactionQueue).payload.queue;
@@ -214,9 +215,9 @@ class networking {
          fs.writeFileSync("network_cache.json", JSON.stringify(cache));
       }
 
-      for(var i in cache.nodeList) {
+      /*for(var i in cache.nodeList) {
          this.addNodeToNodeList({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
-      }
+      }*/
 
       var randomMode = false;
       if(!fs.existsSync("blockchain.json")) process.exit(1);
@@ -233,13 +234,15 @@ class networking {
 
       if(!randomMode) {
          let data = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
-         if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
+         //if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
+         if(data != undefined) this.nodeList = JSON.parse(data).payload.nodeList
       } else {
          var receivedSuccessfully = false;
          for(var i = 0; i < this.nodeList.length && !receivedSuccessfully; i++) {
             if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) {
                let data = await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
-               if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
+               //if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
+               if(data != undefined) this.nodeList = JSON.parse(data).payload.nodeList
             }
 
             if(networkDiff != undefined) receivedSuccessfully = true;;
@@ -492,7 +495,8 @@ class networking {
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
          this.addNodeToNodeList(packet);
-         payload.nodeList = this.networkDiff;
+         //payload.nodeList = this.networkDiff;
+         payload.nodeList = this.nodeList;
       } else {
          payload.status = false;
       }
@@ -583,7 +587,7 @@ class networking {
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["nodeList"]))
                   return false;
 
-               if(JSON.stringify(Object.getOwnPropertyNames(payload.nodeList)) != JSON.stringify(["registered", "left"]))
+               /*if(JSON.stringify(Object.getOwnPropertyNames(payload.nodeList)) != JSON.stringify(["registered", "left"]))
                   return false;
 
                for(var i in payload.nodeList.registered) {
@@ -602,6 +606,20 @@ class networking {
 
                for(var i in payload.nodeList.left) {
                   let entry = payload.nodeList.left[i];
+
+                  if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress"]))
+                     return false
+
+                  if(isNaN(entry.port) || entry.port < 0 || entry.port > 65535)
+                     return false;
+   
+                  if (!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(entry.ipAddress))
+                     return false;
+
+               }*/
+
+               for(var i in payload.nodeList) {
+                  let entry = payload.nodeList[i];
 
                   if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress"]))
                      return false
