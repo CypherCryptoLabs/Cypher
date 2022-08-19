@@ -221,13 +221,15 @@ class networking {
 
       var randomMode = false;
       if(!fs.existsSync("blockchain.json")) process.exit(1);
-      if(await this.isReachable(this.stableNode, this.stableNodePort)) {
+      /*if(await this.isReachable(this.stableNode, this.stableNodePort)) {
          await this.syncBlockchain();
       } else {
          console.log("Stable Node is not reachable, continuing with random Node. This may not be as secure!");
          await this.syncBlockchain(true);
          randomMode = true;
-      }
+      }*/
+
+      await this.syncBlockchain();
 
       var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
       var networkDiff;
