@@ -529,7 +529,7 @@ class networking {
          delete packetCopy.signature;
 
          // checking timestamp
-         if (checkTimestamp && (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now()))
+         if (checkTimestamp && (packet.unixTimestamp <= Date.now() - 60000 || packet.unixTimestamp >= Date.now() + 10000))
             return false;
 
          // checking signature
