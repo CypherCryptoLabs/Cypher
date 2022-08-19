@@ -296,8 +296,8 @@ class networking {
          this.nodeList.push(newNode);
       }
 
-      if(updateNetworkDiff)
-         this.updateNetworkDiff("register", newNode);
+      /*if(updateNetworkDiff)
+         this.updateNetworkDiff("register", newNode);*/
 
    }
 
