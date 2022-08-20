@@ -288,135 +288,140 @@ class blockchain {
    }
 
    validateBlock(block, currentVotingSlot, validators, forger, transactionQueue, networkDiff) {
-      var blockCopy = JSON.parse(block);
-      delete blockCopy.forgerSignature;
+      try {
+         var blockCopy = JSON.parse(block);
+         delete blockCopy.forgerSignature;
 
-      if(blockCopy.validators == undefined)
+         if(blockCopy.validators == undefined)
+            return false
+
+         var blockCopyValidators = Object.keys(blockCopy.validators);
+         for(var i = 0; i < blockCopyValidators.length; i++) {
+            blockCopy.validators[blockCopyValidators[i]] = "";
+         }
+         blockCopy = JSON.stringify(blockCopy);
+
+         if(transactionQueue.length) {
+            transactionQueue.forEach(object => {
+               delete object["queryID"];
+            });
+         }
+
+         block = JSON.parse(block);
+         var blockIsValid = true;
+         
+         if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
+            return false;
+
+         if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
+            return false;
+         
+         if(block.rewardAddress != forger.blockchainAddress) 
+            return false;
+
+         if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
+            return false;
+
+         for(var i = 0; i < block.payload.length; i++) {
+            var signatureTmp = block.payload[i].signature;
+
+            for(var j = 0; j < block.payload.length; j++) {
+               if(j!=i) {
+                  if(signatureTmp == block.payload[j].signature) return false;
+               }
+            }
+         }
+
+         if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
+            return false;
+
+         if(block.networkDiff.registered.length != 0 || block.networkDiff.left.length != 0)
+            return false
+         
+         /*if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
+            return false;
+
+         for(var i = 0; i < block.networkDiff.registered.length; i++) {
+            var registrationFound = false;
+            var registrationInBlock = JSON.stringify(block.networkDiff.registered[i]);
+            for(var j = 0; j < networkDiff.registered.length; j++) {
+               var registrationLocal = JSON.stringify(networkDiff.registered[j]);
+               if(registrationInBlock == registrationLocal) {
+                  registrationFound = true;
+                  break;
+               }
+            }
+
+            if(!registrationFound)
+               return false;
+         }
+
+         for(var i = 0; i < block.networkDiff.left.length; i++) {
+            var leaveFound = false;
+            var leaveInBlock = JSON.stringify(block.networkDiff.left[i]);
+            for(var j = 0; j < networkDiff.left.length; j++) {
+               var leaveLocal = JSON.stringify(networkDiff.left[j]);
+               if(leaveInBlock == leaveLocal) {
+                  leaveFound = true;
+                  break;
+               }
+            }
+
+            if(!leaveFound)
+               return false;
+         }*/
+
+         var expectedRewardAmount = 0;
+
+         for(var i = 0; i < block.payload.length && blockIsValid; i++) {
+            var transactionFound = false;
+            expectedRewardAmount += block.payload[i].payload.networkFee;
+            for(var j = 0; j < transactionQueue.length && !transactionFound; j++) {
+               let transactionQueueEntryString = JSON.stringify(transactionQueue[j]);
+               let blockPayloadEntryString = JSON.stringify(block.payload[i]);
+
+               if(blockPayloadEntryString == transactionQueueEntryString) {
+                  transactionFound = true;
+               }
+            }
+
+            if(expectedRewardAmount < 1) expectedRewardAmount = 1;
+
+            if(!transactionFound)
+               return false;
+         }
+
+         if(block.rewardAmount != expectedRewardAmount)
+            return false;
+         
+         console.log(Object.keys(block.validators))
+         if(Object.keys(block.validators).length != validators.length)
+            return false;
+         
+         for(var i = 0; i < block.validators.length && blockIsValid; i++) {
+            if(block.validators[validators[i]] == undefined) {
+               return false;
+            }
+         }
+
+         if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
+            return false;
+
+         let previousBlock = this.getNewestBlock(true);
+         let previousBlockHash = this.bcrypto.hash(previousBlock);
+
+         if(block.previousBlockHash != previousBlockHash)
+               return false;
+
+         if(block.id != JSON.parse(previousBlock).id + 1)
+            return false;
+
+         return blockIsValid;
+      } catch(error) {
+         console.log(error)
+         console.log(block)
          return false
-
-      var blockCopyValidators = Object.keys(blockCopy.validators);
-      for(var i = 0; i < blockCopyValidators.length; i++) {
-         blockCopy.validators[blockCopyValidators[i]] = "";
       }
-      blockCopy = JSON.stringify(blockCopy);
-
-      if(transactionQueue.length) {
-         transactionQueue.forEach(object => {
-            delete object["queryID"];
-         });
-      }
-
-      block = JSON.parse(block);
-      var blockIsValid = true;
-      
-      if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
-         return false;
-
-      if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
-         return false;
-      
-      if(block.rewardAddress != forger.blockchainAddress) 
-         return false;
-
-      if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
-         return false;
-
-      for(var i = 0; i < block.payload.length; i++) {
-         var signatureTmp = block.payload[i].signature;
-
-         for(var j = 0; j < block.payload.length; j++) {
-            if(j!=i) {
-               if(signatureTmp == block.payload[j].signature) return false;
-            }
-         }
-      }
-
-      if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
-         return false;
-
-      if(block.networkDiff.registered.length != 0 || block.networkDiff.left.length != 0)
-         return false
-      
-      /*if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
-         return false;
-
-      for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         var registrationFound = false;
-         var registrationInBlock = JSON.stringify(block.networkDiff.registered[i]);
-         for(var j = 0; j < networkDiff.registered.length; j++) {
-            var registrationLocal = JSON.stringify(networkDiff.registered[j]);
-            if(registrationInBlock == registrationLocal) {
-               registrationFound = true;
-               break;
-            }
-         }
-
-         if(!registrationFound)
-            return false;
-      }
-
-      for(var i = 0; i < block.networkDiff.left.length; i++) {
-         var leaveFound = false;
-         var leaveInBlock = JSON.stringify(block.networkDiff.left[i]);
-         for(var j = 0; j < networkDiff.left.length; j++) {
-            var leaveLocal = JSON.stringify(networkDiff.left[j]);
-            if(leaveInBlock == leaveLocal) {
-               leaveFound = true;
-               break;
-            }
-         }
-
-         if(!leaveFound)
-            return false;
-      }*/
-
-      var expectedRewardAmount = 0;
-
-      for(var i = 0; i < block.payload.length && blockIsValid; i++) {
-         var transactionFound = false;
-         expectedRewardAmount += block.payload[i].payload.networkFee;
-         for(var j = 0; j < transactionQueue.length && !transactionFound; j++) {
-            let transactionQueueEntryString = JSON.stringify(transactionQueue[j]);
-            let blockPayloadEntryString = JSON.stringify(block.payload[i]);
-
-            if(blockPayloadEntryString == transactionQueueEntryString) {
-               transactionFound = true;
-            }
-         }
-
-         if(expectedRewardAmount < 1) expectedRewardAmount = 1;
-
-         if(!transactionFound)
-            return false;
-      }
-
-      if(block.rewardAmount != expectedRewardAmount)
-         return false;
-      
-      console.log(Object.keys(block.validators))
-      if(Object.keys(block.validators).length != validators.length)
-         return false;
-      
-      for(var i = 0; i < block.validators.length && blockIsValid; i++) {
-         if(block.validators[validators[i]] == undefined) {
-            return false;
-         }
-      }
-
-      if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
-         return false;
-
-      let previousBlock = this.getNewestBlock(true);
-      let previousBlockHash = this.bcrypto.hash(previousBlock);
-
-      if(block.previousBlockHash != previousBlockHash)
-            return false;
-
-      if(block.id != JSON.parse(previousBlock).id + 1)
-         return false;
-
-      return blockIsValid;
-
    }
 
    addBlockToQueue(block) {   
