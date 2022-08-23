@@ -5,17 +5,22 @@ const networking = require(__dirname + "/networking.js");
 const fs = require("fs");
 const execSync = require('child_process').execSync;
 
-const output = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' });
+try { 
+    const output = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' });
 
-if(output != "master") {
-    if(fs.existsSync("cache.json"))
-        fs.rmSync("cache.json")
-    if(fs.existsSync("network_cache.json"))
-        fs.rmSync("network_cache.json")
+    if(output != "master") {
+        if(fs.existsSync("cache.json"))
+            fs.rmSync("cache.json")
+        if(fs.existsSync("network_cache.json"))
+            fs.rmSync("network_cache.json")
 
-    if(fs.existsSync("docker/blockchain.json")) 
-        fs.copyFileSync("docker/blockchain.json", "blockchain.json")
+        if(fs.existsSync("docker/blockchain.json")) 
+            fs.copyFileSync("docker/blockchain.json", "blockchain.json")
+    }
+} catch(error) {
+    console.log("Could not determine git branch, presuming \"master\"...")
 }
+
 let config = JSON.parse(fs.readFileSync("config.json", "utf-8"));
 var BCrypto = new bcrypto();
 var blockchainInstance = new blockchain(BCrypto);
