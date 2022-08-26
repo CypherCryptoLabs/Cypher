@@ -668,8 +668,12 @@ class networking {
                for(var i = 0; i < blockValidators.length; i++) {
                   for(var j = 0; j < this.validators.length; j++) {
                      if(blockValidators[i] == this.validators[j].blockchainAddress) {
-                        if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.validators[j].publicKey, blockCopy))
+                        try {
+                           if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.validators[j].publicKey, blockCopy))
+                              invalidSignatures++;
+                        } catch(_) {
                            invalidSignatures++;
+                        }
                      }
                   }
                }
