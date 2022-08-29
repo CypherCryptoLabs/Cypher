@@ -48,7 +48,7 @@ class transactionQueue {
          var now = Date.now();
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
 
-         let validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
+         let validators = networkingInstance.consensus.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
          var timeToWait = nextVoteSlotTimestamp - Date.now();
 
          let sleepPromise = new Promise((resolve) => {
@@ -64,12 +64,12 @@ class transactionQueue {
             });
             await sleepPromise;
 
-            networkingInstance.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
+            networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-            await networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.getNetworkDiff()));
+            await networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.getNetworkDiff()));
          } else {
-            networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock({}));
+            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}));
          }
          
       }

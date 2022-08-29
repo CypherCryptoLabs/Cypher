@@ -1,6 +1,7 @@
 class NodeList {
-    constructor(bcrypto) {
+    constructor(bcrypto, netInstance) {
         this.bcrypto = bcrypto
+        this.netInstance = netInstance
         this.list = []
     }
 

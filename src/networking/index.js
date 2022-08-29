@@ -4,6 +4,7 @@ const BigNumber = require('bignumber.js');
 const fs = require("fs");
 
 const NodeList = require("./nodeList")
+const Consensus = require("./consensus")
 
 class networking {
 
@@ -12,7 +13,8 @@ class networking {
    constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain, stableNodePubKey) {
       this.host = host;
       this.port = port;
-      this.nodeList = new NodeList(bcrypto)
+      this.nodeList = new NodeList(bcrypto, this)
+      this.consensus = new Consensus(bcrypto, this.nodeList, this)
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
@@ -20,10 +22,6 @@ class networking {
       this.transactionQueue = transactionQueue;
       this.networkDiff = {registered:[], left:[]};
       this.blockchain = blockchain;
-      this.potentialBlock;
-      this.forger;
-      this.validators;
-      this.signatures = {};
    }
 
    getNetworkDiff() {
@@ -329,29 +327,29 @@ class networking {
 
                   case 3:
                      if(packet.payload.type == "request")
-                        payload.potentialBlock = this.potentialBlock;
+                        payload.potentialBlock = this.consensus.potentialBlock;
 
                      if(packet.payload.type == "vote") {
                         var blockToVoteOnCopy;
-                        if(typeof this.potentialBlock == "string") {
-                           blockToVoteOnCopy = JSON.parse(this.potentialBlock);
-                        } else if(typeof this.potentialBlock == "object") {
-                           blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
+                        if(typeof this.consensus.potentialBlock == "string") {
+                           blockToVoteOnCopy = JSON.parse(this.consensus.potentialBlock);
+                        } else if(typeof this.consensus.potentialBlock == "object") {
+                           blockToVoteOnCopy = JSON.parse(JSON.stringify(this.consensus.potentialBlock));
                         }
 
                         if(blockToVoteOnCopy == undefined) break;
                         delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
-                        if(this.validators != undefined && this.validators.hasOwnProperty('length')) {
-                           for(var i = 0; i < this.validators.length; i++) {
-                              if(packet.publicKey == this.validators[i].publicKey)
+                        if(this.consensus.validators != undefined && this.consensus.validators.hasOwnProperty('length')) {
+                           for(var i = 0; i < this.consensus.validators.length; i++) {
+                              if(packet.publicKey == this.consensus.validators[i].publicKey)
                                  senderIsValidator = true;
                            }
                         }
 
                         if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, JSON.stringify(blockToVoteOnCopy)) && senderIsValidator) {
-                           this.signatures[this.bcrypto.getFingerprint(packet.publicKey)] = packet.payload.signature;
+                           this.consensus.signatures[this.bcrypto.getFingerprint(packet.publicKey)] = packet.payload.signature;
                         }
                      }
                                
@@ -616,7 +614,7 @@ class networking {
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
                   return false;
 
-               let validatorsAndForger = this.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
+               let validatorsAndForger = this.consensus.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
                if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.getNetworkDiff()))
                   return false;
 
@@ -628,10 +626,10 @@ class networking {
                blockCopy = JSON.stringify(blockCopy);
 
                for(var i = 0; i < blockValidators.length; i++) {
-                  for(var j = 0; j < this.validators.length; j++) {
-                     if(blockValidators[i] == this.validators[j].blockchainAddress) {
+                  for(var j = 0; j < this.consensus.validators.length; j++) {
+                     if(blockValidators[i] == this.consensus.validators[j].blockchainAddress) {
                         try {
-                           if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.validators[j].publicKey, blockCopy))
+                           if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.consensus.validators[j].publicKey, blockCopy))
                               invalidSignatures++;
                         } catch(_) {
                            invalidSignatures++;
@@ -702,136 +700,6 @@ class networking {
          console.log(error);
          return false;
       }
-   }
-
-   pickValidators(latestBlockHash, nextVotingSlot) {
-      var validators = {validators:[], forger:{}};
-
-      let numOfValidators = (this.nodeList.length - 1 < 128) ? this.nodeList.length : 128;
-      var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
-
-
-      var forgerAddress = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-      var forgerAddressDifference = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-
-      for(var i = 0; i < numOfValidators; i++) {
-
-         var difference = forgerAproximateAddress.minus(this.nodeList.get(i).blockchainAddress, 16);
-         if(difference.isNegative())
-            difference = difference.negated();
-
-         if(difference.lt(forgerAddressDifference)) {
-            validators.forger = this.nodeList.get(i);
-            forgerAddress = new BigNumber(this.nodeList.get(i).blockchainAddress, 16);
-            forgerAddressDifference = difference;
-         }
-      }
-
-      var validatorAproximateAddress = forgerAproximateAddress;
-      while(validators.validators.length < numOfValidators - 1) {
-         validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16));
-
-         var nodeListCopy = JSON.parse(JSON.stringify(this.nodeList.get()));
-         nodeListCopy.push({blockchainAddress: validatorAproximateAddress});
-         
-         nodeListCopy = nodeListCopy.sort((a, b) => (a.blockchainAddress > b.blockchainAddress) ? 1 : -1);
-         var index = nodeListCopy.map(function(e) { return e.blockchainAddress; }).indexOf(validatorAproximateAddress);
-
-         var indexesToAdd = new Array();
-         if(index == 0) {
-            indexesToAdd.push(index + 1);
-         } else if(index == nodeListCopy.length - 1) {
-            indexesToAdd.push(index - 1);
-         } else {
-            indexesToAdd.push(index - 1);
-            indexesToAdd.push(index + 1);
-         }
-
-         for(var i = 0; i < indexesToAdd.length; i++) {
-            if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(nodeListCopy[indexesToAdd[i]].blockchainAddress) == -1 && 
-            validators.forger.blockchainAddress != nodeListCopy[indexesToAdd[i]].blockchainAddress) {
-               validators.validators.push(nodeListCopy[indexesToAdd[i]]);
-            }
-         }
-      }
-
-      this.validators = validators.validators;
-      this.forger = validators.forger;
-      
-      return validators;
-
-   }
-
-   async voteOnBlock(forger, currentVotingSlot, validators, transactionQueue) {
-      var blockToVoteOnData = await this.sendPacket(this.createPacket(3, {type: "request"}), forger.ipAddress, forger.port);
-      if(blockToVoteOnData == undefined)
-         return;
-
-      var blockToVoteOn = JSON.parse(blockToVoteOnData);
-      var transactionQueueCopy = JSON.parse(JSON.stringify(transactionQueue));
-      transactionQueueCopy.forEach(object => {
-         delete object["queryID"];
-      });
-
-      if(blockToVoteOn != undefined) {
-         blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
-
-         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.getNetworkDiff())) {
-            // send signature to Forger
-            this.updatePotentialBlock(blockToVoteOn);
-            var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
-            delete blockToVoteOnCopy.validators;
-
-            var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
-            var packetVote = this.createPacket(3, {type: "vote", signature: blockVoteSignature});
-
-            for(var i = 0; i < validators.length; i++) {
-               if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {
-                  let z = i;
-                  this.sendPacket(packetVote, validators[z].ipAddress, validators[z].port, false);
-               }
-            }
-
-            var timeToWait = currentVotingSlot + 15000 - Date.now();
-
-            var sleepPromise = new Promise((resolve) => {
-               setTimeout(resolve, timeToWait);
-            });
-            await sleepPromise;
-            
-            var votes = this.signatures;
-            this.signatures = {};
-
-            if(votes != undefined && Object.keys(votes).length >= ((Object.keys(validators).length / 2) - 1)) {
-               var votedBlock = JSON.parse(blockToVoteOn);
-
-               for(var i = 0; i < Object.keys(votes).length; i++) {
-                  votedBlock.validators[Object.keys(votes)[i]] = votes[Object.keys(votes)[i]];
-               }
-               
-               votedBlock.validators[this.bcrypto.getFingerprint()] = blockVoteSignature;
-               var broadcastPacket = this.createPacket(4, {block:votedBlock});
-               this.broadcastToRandomNodes(broadcastPacket);
-
-            }
-
-         }
-      }
-   }
-
-   async updatePotentialBlock(potentialBlock) {
-      this.potentialBlock = potentialBlock;
-
-      var sleepPromise = new Promise((resolve) => {
-         setTimeout(resolve, 15000);
-      });
-      await sleepPromise;
-
-      this.potentialBlock = {};
-   }
-
-   getVotes() {
-      return this.signatures;
    }
 
    createPacket(queryID, payload) {
