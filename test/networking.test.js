@@ -63,14 +63,14 @@ test("add Node to NodeList", ()=> {
         publicKey: bcrypto.getPubKey(true)
     }
 
-    netInstance.addNodeToNodeList(node, false);
+    netInstance.nodeList.add(node, false);
     expect(netInstance.nodeList).toStrictEqual([{"ipAddress":"192.168.178.123","port":1234,"publicKey":"-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE0eh+AvR+We2qTcRyxHBxMhSZEYGjbeQz\nrhWsrJ6uw3PiwtpEaYOP24QXai23F/DQdWL0GkhRfsdTMyeqr3Kh9A==\n-----END PUBLIC KEY-----\n","blockchainAddress":"30c442f72e92c0ddcd5662ebf399a1e9ea00f8f77fac95b8ac4c4456a2661d47"}])
 })
 
 test("remove Node from NodeList", ()=> {
     let node = bcrypto.getPubKey(true)
 
-    netInstance.removeNodeFromNodeList(node)
+    netInstance.nodeList.remove(node)
     expect(netInstance.nodeList).toStrictEqual([])
 })
 

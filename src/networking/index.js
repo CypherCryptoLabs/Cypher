@@ -3,6 +3,7 @@ const server = net.createServer();
 const BigNumber = require('bignumber.js');
 const fs = require("fs");
 
+const NodeList = require("./nodeList")
 
 class networking {
 
@@ -11,7 +12,7 @@ class networking {
    constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain, stableNodePubKey) {
       this.host = host;
       this.port = port;
-      this.nodeList = new Array();
+      this.nodeList = new NodeList()
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
@@ -75,12 +76,12 @@ class networking {
          var numOfRandomPeers = (numOfRandomPeers > this.nodeList.length) ? this.nodeList.length - 1 : 8;
          for(var i = 0; i < numOfRandomPeers; i++) {
             var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
-            var randomNode = this.nodeList[randomNodeIndex];
+            var randomNode = this.nodeList.get(randomNodeIndex);
 
             if(randomNode.publicKey != this.bcrypto.getPubKey(true) && await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
                var packet = this.createPacket(6, {type:"report", publicKey:randomNode.publicKey});
                this.broadcastToRandomNodes(packet);
-               this.removeNodeFromNodeList(randomNode.publicKey);
+               this.nodeList.remove(randomNode.publicKey);
             }
          }
       }
@@ -97,7 +98,7 @@ class networking {
 
       while (successfullyNotifiedNodes.length - 1 < numOfRandomPeers && notifiedNodes.length - 1 < this.nodeList.length - 1) {
          var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
-         var randomNode = this.nodeList[randomNodeIndex];
+         var randomNode = this.nodeList.get(randomNodeIndex);
 
          if (notifiedNodes.indexOf(randomNode.blockchainAddress) == -1 && successfullyNotifiedNodes.indexOf(randomNode.blockchainAddress) == -1) {
 
@@ -119,10 +120,10 @@ class networking {
 
       while(!syncSuccessful && (randomNode || this.nodeList.length > 1)) {
          let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
-         if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
+         if(this.nodeList.get(randomNodeIndex).publicKey != this.bcrypto.getPubKey().toPem()) {
             try {
                if(randomNode) {
-                  newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
+                  newBlocks = await this.sendPacket(packet, this.nodeList.get(randomNodeIndex).ipAddress, this.nodeList.get(randomNodeIndex).port);
                } else {
                   newBlocks = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
                }
@@ -135,7 +136,7 @@ class networking {
                   newestBlock = JSON.stringify(newestBlock);
                   var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
                   let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
-                  let validationAnswer = await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port);
+                  let validationAnswer = await this.sendPacket(validatePacket, this.nodeList.get(validationRandomNode).ipAddress, this.nodeList.get(validationRandomNode).port);
 
                   if(JSON.parse(validationAnswer).payload.status) {
                      if(blockchainUpdate.length > 1) {
@@ -180,7 +181,7 @@ class networking {
       if(!randomNode){
          transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
       } else {
-         let nodePool = JSON.parse(JSON.stringify(this.nodeList));
+         let nodePool = JSON.parse(JSON.stringify(this.nodeList.get()));
          for(var i in nodePool) {
             if(nodePool[i].publicKey == this.stableNodePubKey) nodePool.splice(i, 1);
          }
@@ -205,8 +206,8 @@ class networking {
 
    async registerToNetwork() {
       var cache;
-      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
-      this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
+      this.nodeList.add({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      this.nodeList.add({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
 
       if(fs.existsSync("network_cache.json")) {
          cache = JSON.parse(fs.readFileSync("network_cache.json").toString());
@@ -216,7 +217,7 @@ class networking {
       }
 
       /*for(var i in cache.nodeList) {
-         this.addNodeToNodeList({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
+         this.nodeList.add({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
       }*/
 
       var randomMode = false;
@@ -237,14 +238,14 @@ class networking {
       if(!randomMode) {
          let data = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
          //if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
-         if(data != undefined) this.nodeList = JSON.parse(data).payload.nodeList
+         if(data != undefined) this.nodeList.loadFrom(JSON.parse(data).payload.nodeList)
       } else {
          var receivedSuccessfully = false;
          for(var i = 0; i < this.nodeList.length && !receivedSuccessfully; i++) {
-            if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) {
-               let data = await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+            if(this.nodeList.get(i).publicKey != this.bcrypto.getPubKey(true)) {
+               let data = await this.sendPacket(packet, this.nodeList.get(i).ipAddress, this.nodeList.get(i).port);
                //if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
-               if(data != undefined) this.nodeList = JSON.parse(data).payload.nodeList
+               if(data != undefined) this.nodeList.loadFrom(JSON.parse(data).payload.nodeList)
             }
 
             if(networkDiff != undefined) receivedSuccessfully = true;;
@@ -254,61 +255,22 @@ class networking {
       if(networkDiff != undefined) {
          for(var i in networkDiff.registered) {
             let node = networkDiff.registered[i];
-            this.addNodeToNodeList({ payload: { ipAddress: node.ipAddress, port: node.port }, publicKey: node.publicKey });
+            this.nodeList.add({ payload: { ipAddress: node.ipAddress, port: node.port }, publicKey: node.publicKey });
          }
 
          for(var i in networkDiff.left) {
             let node = networkDiff.registered[i];
-            this.removeNodeFromNodeList(node.publicKey)
+            this.nodeList.remove(node.publicKey)
          }
       }
 
       for (var i = 0; i < this.nodeList.length; i++) {
-         if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true) && (!randomMode && this.nodeList[i].publicKey != this.stableNodePubKey)){
-            await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+         if(this.nodeList.get(i).publicKey != this.bcrypto.getPubKey(true) && (!randomMode && this.nodeList.get(i).publicKey != this.stableNodePubKey)){
+            await this.sendPacket(packet, this.nodeList.get(i).ipAddress, this.nodeList.get(i).port);
          }
       }
 
       await this.syncTransactionQueue(randomMode);
-   }
-
-   addNodeToNodeList(packet, updateNetworkDiff = true) {
-      var newNode = {
-         ipAddress: packet.payload.ipAddress,
-         port: packet.payload.port,
-         publicKey: packet.publicKey,
-         blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey)
-      };
-      var nodeIsAlreadyRegistered = false;
-      var nodeIndex = -1;
-
-      for (var i = 0; i < this.nodeList.length && !nodeIsAlreadyRegistered; i++) {
-         if (JSON.stringify(this.nodeList[i].publicKey) == JSON.stringify(packet.publicKey)) {
-            nodeIsAlreadyRegistered = true;
-            nodeIndex = i;
-         }
-      }
-
-      if (!nodeIsAlreadyRegistered) {
-         this.nodeList.push(newNode);
-      } else {
-         this.nodeList.splice(nodeIndex, 1);
-         this.nodeList.push(newNode);
-      }
-
-      /*if(updateNetworkDiff)
-         this.updateNetworkDiff("register", newNode);*/
-
-   }
-
-   removeNodeFromNodeList(publicKey) {
-      for(var i = 0; i < this.nodeList.length; i++) {
-         if(this.nodeList[i].publicKey == publicKey) {
-            this.updateNetworkDiff("leave", this.nodeList[i]);
-            this.nodeList.splice(i, 1);
-            break;
-         }
-      }
    }
 
    async isReachable(address, port) {
@@ -327,8 +289,8 @@ class networking {
 
    async isReachableByPublicKey(publicKey) {
       for(var i = 0; i < this.nodeList.length; i++) {
-         if(this.nodeList[i].publicKey == publicKey) {
-            return await this.isReachable(this.nodeList[i].ipAddress, this.nodeList[i].port);
+         if(this.nodeList.get(i).publicKey == publicKey) {
+            return await this.isReachable(this.nodeList.get(i).ipAddress, this.nodeList.get(i).port);
          }
       }
 
@@ -426,7 +388,7 @@ class networking {
                         payload.timestamp = Date.now();
                      } else {
                         /*if(!this.isReachableByPublicKey(payload.publicKey)) {
-                           this.removeNodeFromNodeList(payload.publicKey);
+                           this.nodeList.remove(payload.publicKey);
                            this.broadcastToRandomNodes(data.toString());
                            payload.status = true;
                         } else {
@@ -471,7 +433,7 @@ class networking {
       var payload = {};
 
       if(!await this.isReachableByPublicKey(packet.payload.publicKey)) {
-         this.removeNodeFromNodeList(packet.payload.publicKey);
+         this.nodeList.remove(packet.payload.publicKey);
          this.broadcastToRandomNodes(JSON.stringify(packet));
          payload.status = true;
       } else {
@@ -496,9 +458,9 @@ class networking {
       var payload = {};
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
-         this.addNodeToNodeList(packet);
+         this.this.nodeList.add(packet);
          //payload.nodeList = this.networkDiff;
-         payload.nodeList = this.nodeList;
+         payload.nodeList = this.nodeList.get();
       } else {
          payload.status = false;
       }
@@ -754,13 +716,13 @@ class networking {
 
       for(var i = 0; i < numOfValidators; i++) {
 
-         var difference = forgerAproximateAddress.minus(this.nodeList[i].blockchainAddress, 16);
+         var difference = forgerAproximateAddress.minus(this.nodeList.get(i).blockchainAddress, 16);
          if(difference.isNegative())
             difference = difference.negated();
 
          if(difference.lt(forgerAddressDifference)) {
-            validators.forger = this.nodeList[i];
-            forgerAddress = new BigNumber(this.nodeList[i].blockchainAddress, 16);
+            validators.forger = this.nodeList.get(i);
+            forgerAddress = new BigNumber(this.nodeList.get(i).blockchainAddress, 16);
             forgerAddressDifference = difference;
          }
       }
@@ -769,7 +731,7 @@ class networking {
       while(validators.validators.length < numOfValidators - 1) {
          validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16));
 
-         var nodeListCopy = JSON.parse(JSON.stringify(this.nodeList));
+         var nodeListCopy = JSON.parse(JSON.stringify(this.nodeList.get()));
          nodeListCopy.push({blockchainAddress: validatorAproximateAddress});
          
          nodeListCopy = nodeListCopy.sort((a, b) => (a.blockchainAddress > b.blockchainAddress) ? 1 : -1);
@@ -935,7 +897,7 @@ class networking {
    }
 
    updateNetworkCache(block) {
-      var cache = {blockHeight: block.id, nodeList:JSON.parse(JSON.stringify(this.nodeList))};
+      var cache = {blockHeight: block.id, nodeList:JSON.parse(JSON.stringify(this.nodeList.get()))};
 
       for(var i = 0; i < block.networkDiff.registered.length; i++) {
          let node = block.networkDiff.registered[i];
