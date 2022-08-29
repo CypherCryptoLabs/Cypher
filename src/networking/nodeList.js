@@ -1,5 +1,6 @@
 class NodeList {
-    constructor() {
+    constructor(bcrypto) {
+        this.bcrypto = bcrypto
         this.list = []
     }
 

@@ -12,7 +12,7 @@ class networking {
    constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain, stableNodePubKey) {
       this.host = host;
       this.port = port;
-      this.nodeList = new NodeList()
+      this.nodeList = new NodeList(bcrypto)
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
@@ -458,7 +458,7 @@ class networking {
       var payload = {};
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
-         this.this.nodeList.add(packet);
+         this.nodeList.add(packet);
          //payload.nodeList = this.networkDiff;
          payload.nodeList = this.nodeList.get();
       } else {
