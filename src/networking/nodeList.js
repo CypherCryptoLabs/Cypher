@@ -34,7 +34,7 @@ class NodeList {
         }
 
         /*if(updateNetworkDiff)
-           this.updateNetworkDiff("register", newNode);*/
+           this.netInstance.update("register", newNode);*/
 
     }
 
@@ -42,7 +42,7 @@ class NodeList {
         for (var i = 0; i < this.list.length; i++) {
             if (this.list[i].publicKey == publicKey) {
                 if (updateNetworkDiff)
-                    this.updateNetworkDiff("leave", this.list[i]);
+                this.netInstance.update("leave", this.list[i]);
                 this.list.splice(i, 1);
                 break;
             }

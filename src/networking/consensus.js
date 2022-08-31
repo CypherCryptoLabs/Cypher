@@ -99,7 +99,7 @@ class Consensus {
         if (blockToVoteOn != undefined) {
             blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
 
-            if (this.netInstance.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.netInstance.getNetworkDiff())) {
+            if (this.netInstance.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.netInstance.networkDiff.diff)) {
                 // send signature to Forger
                 this.updatePotentialBlock(blockToVoteOn);
                 var blockToVoteOnCopy = JSON.parse(blockToVoteOn);

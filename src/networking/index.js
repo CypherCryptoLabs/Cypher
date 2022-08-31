@@ -5,6 +5,7 @@ const fs = require("fs");
 
 const NodeList = require("./nodeList")
 const Consensus = require("./consensus")
+const NetworkDiff = require("./networkDiff")
 
 class networking {
 
@@ -15,49 +16,13 @@ class networking {
       this.port = port;
       this.nodeList = new NodeList(bcrypto, this)
       this.consensus = new Consensus(bcrypto, this.nodeList, this)
+      this.networkDiff = new NetworkDiff(this)
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
-      this.networkDiff = {registered:[], left:[]};
       this.blockchain = blockchain;
-   }
-
-   getNetworkDiff() {
-      return JSON.parse(JSON.stringify(this.networkDiff));
-   }
-
-   clearNetworkDiff() {
-      this.networkDiff = {registered:[], left:[]};
-   }
-
-   updateNetworkDiff(mode, node) {
-      return;
-
-      var nodeAlreadyInDiff = false;
-
-      if(mode == "register") {
-         for(var i = 0; i < this.networkDiff.registered.length; i++) {
-            if(this.networkDiff.registered[i].publicKey == node.publicKey) {
-               nodeAlreadyInDiff = true;
-               break;
-            }
-         }
-
-         if(!nodeAlreadyInDiff)
-            this.networkDiff.registered.push(node);
-      } else if(mode == "leave") {
-         for(var i = 0; i < this.networkDiff.left.length; i++) {
-            if(this.networkDiff.left[i].publicKey == node.publicKey) {
-               nodeAlreadyInDiff = true;
-               break;
-            }
-         }
-
-         if(!nodeAlreadyInDiff)
-            this.networkDiff.left.push(node);
-      }
    }
 
    async checkReachabilityForRandomNodes() {
@@ -364,7 +329,7 @@ class networking {
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
                            this.blockchain.appendBlockToBlockchain(this);
                            this.transactionQueue.clean(packet.payload.block.payload);
-                           this.clearNetworkDiff();
+                           this.networkDiff.clear();
 
                         }
                      } else {
@@ -457,7 +422,7 @@ class networking {
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
          this.nodeList.add(packet);
-         //payload.nodeList = this.networkDiff;
+         //payload.nodeList = this.networkDiff.diff;
          payload.nodeList = this.nodeList.get();
       } else {
          payload.status = false;
@@ -615,7 +580,7 @@ class networking {
                   return false;
 
                let validatorsAndForger = this.consensus.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.getNetworkDiff()))
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.networkDiff.diff))
                   return false;
 
                var blockValidators = Object.keys(packet.payload.block.validators);
@@ -761,38 +726,6 @@ class networking {
       } else {
          return;
       }
-
-   }
-
-   updateNetworkCache(block) {
-      var cache = {blockHeight: block.id, nodeList:JSON.parse(JSON.stringify(this.nodeList.get()))};
-
-      for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         let node = block.networkDiff.registered[i];
-         var nodeIndex = -1;
-         for(var j = 0; j < cache.nodeList.length; j++) {
-            if(node.publicKey == cache.nodeList[j].publicKey) {
-               nodeAlreadyRegistered = j;
-               cache.nodeList.splice(j, 1);
-               cache.nodeList.push(node);
-               break;
-            }
-         }
-
-         if(nodeIndex == -1) cache.nodeList.push(node);
-      }
-
-      for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         let node = block.networkDiff.registered[i];
-         for(var j = 0; j < cache.nodeList.length; j++) {
-            if(node.publicKey == cache.nodeList[j].publicKey) {
-               cache.nodeList.splice(j, 1);
-               break;
-            }
-         }
-      }
-
-      fs.writeFileSync("network_cache.json", JSON.stringify(cache));
 
    }
 
