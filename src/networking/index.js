@@ -3,6 +3,9 @@ const server = net.createServer();
 const BigNumber = require('bignumber.js');
 const fs = require("fs");
 
+const NodeList = require("./nodeList")
+const Consensus = require("./consensus")
+const NetworkDiff = require("./networkDiff")
 
 class networking {
 
@@ -11,54 +14,15 @@ class networking {
    constructor(host, port, bcrypto, transactionQueue, stableNode, stableNodePort, blockchain, stableNodePubKey) {
       this.host = host;
       this.port = port;
-      this.nodeList = new Array();
+      this.nodeList = new NodeList(bcrypto, this)
+      this.consensus = new Consensus(bcrypto, this.nodeList, this)
+      this.networkDiff = new NetworkDiff(this)
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
       this.bcrypto = bcrypto;
       this.transactionQueue = transactionQueue;
-      this.networkDiff = {registered:[], left:[]};
       this.blockchain = blockchain;
-      this.potentialBlock;
-      this.forger;
-      this.validators;
-      this.signatures = {};
-   }
-
-   getNetworkDiff() {
-      return JSON.parse(JSON.stringify(this.networkDiff));
-   }
-
-   clearNetworkDiff() {
-      this.networkDiff = {registered:[], left:[]};
-   }
-
-   updateNetworkDiff(mode, node) {
-      return;
-
-      var nodeAlreadyInDiff = false;
-
-      if(mode == "register") {
-         for(var i = 0; i < this.networkDiff.registered.length; i++) {
-            if(this.networkDiff.registered[i].publicKey == node.publicKey) {
-               nodeAlreadyInDiff = true;
-               break;
-            }
-         }
-
-         if(!nodeAlreadyInDiff)
-            this.networkDiff.registered.push(node);
-      } else if(mode == "leave") {
-         for(var i = 0; i < this.networkDiff.left.length; i++) {
-            if(this.networkDiff.left[i].publicKey == node.publicKey) {
-               nodeAlreadyInDiff = true;
-               break;
-            }
-         }
-
-         if(!nodeAlreadyInDiff)
-            this.networkDiff.left.push(node);
-      }
    }
 
    async checkReachabilityForRandomNodes() {
@@ -75,12 +39,12 @@ class networking {
          var numOfRandomPeers = (numOfRandomPeers > this.nodeList.length) ? this.nodeList.length - 1 : 8;
          for(var i = 0; i < numOfRandomPeers; i++) {
             var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
-            var randomNode = this.nodeList[randomNodeIndex];
+            var randomNode = this.nodeList.get(randomNodeIndex);
 
             if(randomNode.publicKey != this.bcrypto.getPubKey(true) && await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
                var packet = this.createPacket(6, {type:"report", publicKey:randomNode.publicKey});
                this.broadcastToRandomNodes(packet);
-               this.removeNodeFromNodeList(randomNode.publicKey);
+               this.nodeList.remove(randomNode.publicKey);
             }
          }
       }
@@ -97,7 +61,7 @@ class networking {
 
       while (successfullyNotifiedNodes.length - 1 < numOfRandomPeers && notifiedNodes.length - 1 < this.nodeList.length - 1) {
          var randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
-         var randomNode = this.nodeList[randomNodeIndex];
+         var randomNode = this.nodeList.get(randomNodeIndex);
 
          if (notifiedNodes.indexOf(randomNode.blockchainAddress) == -1 && successfullyNotifiedNodes.indexOf(randomNode.blockchainAddress) == -1) {
 
@@ -119,10 +83,10 @@ class networking {
 
       while(!syncSuccessful && (randomNode || this.nodeList.length > 1)) {
          let randomNodeIndex = Math.floor(Math.random() * (this.nodeList.length));
-         if(this.nodeList[randomNodeIndex].publicKey != this.bcrypto.getPubKey().toPem()) {
+         if(this.nodeList.get(randomNodeIndex).publicKey != this.bcrypto.getPubKey().toPem()) {
             try {
                if(randomNode) {
-                  newBlocks = await this.sendPacket(packet, this.nodeList[randomNodeIndex].ipAddress, this.nodeList[randomNodeIndex].port);
+                  newBlocks = await this.sendPacket(packet, this.nodeList.get(randomNodeIndex).ipAddress, this.nodeList.get(randomNodeIndex).port);
                } else {
                   newBlocks = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
                }
@@ -135,7 +99,7 @@ class networking {
                   newestBlock = JSON.stringify(newestBlock);
                   var validatePacket = this.createPacket(5, {type: "verification", hash:this.bcrypto.hash(newestBlock)});
                   let validationRandomNode = Math.floor(Math.random() * (this.nodeList.length));
-                  let validationAnswer = await this.sendPacket(validatePacket, this.nodeList[validationRandomNode].ipAddress, this.nodeList[validationRandomNode].port);
+                  let validationAnswer = await this.sendPacket(validatePacket, this.nodeList.get(validationRandomNode).ipAddress, this.nodeList.get(validationRandomNode).port);
 
                   if(JSON.parse(validationAnswer).payload.status) {
                      if(blockchainUpdate.length > 1) {
@@ -180,7 +144,7 @@ class networking {
       if(!randomNode){
          transactionQueue = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
       } else {
-         let nodePool = JSON.parse(JSON.stringify(this.nodeList));
+         let nodePool = JSON.parse(JSON.stringify(this.nodeList.get()));
          for(var i in nodePool) {
             if(nodePool[i].publicKey == this.stableNodePubKey) nodePool.splice(i, 1);
          }
@@ -205,8 +169,8 @@ class networking {
 
    async registerToNetwork() {
       var cache;
-      this.addNodeToNodeList({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
-      this.addNodeToNodeList({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
+      this.nodeList.add({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      this.nodeList.add({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
 
       if(fs.existsSync("network_cache.json")) {
          cache = JSON.parse(fs.readFileSync("network_cache.json").toString());
@@ -216,7 +180,7 @@ class networking {
       }
 
       /*for(var i in cache.nodeList) {
-         this.addNodeToNodeList({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
+         this.nodeList.add({ payload: { ipAddress: cache.nodeList[i].ipAddress, port: cache.nodeList[i].port }, publicKey: cache.nodeList[i].publicKey }, false);
       }*/
 
       var randomMode = false;
@@ -237,14 +201,14 @@ class networking {
       if(!randomMode) {
          let data = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
          //if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
-         if(data != undefined) this.nodeList = JSON.parse(data).payload.nodeList
+         if(data != undefined) this.nodeList.loadFrom(JSON.parse(data).payload.nodeList)
       } else {
          var receivedSuccessfully = false;
          for(var i = 0; i < this.nodeList.length && !receivedSuccessfully; i++) {
-            if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true)) {
-               let data = await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+            if(this.nodeList.get(i).publicKey != this.bcrypto.getPubKey(true)) {
+               let data = await this.sendPacket(packet, this.nodeList.get(i).ipAddress, this.nodeList.get(i).port);
                //if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
-               if(data != undefined) this.nodeList = JSON.parse(data).payload.nodeList
+               if(data != undefined) this.nodeList.loadFrom(JSON.parse(data).payload.nodeList)
             }
 
             if(networkDiff != undefined) receivedSuccessfully = true;;
@@ -254,61 +218,22 @@ class networking {
       if(networkDiff != undefined) {
          for(var i in networkDiff.registered) {
             let node = networkDiff.registered[i];
-            this.addNodeToNodeList({ payload: { ipAddress: node.ipAddress, port: node.port }, publicKey: node.publicKey });
+            this.nodeList.add({ payload: { ipAddress: node.ipAddress, port: node.port }, publicKey: node.publicKey });
          }
 
          for(var i in networkDiff.left) {
             let node = networkDiff.registered[i];
-            this.removeNodeFromNodeList(node.publicKey)
+            this.nodeList.remove(node.publicKey)
          }
       }
 
       for (var i = 0; i < this.nodeList.length; i++) {
-         if(this.nodeList[i].publicKey != this.bcrypto.getPubKey(true) && (!randomMode && this.nodeList[i].publicKey != this.stableNodePubKey)){
-            await this.sendPacket(packet, this.nodeList[i].ipAddress, this.nodeList[i].port);
+         if(this.nodeList.get(i).publicKey != this.bcrypto.getPubKey(true) && (!randomMode && this.nodeList.get(i).publicKey != this.stableNodePubKey)){
+            await this.sendPacket(packet, this.nodeList.get(i).ipAddress, this.nodeList.get(i).port);
          }
       }
 
       await this.syncTransactionQueue(randomMode);
-   }
-
-   addNodeToNodeList(packet, updateNetworkDiff = true) {
-      var newNode = {
-         ipAddress: packet.payload.ipAddress,
-         port: packet.payload.port,
-         publicKey: packet.publicKey,
-         blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey)
-      };
-      var nodeIsAlreadyRegistered = false;
-      var nodeIndex = -1;
-
-      for (var i = 0; i < this.nodeList.length && !nodeIsAlreadyRegistered; i++) {
-         if (JSON.stringify(this.nodeList[i].publicKey) == JSON.stringify(packet.publicKey)) {
-            nodeIsAlreadyRegistered = true;
-            nodeIndex = i;
-         }
-      }
-
-      if (!nodeIsAlreadyRegistered) {
-         this.nodeList.push(newNode);
-      } else {
-         this.nodeList.splice(nodeIndex, 1);
-         this.nodeList.push(newNode);
-      }
-
-      /*if(updateNetworkDiff)
-         this.updateNetworkDiff("register", newNode);*/
-
-   }
-
-   removeNodeFromNodeList(publicKey) {
-      for(var i = 0; i < this.nodeList.length; i++) {
-         if(this.nodeList[i].publicKey == publicKey) {
-            this.updateNetworkDiff("leave", this.nodeList[i]);
-            this.nodeList.splice(i, 1);
-            break;
-         }
-      }
    }
 
    async isReachable(address, port) {
@@ -327,8 +252,8 @@ class networking {
 
    async isReachableByPublicKey(publicKey) {
       for(var i = 0; i < this.nodeList.length; i++) {
-         if(this.nodeList[i].publicKey == publicKey) {
-            return await this.isReachable(this.nodeList[i].ipAddress, this.nodeList[i].port);
+         if(this.nodeList.get(i).publicKey == publicKey) {
+            return await this.isReachable(this.nodeList.get(i).ipAddress, this.nodeList.get(i).port);
          }
       }
 
@@ -367,29 +292,29 @@ class networking {
 
                   case 3:
                      if(packet.payload.type == "request")
-                        payload.potentialBlock = this.potentialBlock;
+                        payload.potentialBlock = this.consensus.potentialBlock;
 
                      if(packet.payload.type == "vote") {
                         var blockToVoteOnCopy;
-                        if(typeof this.potentialBlock == "string") {
-                           blockToVoteOnCopy = JSON.parse(this.potentialBlock);
-                        } else if(typeof this.potentialBlock == "object") {
-                           blockToVoteOnCopy = JSON.parse(JSON.stringify(this.potentialBlock));
+                        if(typeof this.consensus.potentialBlock == "string") {
+                           blockToVoteOnCopy = JSON.parse(this.consensus.potentialBlock);
+                        } else if(typeof this.consensus.potentialBlock == "object") {
+                           blockToVoteOnCopy = JSON.parse(JSON.stringify(this.consensus.potentialBlock));
                         }
 
                         if(blockToVoteOnCopy == undefined) break;
                         delete blockToVoteOnCopy.validators;
 
                         var senderIsValidator = false;
-                        if(this.validators != undefined && this.validators.hasOwnProperty('length')) {
-                           for(var i = 0; i < this.validators.length; i++) {
-                              if(packet.publicKey == this.validators[i].publicKey)
+                        if(this.consensus.validators != undefined && this.consensus.validators.hasOwnProperty('length')) {
+                           for(var i = 0; i < this.consensus.validators.length; i++) {
+                              if(packet.publicKey == this.consensus.validators[i].publicKey)
                                  senderIsValidator = true;
                            }
                         }
 
                         if(this.bcrypto.verrifySignature(packet.payload.signature, packet.publicKey, JSON.stringify(blockToVoteOnCopy)) && senderIsValidator) {
-                           this.signatures[this.bcrypto.getFingerprint(packet.publicKey)] = packet.payload.signature;
+                           this.consensus.signatures[this.bcrypto.getFingerprint(packet.publicKey)] = packet.payload.signature;
                         }
                      }
                                
@@ -404,7 +329,7 @@ class networking {
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
                            this.blockchain.appendBlockToBlockchain(this);
                            this.transactionQueue.clean(packet.payload.block.payload);
-                           this.clearNetworkDiff();
+                           this.networkDiff.clear();
 
                         }
                      } else {
@@ -426,7 +351,7 @@ class networking {
                         payload.timestamp = Date.now();
                      } else {
                         /*if(!this.isReachableByPublicKey(payload.publicKey)) {
-                           this.removeNodeFromNodeList(payload.publicKey);
+                           this.nodeList.remove(payload.publicKey);
                            this.broadcastToRandomNodes(data.toString());
                            payload.status = true;
                         } else {
@@ -471,7 +396,7 @@ class networking {
       var payload = {};
 
       if(!await this.isReachableByPublicKey(packet.payload.publicKey)) {
-         this.removeNodeFromNodeList(packet.payload.publicKey);
+         this.nodeList.remove(packet.payload.publicKey);
          this.broadcastToRandomNodes(JSON.stringify(packet));
          payload.status = true;
       } else {
@@ -496,9 +421,9 @@ class networking {
       var payload = {};
 
       if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
-         this.addNodeToNodeList(packet);
-         //payload.nodeList = this.networkDiff;
-         payload.nodeList = this.nodeList;
+         this.nodeList.add(packet);
+         //payload.nodeList = this.networkDiff.diff;
+         payload.nodeList = this.nodeList.get();
       } else {
          payload.status = false;
       }
@@ -654,8 +579,8 @@ class networking {
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
                   return false;
 
-               let validatorsAndForger = this.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.getNetworkDiff()))
+               let validatorsAndForger = this.consensus.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
+               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.networkDiff.diff))
                   return false;
 
                var blockValidators = Object.keys(packet.payload.block.validators);
@@ -666,10 +591,10 @@ class networking {
                blockCopy = JSON.stringify(blockCopy);
 
                for(var i = 0; i < blockValidators.length; i++) {
-                  for(var j = 0; j < this.validators.length; j++) {
-                     if(blockValidators[i] == this.validators[j].blockchainAddress) {
+                  for(var j = 0; j < this.consensus.validators.length; j++) {
+                     if(blockValidators[i] == this.consensus.validators[j].blockchainAddress) {
                         try {
-                           if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.validators[j].publicKey, blockCopy))
+                           if(!this.bcrypto.verrifySignature(packet.payload.block.validators[blockValidators[i]], this.consensus.validators[j].publicKey, blockCopy))
                               invalidSignatures++;
                         } catch(_) {
                            invalidSignatures++;
@@ -742,136 +667,6 @@ class networking {
       }
    }
 
-   pickValidators(latestBlockHash, nextVotingSlot) {
-      var validators = {validators:[], forger:{}};
-
-      let numOfValidators = (this.nodeList.length - 1 < 128) ? this.nodeList.length : 128;
-      var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
-
-
-      var forgerAddress = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-      var forgerAddressDifference = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-
-      for(var i = 0; i < numOfValidators; i++) {
-
-         var difference = forgerAproximateAddress.minus(this.nodeList[i].blockchainAddress, 16);
-         if(difference.isNegative())
-            difference = difference.negated();
-
-         if(difference.lt(forgerAddressDifference)) {
-            validators.forger = this.nodeList[i];
-            forgerAddress = new BigNumber(this.nodeList[i].blockchainAddress, 16);
-            forgerAddressDifference = difference;
-         }
-      }
-
-      var validatorAproximateAddress = forgerAproximateAddress;
-      while(validators.validators.length < numOfValidators - 1) {
-         validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16));
-
-         var nodeListCopy = JSON.parse(JSON.stringify(this.nodeList));
-         nodeListCopy.push({blockchainAddress: validatorAproximateAddress});
-         
-         nodeListCopy = nodeListCopy.sort((a, b) => (a.blockchainAddress > b.blockchainAddress) ? 1 : -1);
-         var index = nodeListCopy.map(function(e) { return e.blockchainAddress; }).indexOf(validatorAproximateAddress);
-
-         var indexesToAdd = new Array();
-         if(index == 0) {
-            indexesToAdd.push(index + 1);
-         } else if(index == nodeListCopy.length - 1) {
-            indexesToAdd.push(index - 1);
-         } else {
-            indexesToAdd.push(index - 1);
-            indexesToAdd.push(index + 1);
-         }
-
-         for(var i = 0; i < indexesToAdd.length; i++) {
-            if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(nodeListCopy[indexesToAdd[i]].blockchainAddress) == -1 && 
-            validators.forger.blockchainAddress != nodeListCopy[indexesToAdd[i]].blockchainAddress) {
-               validators.validators.push(nodeListCopy[indexesToAdd[i]]);
-            }
-         }
-      }
-
-      this.validators = validators.validators;
-      this.forger = validators.forger;
-      
-      return validators;
-
-   }
-
-   async voteOnBlock(forger, currentVotingSlot, validators, transactionQueue) {
-      var blockToVoteOnData = await this.sendPacket(this.createPacket(3, {type: "request"}), forger.ipAddress, forger.port);
-      if(blockToVoteOnData == undefined)
-         return;
-
-      var blockToVoteOn = JSON.parse(blockToVoteOnData);
-      var transactionQueueCopy = JSON.parse(JSON.stringify(transactionQueue));
-      transactionQueueCopy.forEach(object => {
-         delete object["queryID"];
-      });
-
-      if(blockToVoteOn != undefined) {
-         blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
-
-         if (this.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.getNetworkDiff())) {
-            // send signature to Forger
-            this.updatePotentialBlock(blockToVoteOn);
-            var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
-            delete blockToVoteOnCopy.validators;
-
-            var blockVoteSignature = this.bcrypto.sign(JSON.stringify(blockToVoteOnCopy));
-            var packetVote = this.createPacket(3, {type: "vote", signature: blockVoteSignature});
-
-            for(var i = 0; i < validators.length; i++) {
-               if(validators[i].publicKey != this.bcrypto.getPubKey(true)) {
-                  let z = i;
-                  this.sendPacket(packetVote, validators[z].ipAddress, validators[z].port, false);
-               }
-            }
-
-            var timeToWait = currentVotingSlot + 15000 - Date.now();
-
-            var sleepPromise = new Promise((resolve) => {
-               setTimeout(resolve, timeToWait);
-            });
-            await sleepPromise;
-            
-            var votes = this.signatures;
-            this.signatures = {};
-
-            if(votes != undefined && Object.keys(votes).length >= ((Object.keys(validators).length / 2) - 1)) {
-               var votedBlock = JSON.parse(blockToVoteOn);
-
-               for(var i = 0; i < Object.keys(votes).length; i++) {
-                  votedBlock.validators[Object.keys(votes)[i]] = votes[Object.keys(votes)[i]];
-               }
-               
-               votedBlock.validators[this.bcrypto.getFingerprint()] = blockVoteSignature;
-               var broadcastPacket = this.createPacket(4, {block:votedBlock});
-               this.broadcastToRandomNodes(broadcastPacket);
-
-            }
-
-         }
-      }
-   }
-
-   async updatePotentialBlock(potentialBlock) {
-      this.potentialBlock = potentialBlock;
-
-      var sleepPromise = new Promise((resolve) => {
-         setTimeout(resolve, 15000);
-      });
-      await sleepPromise;
-
-      this.potentialBlock = {};
-   }
-
-   getVotes() {
-      return this.signatures;
-   }
-
    createPacket(queryID, payload) {
       var packet = {
          queryID:queryID, 
@@ -931,38 +726,6 @@ class networking {
       } else {
          return;
       }
-
-   }
-
-   updateNetworkCache(block) {
-      var cache = {blockHeight: block.id, nodeList:JSON.parse(JSON.stringify(this.nodeList))};
-
-      for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         let node = block.networkDiff.registered[i];
-         var nodeIndex = -1;
-         for(var j = 0; j < cache.nodeList.length; j++) {
-            if(node.publicKey == cache.nodeList[j].publicKey) {
-               nodeAlreadyRegistered = j;
-               cache.nodeList.splice(j, 1);
-               cache.nodeList.push(node);
-               break;
-            }
-         }
-
-         if(nodeIndex == -1) cache.nodeList.push(node);
-      }
-
-      for(var i = 0; i < block.networkDiff.registered.length; i++) {
-         let node = block.networkDiff.registered[i];
-         for(var j = 0; j < cache.nodeList.length; j++) {
-            if(node.publicKey == cache.nodeList[j].publicKey) {
-               cache.nodeList.splice(j, 1);
-               break;
-            }
-         }
-      }
-
-      fs.writeFileSync("network_cache.json", JSON.stringify(cache));
 
    }
 

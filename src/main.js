@@ -1,7 +1,7 @@
 const blockchain = require(__dirname + "/blockchain.js");
 const transactionQueue = require(__dirname + "/transactionQueue.js");
 const bcrypto = require(__dirname + "/bcrypto.js");
-const networking = require(__dirname + "/networking.js");
+const networking = require(__dirname + "/networking");
 const fs = require("fs");
 const execSync = require('child_process').execSync;
 
