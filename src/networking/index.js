@@ -44,7 +44,7 @@ class networking {
             if(randomNode.publicKey != this.bcrypto.getPubKey(true) && await this.isReachable(randomNode.ipAddress, randomNode.port) == false) {
                var packet = this.createPacket(6, {type:"report", publicKey:randomNode.publicKey});
                this.broadcastToRandomNodes(packet);
-               this.nodeList.remove(randomNode.publicKey);
+               //this.nodeList.remove(randomNode.publicKey);
             }
          }
       }
