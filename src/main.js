@@ -7,7 +7,7 @@ const execSync = require('child_process').execSync;
 
 const orig_consoleLog = console.log;
 console.log = (...args) => {
-    orig_consoleLog(`[${new Date().toJSON()}]`, ...args)
+    orig_consoleLog(`[${Date.now()}]`, ...args)
 }
 
 try { 
