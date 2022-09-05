@@ -111,7 +111,7 @@ class Consensus {
                 for (var i = 0; i < validators.length; i++) {
                     if (validators[i].publicKey != this.bcrypto.getPubKey(true)) {
                         let z = i;
-                        this.netInstance.sendPacket(packetVote, validators[z].ipAddress, validators[z].port, false);
+                        this.netInstance.sendPacket(packetVote, validators[z].ipAddress, validators[z].port);
                     }
                 }
 
