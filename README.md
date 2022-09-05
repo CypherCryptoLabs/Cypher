@@ -179,7 +179,7 @@ Congratulations, your Node is now online!
   - [ ] Implement Proof of Work for Nodes forwarding Messages
   - [ ] Integrate PoW for forwarding Messages into PoS Pentalties and health system
 - [ ] Alert Network of offline Nodes in Networking.sendPacket() if a Timeout occures
-- [ ] Split Networking Class into Networking and Consensus
+- [x] Split Networking Class into Networking and Consensus
 
 # License
 MIT License

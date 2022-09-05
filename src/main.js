@@ -5,6 +5,11 @@ const networking = require(__dirname + "/networking");
 const fs = require("fs");
 const execSync = require('child_process').execSync;
 
+const orig_consoleLog = console.log;
+console.log = (...args) => {
+    orig_consoleLog(`[${new Date().toJSON()}]`, ...args)
+}
+
 try { 
     const output = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' });
 
