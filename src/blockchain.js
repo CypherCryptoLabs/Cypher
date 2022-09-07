@@ -394,11 +394,11 @@ class blockchain {
                }
             }
 
-            if(expectedRewardAmount < 1) expectedRewardAmount = 1;
-
             if(!transactionFound)
                return false;
          }
+
+         if(expectedRewardAmount < 1) expectedRewardAmount = 1;
 
          console.log(10)
          if(block.rewardAmount != expectedRewardAmount)
