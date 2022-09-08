@@ -162,7 +162,7 @@ class networking {
       transactionQueue = JSON.parse(transactionQueue).payload.queue;
 
       for(var i = 0; i < transactionQueue.length; i++) {
-         if(this.verrifyPacket(JSON.stringify(transactionQueue[i])))
+         if(this.verrifyPacket(JSON.stringify(transactionQueue[i]), false)) 
             this.transactionQueue.addTransaction(transactionQueue[i])
       }
    }
@@ -362,7 +362,17 @@ class networking {
                      }
                      break;
                   case 7:
-                     payload.queue = this.transactionQueue.getQueue();
+                     var queue = this.transactionQueue.getQueue();
+
+                     for(var i = 0; i < queue.length; i++) {
+                        var transaction = queue[i];
+                        transaction.payload.unitsToTransfer = transaction.payload.unitsToTransfer.toString();
+                        transaction.payload.networkFee = transaction.payload.networkFee.toString();
+
+                        queue[i] = transaction
+                     }
+
+                     payload.queue = queue;
                      break;
                }
 
