@@ -60,7 +60,7 @@ class transactionQueue {
          if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             
             let sleepPromise = new Promise((resolve) => {
-               setTimeout(resolve, 100);
+               setTimeout(resolve, 750);
             });
             await sleepPromise;
 
