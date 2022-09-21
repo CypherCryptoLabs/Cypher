@@ -227,11 +227,11 @@ class networking {
          }
       }
 
-      for (var i = 0; i < this.nodeList.length; i++) {
+      /*for (var i = 0; i < this.nodeList.length; i++) {
          if(this.nodeList.get(i).publicKey != this.bcrypto.getPubKey(true) && (!randomMode && this.nodeList.get(i).publicKey != this.stableNodePubKey)){
             await this.sendPacket(packet, this.nodeList.get(i).ipAddress, this.nodeList.get(i).port);
          }
-      }
+      }*/
 
       await this.syncTransactionQueue(randomMode);
    }
@@ -430,9 +430,12 @@ class networking {
    async handleRegistration(socket, packet) {
       var payload = {};
 
-      if(await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
-         this.nodeList.add(packet);
-         //payload.nodeList = this.networkDiff.diff;
+      if( await this.isReachable(packet.payload.ipAddress, packet.payload.port)) {
+         if(this.nodeList.getByPublicKey(packet.publicKey) == -1) {
+            this.nodeList.add(packet);
+            this.broadcastToRandomNodes(JSON.stringify(packet), 8)
+         }
+         
          payload.nodeList = this.nodeList.get();
       } else {
          payload.status = false;
