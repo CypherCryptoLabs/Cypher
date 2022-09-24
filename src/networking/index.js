@@ -201,7 +201,15 @@ class networking {
       if(!randomMode) {
          let data = await this.sendPacket(packet, this.stableNode, this.stableNodePort);
          //if(data != undefined) networkDiff = JSON.parse(data).payload.nodeList;
-         if(data != undefined) this.nodeList.loadFrom(JSON.parse(data).payload.nodeList)
+         if(data != undefined) {
+            let payload = JSON.parse(data).payload;
+            if(payload.status != undefined && payload.status == false) {
+               console.log("Node refused registration! Maybe you just recently left the network?")
+               process.exit();
+            }
+
+            this.nodeList.loadFrom(JSON.parse(data).payload.nodeList)
+         }
       } else {
          var receivedSuccessfully = false;
          for(var i = 0; i < this.nodeList.length && !receivedSuccessfully; i++) {
@@ -434,9 +442,12 @@ class networking {
          if(this.nodeList.getByPublicKey(packet.publicKey) == -1) {
             this.nodeList.add(packet);
             this.broadcastToRandomNodes(JSON.stringify(packet), 8)
+            payload.nodeList = this.nodeList.get();
+         } else {
+            payload.status = false;
          }
-         
-         payload.nodeList = this.nodeList.get();
+
+
       } else {
          payload.status = false;
       }
