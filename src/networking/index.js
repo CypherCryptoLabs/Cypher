@@ -607,7 +607,7 @@ class networking {
 
                let blockValidityValue = this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.networkDiff.diff)
                if(blockValidityValue != 0) {
-                  console.log("(Block announcement) Block invalid, validity value is " + blockValidityValue)
+                  console.log("(Block announcement) Block invalid, validity value is ", blockValidityValue)
                   return false;
                }
 

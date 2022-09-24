@@ -140,7 +140,7 @@ class Consensus {
                 }
 
             } else {
-                console.log("Block invalid, validity value is " + blockValidityValue);
+                console.log("Block invalid, validity value is ", blockValidityValue);
             }
         }
     }
