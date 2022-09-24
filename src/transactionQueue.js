@@ -63,12 +63,14 @@ class transactionQueue {
                setTimeout(resolve, 750);
             });
             await sleepPromise;
-
+            console.log("This node is a validator for the current epoch.\nForger:" + validators.forger)
             networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
+            console.log("This node is the forger for the current epoch.")
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
             await networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
          } else {
+            console.log("This node is the forger for the current epoch.")
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}));
          }
       }

@@ -99,7 +99,8 @@ class Consensus {
         if (blockToVoteOn != undefined) {
             blockToVoteOn = JSON.stringify(blockToVoteOn.payload.potentialBlock);
 
-            if (this.netInstance.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.netInstance.networkDiff.diff)) {
+            let blockValidityValue = this.netInstance.blockchain.validateBlock(blockToVoteOn, currentVotingSlot, validators, forger, transactionQueueCopy, this.netInstance.networkDiff.diff);
+            if (blockValidityValue == 0) {
                 // send signature to Forger
                 this.updatePotentialBlock(blockToVoteOn);
                 var blockToVoteOnCopy = JSON.parse(blockToVoteOn);
@@ -138,6 +139,8 @@ class Consensus {
 
                 }
 
+            } else {
+                console.log("Block invalid, validity value is " + blockValidityValue);
             }
         }
     }

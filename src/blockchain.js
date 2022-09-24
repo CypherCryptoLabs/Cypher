@@ -292,9 +292,8 @@ class blockchain {
          var blockCopy = JSON.parse(block);
          delete blockCopy.forgerSignature;
 
-         console.log(1)
          if(blockCopy.validators == undefined)
-            return false
+            return 1
 
          var blockCopyValidators = Object.keys(blockCopy.validators);
          for(var i = 0; i < blockCopyValidators.length; i++) {
@@ -310,41 +309,34 @@ class blockchain {
 
          block = JSON.parse(block);
          var blockIsValid = true;
-         
-         console.log(2)
+
          if(JSON.stringify(Object.getOwnPropertyNames(block)) != JSON.stringify(['id', 'timestamp', 'previousBlockHash', 'rewardAddress', 'rewardAmount', "payloadHash", "payload", "networkDiff", "validators", "forgerSignature"]))
-            return false;
+            return 2;
 
-         console.log(3)
          if(block.timestamp < currentVotingSlot || block.timestamp > Date.now())
-            return false;
+            return 3;
          
-         console.log(4)
          if(block.rewardAddress != forger.blockchainAddress) 
-            return false;
+            return 4;
 
-         console.log(5)
          if(block.payloadHash != this.bcrypto.hash(JSON.stringify(block.payload)))
-            return false;
+            return 5;
          
-         console.log(6)
          for(var i = 0; i < block.payload.length; i++) {
             var signatureTmp = block.payload[i].signature;
 
             for(var j = 0; j < block.payload.length; j++) {
                if(j!=i) {
-                  if(signatureTmp == block.payload[j].signature) return false;
+                  if(signatureTmp == block.payload[j].signature) return 6;
                }
             }
          }
 
-         console.log(7)
          if(JSON.stringify(Object.getOwnPropertyNames(block.networkDiff)) != JSON.stringify(["registered", "left"]))
-            return false;
+            return 7;
             
-         console.log(8)
          if(block.networkDiff.registered.length != 0 || block.networkDiff.left.length != 0)
-            return false
+            return 8
          
          /*if(block.networkDiff.registered.length != networkDiff.registered.length || block.networkDiff.left.length != networkDiff.left.length)
             return false;
@@ -381,7 +373,6 @@ class blockchain {
 
          var expectedRewardAmount = 0;
 
-         console.log(9)
          for(var i = 0; i < block.payload.length && blockIsValid; i++) {
             var transactionFound = false;
             expectedRewardAmount += block.payload[i].payload.networkFee;
@@ -395,47 +386,41 @@ class blockchain {
             }
 
             if(!transactionFound)
-               return false;
+               return 9;
          }
 
          if(expectedRewardAmount < 1) expectedRewardAmount = 1;
 
-         console.log(10)
          if(block.rewardAmount != expectedRewardAmount)
-            return false;
+            return 10;
          
-         console.log(11)
          console.log(Object.keys(block.validators))
          if(Object.keys(block.validators).length != validators.length)
-            return false;
+            return 11;
          
-         console.log(12)
          for(var i = 0; i < block.validators.length && blockIsValid; i++) {
             if(block.validators[validators[i]] == undefined) {
-               return false;
+               return 12;
             }
          }
 
-         console.log(13)
          if(!this.bcrypto.verrifySignature(block.forgerSignature, forger.publicKey, blockCopy))
-            return false;
+            return 13;
 
          let previousBlock = this.getNewestBlock(true);
          let previousBlockHash = this.bcrypto.hash(previousBlock);
 
-         console.log(14)
          if(block.previousBlockHash != previousBlockHash)
-            return false;
+            return 14;
 
-         console.log(15)
          if(block.id != JSON.parse(previousBlock).id + 1)
-            return false;
+            return 15;
 
-         return blockIsValid;
+         return 0;
       } catch(error) {
          console.log(error)
          console.log(block)
-         return false
+         return -1
       }
    }
 

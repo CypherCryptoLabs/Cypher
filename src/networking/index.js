@@ -604,8 +604,12 @@ class networking {
                   return false;
 
                let validatorsAndForger = this.consensus.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
-               if(!this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.networkDiff.diff))
+
+               let blockValidityValue = this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.networkDiff.diff)
+               if(blockValidityValue != 0) {
+                  console.log("(Block announcement) Block invalid, validity value is " + blockValidityValue)
                   return false;
+               }
 
                var blockValidators = Object.keys(packet.payload.block.validators);
                var invalidSignatures = 0;
