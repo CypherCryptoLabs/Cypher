@@ -394,7 +394,6 @@ class blockchain {
          if(block.rewardAmount != expectedRewardAmount)
             return 10;
          
-         console.log(Object.keys(block.validators))
          if(Object.keys(block.validators).length != validators.length)
             return 11;
          
