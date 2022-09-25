@@ -68,7 +68,7 @@ class transactionQueue {
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
             console.log("This node is the forger for the current epoch.")
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-            await networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
+            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
          } else {
             console.log("This node is the forger for the current epoch.")
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}));
