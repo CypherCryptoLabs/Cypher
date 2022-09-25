@@ -374,10 +374,15 @@ class networking {
 
                      for(var i = 0; i < queue.length; i++) {
                         var transaction = queue[i];
-                        transaction.payload.unitsToTransfer = transaction.payload.unitsToTransfer.toString();
-                        transaction.payload.networkFee = transaction.payload.networkFee.toString();
+                        var rebuiltTx = {
+                           queryID: 1, 
+                           unixTimestamp: transaction.unixTimestamp,
+                           payload: transaction.payload,
+                           publicKey: transaction.publicKey,
+                           signature: transaction.signature
+                        }
 
-                        queue[i] = transaction
+                        queue[i] = rebuiltTx
                      }
 
                      payload.queue = queue;
