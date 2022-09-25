@@ -63,7 +63,7 @@ class transactionQueue {
                setTimeout(resolve, 750);
             });
             await sleepPromise;
-            console.log("This node is a validator for the current epoch.\nForger:", validators.forger)
+            console.log("This node is a validator for the current epoch. Forger:", validators.forger.ipAddress, validators.forger.port)
             networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
             console.log("This node is the forger for the current epoch.")

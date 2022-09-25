@@ -57,7 +57,6 @@ class NodeList {
     }
 
     getByPublicKey(key) {
-        console.log(this.list)
         return JSON.parse(JSON.stringify(this.list)).map(function(e) { return e.publicKey; }).indexOf(key);
     }
 
