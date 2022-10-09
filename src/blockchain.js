@@ -24,43 +24,43 @@ class blockchain {
                   cacheObj[blockchainCopy[i].rewardAddress] = {balance: blockchainCopy[i].rewardAmount, balanceChanges: [i]};
                }
 
-               if(blockchainCopy[i].hasOwnProperty("validators")) {
-                  let validators = Object.keys(blockchainCopy[i].validators);
+               // if(blockchainCopy[i].hasOwnProperty("validators")) {
+               //    let validators = Object.keys(blockchainCopy[i].validators);
 
-                  for(var j = 0; j < validators.length; j++) {
-                     if(blockchainCopy[i].validators[validators[j]] == "") {
-                        if(cacheObj.hasOwnProperty(validators[j])) {
-                           cacheObj[validators[j]].balance -= 15;
-                           if(cacheObj[validators[j]].balanceChanges.lastIndexOf(i) == -1)
-                              cacheObj[validators[j]].balanceChanges.push(i);
-                        }
-                     }
-                  }
-               }
+               //    for(var j = 0; j < validators.length; j++) {
+               //       if(blockchainCopy[i].validators[validators[j]] == "") {
+               //          if(cacheObj.hasOwnProperty(validators[j])) {
+               //             cacheObj[validators[j]].balance -= 15;
+               //             if(cacheObj[validators[j]].balanceChanges.lastIndexOf(i) == -1)
+               //                cacheObj[validators[j]].balanceChanges.push(i);
+               //          }
+               //       }
+               //    }
+               // }
 
-               for(var j in blockchainCopy[i].networkDiff.left) {
-                  if(cacheObj.hasOwnProperty(blockchainCopy[i].networkDiff.left[j].blockchainAddress)) {
-                     cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balance -= 1;
-                     if(cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(i) == -1)
-                        cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.push(i);
-                  }
-               }
+               // for(var j in blockchainCopy[i].networkDiff.left) {
+               //    if(cacheObj.hasOwnProperty(blockchainCopy[i].networkDiff.left[j].blockchainAddress)) {
+               //       cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balance -= 1;
+               //       if(cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(i) == -1)
+               //          cacheObj[blockchainCopy[i].networkDiff.left[j].blockchainAddress].balanceChanges.push(i);
+               //    }
+               // }
 
-               let payload = blockchainCopy[i].payload;
-               for(var j = 0; j < payload.length; j++) {
-                  cacheObj[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-                  if(cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(i) == -1)
-                     cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.push(i);
+               // let payload = blockchainCopy[i].payload;
+               // for(var j = 0; j < payload.length; j++) {
+               //    cacheObj[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+               //    if(cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(i) == -1)
+               //       cacheObj[payload[j].payload.blockchainSenderAddress].balanceChanges.push(i);
 
-                  if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
-                     cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
-                     if(cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf(i) == -1) {
-                        cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.push(i);
-                     }
-                  } else {
-                     cacheObj[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [i]};
-                  }
-               }
+               //    if(cacheObj.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
+               //       cacheObj[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
+               //       if(cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf(i) == -1) {
+               //          cacheObj[payload[j].payload.blockchainReceiverAddress].balanceChanges.push(i);
+               //       }
+               //    } else {
+               //       cacheObj[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [i]};
+               //    }
+               // }
             }
 
             fs.writeFileSync("cache.json", JSON.stringify(cacheObj));
@@ -81,43 +81,43 @@ class blockchain {
          this.addressCache[block.rewardAddress] = {balance: block.rewardAmount, balanceChanges: [block.id]};
       }
 
-      if(block.hasOwnProperty("validators")) {
-         let validators = Object.keys(block.validators);
+      // if(block.hasOwnProperty("validators")) {
+      //    let validators = Object.keys(block.validators);
 
-         for(var j = 0; j < validators.length; j++) {
-            if(block.validators[validators[j]] == "") {
-               if(this.addressCache.hasOwnProperty(validators[j])) {
-                  this.addressCache[validators[j]].balance -= 15;
-                  if(this.addressCache[validators[j]].balanceChanges.lastIndexOf(block.id) == -1)
-                  this.addressCache[validators[j]].balanceChanges.push(block.id);
-               }
-            }
-         }
-      }
+      //    for(var j = 0; j < validators.length; j++) {
+      //       if(block.validators[validators[j]] == "") {
+      //          if(this.addressCache.hasOwnProperty(validators[j])) {
+      //             this.addressCache[validators[j]].balance -= 15;
+      //             if(this.addressCache[validators[j]].balanceChanges.lastIndexOf(block.id) == -1)
+      //             this.addressCache[validators[j]].balanceChanges.push(block.id);
+      //          }
+      //       }
+      //    }
+      // }
 
-      for(var j in block.networkDiff.left) {
-         if(this.addressCache.hasOwnProperty(block.networkDiff.left[j].blockchainAddress)) {
-            this.addressCache[block.networkDiff.left[j].blockchainAddress].balance -= 1;
-            if(this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(block.id) == -1)
-            this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.push(block.id);
-         }
-      }
+      // for(var j in block.networkDiff.left) {
+      //    if(this.addressCache.hasOwnProperty(block.networkDiff.left[j].blockchainAddress)) {
+      //       this.addressCache[block.networkDiff.left[j].blockchainAddress].balance -= 1;
+      //       if(this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.lastIndexOf(block.id) == -1)
+      //       this.addressCache[block.networkDiff.left[j].blockchainAddress].balanceChanges.push(block.id);
+      //    }
+      // }
 
-      let payload = block.payload;
-      for(var j = 0; j < payload.length; j++) {
-         this.addressCache[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
-         if(this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(block.id) == -1)
-            this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.push(block.id);
+      // let payload = block.payload;
+      // for(var j = 0; j < payload.length; j++) {
+      //    this.addressCache[payload[j].payload.blockchainSenderAddress].balance -= (payload[j].payload.unitsToTransfer + payload[j].payload.networkFee);
+      //    if(this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.lastIndexOf(block.id) == -1)
+      //       this.addressCache[payload[j].payload.blockchainSenderAddress].balanceChanges.push(block.id);
 
-         if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
-            this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
-            if(this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf(block.id) == -1) {
-               this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.push(block.id);
-            }
-         } else {
-            this.addressCache[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [block.id]};
-         }
-      }
+      //    if(this.addressCache.hasOwnProperty(payload[j].payload.blockchainReceiverAddress)) {
+      //       this.addressCache[payload[j].payload.blockchainReceiverAddress].balance += payload[j].payload.unitsToTransfer;
+      //       if(this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.lastIndexOf(block.id) == -1) {
+      //          this.addressCache[payload[j].payload.blockchainReceiverAddress].balanceChanges.push(block.id);
+      //       }
+      //    } else {
+      //       this.addressCache[payload[j].payload.blockchainReceiverAddress] = {balance: payload[j].payload.unitsToTransfer, balanceChanges: [block.id]};
+      //    }
+      // }
 
       fs.writeFileSync("cache.json", JSON.stringify(this.addressCache));
    }
