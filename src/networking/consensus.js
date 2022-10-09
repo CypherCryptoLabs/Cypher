@@ -29,8 +29,9 @@ class Consensus {
 
     pickValidators(latestBlockHash, nextVotingSlot) {
         var validators = { validators: [], forger: {} };
+        var filteredNodeList = this.nodeList.list.filter(obj => obj.registrationTimestamp < nextVotingSlot - 120000)
 
-        let numOfValidators = (this.nodeList.length - 1 < 128) ? this.nodeList.length : 128;
+        let numOfValidators = (filteredNodeList.length - 1 < 128) ? filteredNodeList.length : 128;
         var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
 
 
@@ -39,13 +40,13 @@ class Consensus {
 
         for (var i = 0; i < numOfValidators; i++) {
 
-            var difference = forgerAproximateAddress.minus(this.nodeList.get(i).blockchainAddress, 16);
+            var difference = forgerAproximateAddress.minus(filteredNodeList[i].blockchainAddress, 16);
             if (difference.isNegative())
                 difference = difference.negated();
 
             if (difference.lt(forgerAddressDifference)) {
-                validators.forger = this.nodeList.get(i);
-                forgerAddress = new BigNumber(this.nodeList.get(i).blockchainAddress, 16);
+                validators.forger = filteredNodeList[i];
+                forgerAddress = new BigNumber(filteredNodeList[i].blockchainAddress, 16);
                 forgerAddressDifference = difference;
             }
         }
@@ -54,7 +55,7 @@ class Consensus {
         while (validators.validators.length < numOfValidators - 1) {
             validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16));
 
-            var nodeListCopy = JSON.parse(JSON.stringify(this.nodeList.get()));
+            var nodeListCopy = JSON.parse(JSON.stringify(filteredNodeList));
             nodeListCopy.push({ blockchainAddress: validatorAproximateAddress });
 
             nodeListCopy = nodeListCopy.sort((a, b) => (a.blockchainAddress > b.blockchainAddress) ? 1 : -1);

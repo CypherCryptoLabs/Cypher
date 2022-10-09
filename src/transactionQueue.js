@@ -60,7 +60,7 @@ class transactionQueue {
          if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             
             let sleepPromise = new Promise((resolve) => {
-               setTimeout(resolve, 750);
+               setTimeout(resolve, 150);
             });
             await sleepPromise;
             console.log("This node is a validator for the current epoch. Forger:", validators.forger.ipAddress, validators.forger.port)
@@ -70,7 +70,7 @@ class transactionQueue {
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
          } else {
-            console.log("This node is the forger for the current epoch.")
+            console.log("This node is inactive during this epoch.")
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}));
          }
       }

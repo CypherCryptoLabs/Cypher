@@ -14,7 +14,8 @@ class NodeList {
             ipAddress: packet.payload.ipAddress,
             port: packet.payload.port,
             publicKey: packet.publicKey,
-            blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey)
+            blockchainAddress: this.bcrypto.getFingerprint(packet.publicKey),
+            registrationTimestamp: packet.unixTimestamp
         };
         var nodeIsAlreadyRegistered = false;
         var nodeIndex = -1;

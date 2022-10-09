@@ -169,8 +169,10 @@ class networking {
 
    async registerToNetwork() {
       var cache;
-      this.nodeList.add({ payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
-      this.nodeList.add({ payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
+      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
+      let registrationTimestamp = JSON.parse(packet).unixTimestamp
+      this.nodeList.add({ unixTimestamp: registrationTimestamp, payload: { ipAddress: this.host, port: this.port }, publicKey: this.bcrypto.getPubKey(true) });
+      this.nodeList.add({ unixTimestamp: registrationTimestamp, payload: { ipAddress: this.stableNode, port: this.stableNodePort }, publicKey: this.stableNodePubKey }, false);
 
       if(fs.existsSync("network_cache.json")) {
          cache = JSON.parse(fs.readFileSync("network_cache.json").toString());
@@ -194,8 +196,6 @@ class networking {
       }*/
 
       await this.syncBlockchain();
-
-      var packet = this.createPacket(2, {ipAddress: this.host, port: this.port});
       var networkDiff;
 
       if(!randomMode) {
@@ -576,8 +576,7 @@ class networking {
 
                for(var i in payload.nodeList) {
                   let entry = payload.nodeList[i];
-
-                  if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress"]))
+                  if(JSON.stringify(Object.getOwnPropertyNames(entry)) != JSON.stringify(["ipAddress", "port", "publicKey", "blockchainAddress", "registrationTimestamp"]))
                      return false
 
                   if(isNaN(entry.port) || entry.port < 0 || entry.port > 65535)
