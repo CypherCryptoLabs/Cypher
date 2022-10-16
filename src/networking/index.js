@@ -339,6 +339,7 @@ class networking {
                            this.transactionQueue.clean(packet.payload.block.payload);
                            this.networkDiff.clear();
 
+                           console.log("(Block announcement) Block " + packet.payload.block.id + " appended to Blockchain.")
                         }
                      } else {
                         payload.status = false;
