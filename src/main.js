@@ -7,7 +7,12 @@ const execSync = require('child_process').execSync;
 
 const orig_consoleLog = console.log;
 console.log = (...args) => {
-    orig_consoleLog(`[${Date.now()}]`, ...args)
+    let e = new Error();
+    let frame = e.stack.split("\n")[2];
+    let lineNumber = frame.split(":").reverse()[1];
+    let functionName = frame.split(" ")[5];
+
+    orig_consoleLog(`[${Date.now()}]`, `[${functionName}:${lineNumber}]`, ...args)
 }
 
 try { 
