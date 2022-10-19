@@ -65,8 +65,14 @@ class networking {
 
          if (notifiedNodes.indexOf(randomNode.blockchainAddress) == -1 && successfullyNotifiedNodes.indexOf(randomNode.blockchainAddress) == -1) {
 
-            if(await this.sendPacket(packet, randomNode.ipAddress, randomNode.port) != undefined) {
-               successfullyNotifiedNodes.push(randomNode.blockchainAddress);
+            if(JSON.parse(packet).queryID != 4) {
+               if(await this.sendPacket(packet, randomNode.ipAddress, randomNode.port) != undefined) {
+                  successfullyNotifiedNodes.push(randomNode.blockchainAddress);
+               }
+            } else {
+               try {
+                  this.sendPacket(packet, randomNode.ipAddress, randomNode.port)
+               }catch (_) {}
             }
 
             notifiedNodes.push(randomNode.blockchainAddress);
@@ -332,9 +338,9 @@ class networking {
 
                      if(JSON.parse(this.blockchain.getNewestBlock()).id == packet.payload.block.id - 1) {
                         payload.status = true;
-                        this.broadcastToRandomNodes(data.toString());
 
                         if(this.blockchain.addBlockToQueue(packet.payload.block)) {
+                           this.broadcastToRandomNodes(data.toString());
                            this.blockchain.appendBlockToBlockchain(this);
                            this.transactionQueue.clean(packet.payload.block.payload);
                            this.networkDiff.clear();
