@@ -29,12 +29,7 @@ The Cypher Project does not stop with providing this decentralized infrastructur
 Currently Cypher is still in development. It does not have a public Network, so running a Node is completely useless right now. The website that this document refers to does not exist yet. You can track progress on the "TODO" list. Currently development is only focused on the Blockchain and Crypto-currenty. When this part is stable enough, the Live-Messenger will be implemented.
 
 # Contribute
-Contributing to the Cypher Project should be as easy as possible, which is why we use GitHub Pull Requests.There are only 2 rules.
-
-1. Your Pull Requests contains a bug-fix
-2. Your Pull Requests completes one of the goals in the TODO list
-
-If your Pull Request does not contain one of these, it will be rejected. If you want to suggest an improvement, you can open a new Issue.
+If you want to suggest a feature, or change, please create an Issue, then create a Pull Request, and after a reviwe, you will either receive feedback, or your Pull Request will be merged.
 
 # Installation
 There are 2 ways of installing the Cypher Node. Either you choose the easy way (Docker) or the painful one (manual installation). For both methods I assume you are using GNU/Linux and have Git as well as Docker installed. If thats not the case, please do it now.
@@ -184,7 +179,7 @@ Congratulations, your Node is now online!
   - [ ] Implement Proof of Work for Nodes forwarding Messages
   - [ ] Integrate PoW for forwarding Messages into PoS Pentalties and health system
 - [ ] Alert Network of offline Nodes in Networking.sendPacket() if a Timeout occures
-- [ ] Split Networking Class into Networking and Consensus
+- [x] Split Networking Class into Networking and Consensus
 
 # License
 MIT License

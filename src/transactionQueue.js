@@ -48,7 +48,7 @@ class transactionQueue {
          var now = Date.now();
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
 
-         let validators = networkingInstance.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
+         let validators = networkingInstance.consensus.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
          var timeToWait = nextVoteSlotTimestamp - Date.now();
 
          let sleepPromise = new Promise((resolve) => {
@@ -60,18 +60,19 @@ class transactionQueue {
          if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             
             let sleepPromise = new Promise((resolve) => {
-               setTimeout(resolve, 100);
+               setTimeout(resolve, 150);
             });
             await sleepPromise;
-
-            networkingInstance.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
+            console.log("This node is a validator for the current epoch. Forger:", validators.forger.ipAddress, validators.forger.port)
+            networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
          } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
+            console.log("This node is the forger for the current epoch.")
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-            await networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.getNetworkDiff()));
+            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
          } else {
-            networkingInstance.updatePotentialBlock(this.Blockchain.generateBlock({}));
+            console.log("This node is inactive during this epoch.")
+            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}));
          }
-         
       }
    }
 
@@ -79,7 +80,7 @@ class transactionQueue {
       let currentTimestamp = Date.now();
       for (var i = 0; i < usedQueue.length; i++) {
          for (var j = 0; j < this.queue.length; j++) {
-            if (this.queue[j].signature == usedQueue[i].signature || this.queue[j].unixTimestamp < currentTimestamp - 86400000) {
+            if (this.queue[j].signature == usedQueue[i].signature || this.queue[j].unixTimestamp < currentTimestamp - 43200000) {
                this.queue.splice(j, 1);
                j--;
             }

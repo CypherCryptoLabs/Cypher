@@ -63,14 +63,14 @@ test("add Node to NodeList", ()=> {
         publicKey: bcrypto.getPubKey(true)
     }
 
-    netInstance.addNodeToNodeList(node, false);
+    netInstance.nodeList.add(node, false);
     expect(netInstance.nodeList).toStrictEqual([{"ipAddress":"192.168.178.123","port":1234,"publicKey":"-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAE0eh+AvR+We2qTcRyxHBxMhSZEYGjbeQz\nrhWsrJ6uw3PiwtpEaYOP24QXai23F/DQdWL0GkhRfsdTMyeqr3Kh9A==\n-----END PUBLIC KEY-----\n","blockchainAddress":"30c442f72e92c0ddcd5662ebf399a1e9ea00f8f77fac95b8ac4c4456a2661d47"}])
 })
 
 test("remove Node from NodeList", ()=> {
     let node = bcrypto.getPubKey(true)
 
-    netInstance.removeNodeFromNodeList(node)
+    netInstance.nodeList.remove(node)
     expect(netInstance.nodeList).toStrictEqual([])
 })
 
@@ -84,7 +84,7 @@ test("pick validators", ()=> {
 
     netInstance.nodeList = nodeList;
 
-    expect(netInstance.pickValidators("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0", 1)).toStrictEqual({"validators":[{"blockchainAddress":"13af4e1d958c631e7a391b547106fa9d989a4e53fb1c8d048a554b06293c1e8604daefd7ee781e8d8441c5ae7ebda8d9a4ca71aeb55cab633127c904e73b5424"},{"blockchainAddress":"3a0aaf2eaa1ae98397785663443d783978dda23377130143e0a583e6215e67c52efa343a9b1a7eddf8afdff29651004b699fb852f280ebf44ce5e81476530955"},{"blockchainAddress":"7b4be24e7f6d83a849f9fc62e76c246cf8510cc0f66dd47283d4e515ec86f27ebabd1bd9da7c4ec8d33c5c2fcbcb9b849d26bbc1b66110b9a4551638b015c9ca"}],"forger":{"blockchainAddress":"97fbf3d86ecbd9aa92ecb4f837241f5a6689438429da05f7e419f1d0ee1a50a132a90e3d720c688815297bb5bebffbf2dd5cf238cc0bdb34513ebbc4461deb33"}})
+    expect(netInstance.consensus.pickValidators("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0", 1)).toStrictEqual({"validators":[{"blockchainAddress":"13af4e1d958c631e7a391b547106fa9d989a4e53fb1c8d048a554b06293c1e8604daefd7ee781e8d8441c5ae7ebda8d9a4ca71aeb55cab633127c904e73b5424"},{"blockchainAddress":"3a0aaf2eaa1ae98397785663443d783978dda23377130143e0a583e6215e67c52efa343a9b1a7eddf8afdff29651004b699fb852f280ebf44ce5e81476530955"},{"blockchainAddress":"7b4be24e7f6d83a849f9fc62e76c246cf8510cc0f66dd47283d4e515ec86f27ebabd1bd9da7c4ec8d33c5c2fcbcb9b849d26bbc1b66110b9a4551638b015c9ca"}],"forger":{"blockchainAddress":"97fbf3d86ecbd9aa92ecb4f837241f5a6689438429da05f7e419f1d0ee1a50a132a90e3d720c688815297bb5bebffbf2dd5cf238cc0bdb34513ebbc4461deb33"}})
 })
 
 test("get votes", () => {
