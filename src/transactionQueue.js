@@ -71,7 +71,7 @@ class transactionQueue {
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
          } else {
             console.log("This node is inactive during this epoch.")
-            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}));
+            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}, validators, networkingInstance.networkDiff.diff));
          }
       }
    }
