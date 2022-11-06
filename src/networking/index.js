@@ -720,6 +720,9 @@ class networking {
                      typeof payload.message != "string"
                   ) return false;
 
+                  if(!/^[0-9a-f]{64}$/.test(payload.blockchainReceiverAddress))
+                  return false;
+
                } else if(payload.type == "retrieve") {
                   if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type"]))
                      return false;
