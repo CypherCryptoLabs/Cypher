@@ -11,3 +11,4 @@ test/node_modules
 !test/private.pem
 !test/blockchain.json
 package-lock.json
+message_store
