@@ -52,10 +52,7 @@ client.connect(PORT, HOST, () => {
         queryID : 8,
         unixTimestamp : Date.now(),
         payload : {
-            type: "send",
-            blockchainSenderAddress : crypto.createHash('sha256').update(crypto.createPublicKey(publicKey.toPem()).export({ type: 'spki', format: 'der' })).digest('hex'),
-            blockchainReceiverAddress : crypto.createHash('sha256').update(crypto.createPublicKey(publicKey.toPem()).export({ type: 'spki', format: 'der' })).digest('hex'),
-            message: "TEST MESSAGE"
+            type: "retrieve"
         },
         publicKey : publicKey.toPem(),
         signature : ""
