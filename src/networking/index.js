@@ -6,6 +6,7 @@ const fs = require("fs");
 const NodeList = require("./nodeList")
 const Consensus = require("./consensus")
 const NetworkDiff = require("./networkDiff")
+const MessageStore = require("../messageStore")
 
 class networking {
 
@@ -17,6 +18,7 @@ class networking {
       this.nodeList = new NodeList(bcrypto, this)
       this.consensus = new Consensus(bcrypto, this.nodeList, this)
       this.networkDiff = new NetworkDiff(this)
+      this.MessageStore = new MessageStore()
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
@@ -394,6 +396,14 @@ class networking {
 
                      payload.queue = queue;
                      break;
+
+                  case 8:
+                     if(packet.payload.type == "send") {
+                        this.MessageStore.store(packet);
+                     } else if(packet.payload.type == "retrieve") {
+
+                     }
+                     break;
                }
 
                if(!subroutineHandlesSocket) {
@@ -693,6 +703,8 @@ class networking {
                break;
             case -7:
                // no checks needed since each received transaction will be chacked later on anyways
+               break;
+            case 8:
                break;
             default:
                return false;
