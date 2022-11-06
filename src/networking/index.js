@@ -399,9 +399,10 @@ class networking {
 
                   case 8:
                      if(packet.payload.type == "send") {
-                        this.MessageStore.store(packet);
+                        payload.status = this.MessageStore.store(packet);
                      } else if(packet.payload.type == "retrieve") {
-
+                        console.log(this.bcrypto.getFingerprint(packet.publicKey))
+                        payload = this.MessageStore.retrieve(this.bcrypto.getFingerprint(packet.publicKey))
                      }
                      break;
                }
