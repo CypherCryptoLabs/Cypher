@@ -20,7 +20,7 @@ class messageStore {
 
     retrieve(receiverAddress) {
         try {
-            let messageStoreForAddress = fs.openSync("./message_store/" + receiverAddress + ".json");
+            let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");
             let messages = JSON.parse(messageStoreForAddress);
 
             return messages;
@@ -48,8 +48,9 @@ class messageStore {
             store.push(message);
 
             fs.writeFileSync("./message_store/" + messagePacket.payload.blockchainReceiverAddress + ".json", JSON.stringify(store));
+
+            return true;
         } catch(_) {
-            console.log(_)
             return false;
         }
 
