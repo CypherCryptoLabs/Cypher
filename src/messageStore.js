@@ -3,7 +3,8 @@ const { inherits } = require("util");
 
 class messageStore {
 
-    constructor() {
+    constructor(bcrypto) {
+        this.bcrypto = bcrypto;
         this.init()
     }
 
@@ -33,7 +34,7 @@ class messageStore {
         let message = {
             unixTimestamp: messagePacket.unixTimestamp,
             message: messagePacket.payload.message,
-            sender: messagePacket.payload.blockchainSenderAddress,
+            sender: this.bcrypto.getFingerprint(messagePacket.publicKey),
             signature: messagePacket.signature
         }
 

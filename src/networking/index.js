@@ -6,7 +6,8 @@ const fs = require("fs");
 const NodeList = require("./nodeList")
 const Consensus = require("./consensus")
 const NetworkDiff = require("./networkDiff")
-const MessageStore = require("../messageStore")
+const MessageStore = require("../messageStore");
+const { type } = require('os');
 
 class networking {
 
@@ -18,7 +19,7 @@ class networking {
       this.nodeList = new NodeList(bcrypto, this)
       this.consensus = new Consensus(bcrypto, this.nodeList, this)
       this.networkDiff = new NetworkDiff(this)
-      this.MessageStore = new MessageStore()
+      this.MessageStore = new MessageStore(bcrypto)
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
@@ -706,6 +707,26 @@ class networking {
                // no checks needed since each received transaction will be chacked later on anyways
                break;
             case 8:
+               if(!payload.hasOwnProperty("type"))
+                  return false;
+
+               if(payload.type == "send") {
+                  if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type","blockchainReceiverAddress","message"]))
+                     return false;
+
+                  if(
+                     typeof payload.type != "string" ||
+                     typeof payload.blockchainReceiverAddress != "string" ||
+                     typeof payload.message != "string"
+                  ) return false;
+
+               } else if(payload.type == "retrieve") {
+                  if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type"]))
+                     return false;
+               } else {
+                  return false;
+               }
+               
                break;
             default:
                return false;

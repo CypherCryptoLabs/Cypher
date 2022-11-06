@@ -3,9 +3,9 @@ const fs = require('fs');
 var crypto = require('crypto');
 var ellipticcurve = require("starkbank-ecdsa");
 
-const HOST = '192.168.178.39'; 
-const PORT = 1234; 
-var client = new net.Socket(); 
+const HOST = '192.168.178.39';
+const PORT = 1234;
+var client = new net.Socket();
 
 var Ecdsa = ellipticcurve.Ecdsa;
 var PrivateKey = ellipticcurve.PrivateKey;
@@ -44,16 +44,15 @@ function signPacket(packet) {
     }
 }
 
-client.connect(PORT, HOST, () => { 
-    console.log(`client connected to ${HOST}:${PORT}`); 
-    // Write a message to the socket as soon as the client is connected, the server will receive it as message from the client  
+client.connect(PORT, HOST, () => {
+    console.log(`client connected to ${HOST}:${PORT}`);
+    // Write a message to the socket as soon as the client is connected, the server will receive it as message from the client
 
     var createTransactionPacket = {
         queryID : 8,
         unixTimestamp : Date.now(),
         payload : {
             type: "send",
-            blockchainSenderAddress : crypto.createHash('sha256').update(crypto.createPublicKey(publicKey.toPem()).export({ type: 'spki', format: 'der' })).digest('hex'),
             blockchainReceiverAddress : crypto.createHash('sha256').update(crypto.createPublicKey(publicKey.toPem()).export({ type: 'spki', format: 'der' })).digest('hex'),
             message: "TEST MESSAGE"
         },
@@ -69,22 +68,22 @@ client.connect(PORT, HOST, () => {
 
     createTransactionPacket.signature = signPacket(createTransactionPacketJSON).toBase64();
 
-    client.write(JSON.stringify(createTransactionPacket)); 
+    client.write(JSON.stringify(createTransactionPacket));
     client.end();
 });
 
-client.on('data', (data) => {     
-    console.log(`Client received: ${data}`); 
-    if (data.toString().endsWith('exit')) { 
-        client.destroy(); 
+client.on('data', (data) => {
+    console.log(`Client received: ${data}`);
+    if (data.toString().endsWith('exit')) {
+        client.destroy();
     }
-}); 
+});
 
-// Add a 'close' event handler for the client socket 
-client.on('close', () => { 
-    console.log('Client closed'); 
-}); 
+// Add a 'close' event handler for the client socket
+client.on('close', () => {
+    console.log('Client closed');
+});
 
-client.on('error', (err) => { 
-    console.error(err); 
-}); 
+client.on('error', (err) => {
+    console.error(err);
+});
