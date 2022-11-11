@@ -116,7 +116,6 @@ let requestFinished = new Promise((resolve, reject) => {
                 };
                 
                 createTransactionPacket.payload[messageHash] = signPacket(messageHash).toBase64();
-                console.log(createTransactionPacket)
             
                 var createTransactionPacketForSignature = JSON.parse(JSON.stringify(createTransactionPacket));
                 delete createTransactionPacketForSignature.queryID;
