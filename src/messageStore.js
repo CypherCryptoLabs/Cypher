@@ -37,16 +37,19 @@ class messageStore {
             sender: this.bcrypto.getFingerprint(messagePacket.publicKey),
             signature: messagePacket.signature
         }
+        
+        let messageHash = this.bcrypto.hash(JSON.stringify(message))
+        console.log(messageHash)
 
         try {
             var store;
             if(fs.existsSync("./message_store/" + messagePacket.payload.blockchainReceiverAddress + ".json")) {
                 store = JSON.parse(fs.readFileSync("./message_store/" + messagePacket.payload.blockchainReceiverAddress + ".json"))
             } else {
-                store = new Array();
+                store = {};
             }
 
-            store.push(message);
+            store[messageHash] = message;
 
             fs.writeFileSync("./message_store/" + messagePacket.payload.blockchainReceiverAddress + ".json", JSON.stringify(store));
 
