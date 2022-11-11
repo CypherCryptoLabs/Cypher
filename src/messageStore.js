@@ -19,6 +19,20 @@ class messageStore {
         }
     }
 
+    checkIfExists(messageHash, receiverAddress) {
+        try {
+            let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");
+            let message = JSON.parse(messageStoreForAddress)[messageHash];
+
+            if (message != undefined)
+                return true;
+            
+            return false;
+        } catch(_) {
+            return false;
+        }
+    }
+
     retrieve(receiverAddress) {
         try {
             let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");

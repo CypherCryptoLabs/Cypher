@@ -405,6 +405,14 @@ class networking {
                         payload = this.MessageStore.retrieve(this.bcrypto.getFingerprint(packet.publicKey))
                      }
                      break;
+                  
+                  case 9:
+                     let messageHash = Object.keys(packet.payload)[0]
+                     this.MessageStore.checkIfExists(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+
+                     payload = this.MessageStore.checkIfExists(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+
+                     break;
                }
 
                if(!subroutineHandlesSocket) {
@@ -729,6 +737,18 @@ class networking {
                   return false;
                }
                
+               break;
+            case 9:
+               let messageHashes = Object.keys(payload);
+
+               for(var i = 0; i < messageHashes.length; i++) {
+                  if(!/^[0-9a-f]{64}$/.test(messageHashes[i]))
+                     return false;
+
+                  if(!this.bcrypto.verrifySignature(payload[messageHashes[i]], packet.publicKey, messageHashes[i]))
+                     return false;
+               }
+
                break;
             default:
                return false;
