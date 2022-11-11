@@ -402,7 +402,6 @@ class networking {
                      if(packet.payload.type == "send") {
                         payload.status = this.MessageStore.store(packet);
                      } else if(packet.payload.type == "retrieve") {
-                        console.log(this.bcrypto.getFingerprint(packet.publicKey))
                         payload = this.MessageStore.retrieve(this.bcrypto.getFingerprint(packet.publicKey))
                      }
                      break;
