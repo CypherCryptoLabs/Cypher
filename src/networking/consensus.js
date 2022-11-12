@@ -1,3 +1,4 @@
+const fs = require("fs");
 const BigNumber = require('bignumber.js');
 
 class Consensus {
@@ -9,6 +10,34 @@ class Consensus {
         this.bcrypto = bcrypto
         this.nodeList = nodeList
         this.netInstance = netInstance
+        this.por;
+        this.init();
+    }
+
+    init() {
+        try {
+            if(!fs.existsSync("./por_store.json")) {
+                fs.writeFileSync("./por_store.json", "{}")
+                this.por = {};
+            } else {
+                this.por = JSON.parse(fs.readFileSync("./por_store.json").toString("utf-8"))
+            }
+
+            console.log(this.por)
+        } catch(error) {
+            console.log("Could not create PoR store: " + error)
+            process.exit();
+        }
+    }
+
+    storePor(por) {
+        this.por[por.hash] = por.payload;
+        try {
+            fs.writeFileSync("./por_store.json", JSON.stringify(this.por));
+        } catch(error) {
+            console.log("Could not write to PoR store: " + error)
+            process.exit();
+        }
     }
 
     get signatures() {

@@ -402,7 +402,7 @@ class networking {
                      if(packet.payload.type == "send") {
                         payload.status = this.MessageStore.store(packet);
                      } else if(packet.payload.type == "retrieve") {
-                        payload = this.MessageStore.retrieve(this.bcrypto.getFingerprint(packet.publicKey))
+                        payload = this.MessageStore.retrieveAll(this.bcrypto.getFingerprint(packet.publicKey))
                      }
                      break;
                   
@@ -410,7 +410,15 @@ class networking {
                      let messageHash = Object.keys(packet.payload)[0]
                      this.MessageStore.checkIfExists(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
 
-                     payload = this.MessageStore.checkIfExists(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+                     payload.status = this.MessageStore.checkIfExists(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+
+                     let por = {
+                        hash: messageHash,
+                        payload: this.MessageStore.retrieveSpecific(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+                     }
+
+                     this.consensus.storePor(por);
+                     this.MessageStore.discardSpecific(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
 
                      break;
                }

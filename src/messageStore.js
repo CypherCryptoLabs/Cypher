@@ -33,7 +33,36 @@ class messageStore {
         }
     }
 
-    retrieve(receiverAddress) {
+    retrieveSpecific(messageHash, receiverAddress) {
+        try {
+            let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");
+            let message = JSON.parse(messageStoreForAddress)[messageHash];
+
+            if (message != undefined)
+                return message;
+            
+            return false;
+        } catch(_) {
+            return false;
+        }
+    }
+
+    discardSpecific(messageHash, receiverAddress) {
+        try {
+            let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");
+            let messages = JSON.parse(messageStoreForAddress);
+
+            delete messages[messageHash]
+
+            fs.writeFileSync("./message_store/" + receiverAddress + ".json", JSON.stringify(messages));
+            
+            return true;
+        } catch(_) {
+            return false;
+        }
+    }
+
+    retrieveAll(receiverAddress) {
         try {
             let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");
             let messages = JSON.parse(messageStoreForAddress);
