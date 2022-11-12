@@ -82,7 +82,6 @@ class messageStore {
         }
         
         let messageHash = this.bcrypto.hash(JSON.stringify(message))
-        console.log(messageHash)
 
         try {
             var store;
@@ -92,6 +91,9 @@ class messageStore {
                 store = {};
             }
 
+            if(Object.keys(store).length >= 30)
+                return false;
+            
             store[messageHash] = message;
 
             fs.writeFileSync("./message_store/" + messagePacket.payload.blockchainReceiverAddress + ".json", JSON.stringify(store));
