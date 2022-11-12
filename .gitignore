@@ -12,3 +12,4 @@ test/node_modules
 !test/blockchain.json
 package-lock.json
 message_store
+por_store.json
