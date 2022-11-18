@@ -57,61 +57,62 @@ class Consensus {
     }
 
     pickValidators(latestBlockHash, nextVotingSlot) {
-        var validators = { validators: [], forger: {} };
-        var filteredNodeList = this.nodeList.list.filter(obj => obj.registrationTimestamp < nextVotingSlot - 120000)
-
-        let numOfValidators = (filteredNodeList.length - 1 < 128) ? filteredNodeList.length : 128;
-        var forgerAproximateAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
-
-
+        var validators = [];
+        var filteredNodeList = this.nodeList.list.filter(obj => obj.registrationTimestamp < nextVotingSlot - 120000).sort((a, b) => b.registrationTimestamp - a.registrationTimestamp)
+        let numOfValidators = 128;
+        var seedAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
         var forgerAddress = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
         var forgerAddressDifference = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-
-        for (var i = 0; i < numOfValidators; i++) {
-
-            var difference = forgerAproximateAddress.minus(filteredNodeList[i].blockchainAddress, 16);
-            if (difference.isNegative())
-                difference = difference.negated();
-
-            if (difference.lt(forgerAddressDifference)) {
-                validators.forger = filteredNodeList[i];
-                forgerAddress = new BigNumber(filteredNodeList[i].blockchainAddress, 16);
-                forgerAddressDifference = difference;
-            }
-        }
-
-        var validatorAproximateAddress = forgerAproximateAddress;
-        while (validators.validators.length < numOfValidators - 1) {
-            validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16));
-
-            var nodeListCopy = JSON.parse(JSON.stringify(filteredNodeList));
-            nodeListCopy.push({ blockchainAddress: validatorAproximateAddress });
-
-            nodeListCopy = nodeListCopy.sort((a, b) => (a.blockchainAddress > b.blockchainAddress) ? 1 : -1);
-            var index = nodeListCopy.map(function (e) { return e.blockchainAddress; }).indexOf(validatorAproximateAddress);
-
-            var indexesToAdd = new Array();
-            if (index == 0) {
-                indexesToAdd.push(index + 1);
-            } else if (index == nodeListCopy.length - 1) {
-                indexesToAdd.push(index - 1);
-            } else {
-                indexesToAdd.push(index - 1);
-                indexesToAdd.push(index + 1);
-            }
-
-            for (var i = 0; i < indexesToAdd.length; i++) {
-                if (validators.validators.map(function (e) { return e.blockchainAddress; }).indexOf(nodeListCopy[indexesToAdd[i]].blockchainAddress) == -1 &&
-                    validators.forger.blockchainAddress != nodeListCopy[indexesToAdd[i]].blockchainAddress) {
-                    validators.validators.push(nodeListCopy[indexesToAdd[i]]);
+        
+        if(filteredNodeList.length < numOfValidators) {
+            console.log(filteredNodeList)
+            return filteredNodeList;
+        } else {
+        
+            for (var i = 0; i < numOfValidators; i++) {
+        
+                var difference = seedAddress.minus(filteredNodeList[i].blockchainAddress, 16);
+                if (difference.isNegative())
+                    difference = difference.negated();
+        
+                if (difference.lt(forgerAddressDifference)) {
+                    validators.forger = filteredNodeList[i];
+                    forgerAddress = new BigNumber(filteredNodeList[i].blockchainAddress, 16);
+                    forgerAddressDifference = difference;
                 }
             }
+        
+            var validatorAproximateAddress = seedAddress;
+            while (validators.length < numOfValidators - 1) {
+                validatorAproximateAddress = this.bcrypto.hash(validatorAproximateAddress.toString(16) + nextVotingSlot);
+        
+                var nodeListCopy = JSON.parse(JSON.stringify(filteredNodeList));
+                nodeListCopy.push({ blockchainAddress: validatorAproximateAddress });
+        
+                nodeListCopy = nodeListCopy.sort((a, b) => (a.blockchainAddress > b.blockchainAddress) ? 1 : -1);
+                var index = nodeListCopy.map(function (e) { return e.blockchainAddress; }).indexOf(validatorAproximateAddress);
+        
+                var indexesToAdd = new Array();
+                if (index == 0) {
+                    indexesToAdd.push(index + 1);
+                } else if (index == nodeListCopy.length - 1) {
+                    indexesToAdd.push(index - 1);
+                } else {
+                    indexesToAdd.push(index - 1);
+                    indexesToAdd.push(index + 1);
+                }
+        
+                for (var i = 0; i < indexesToAdd.length; i++) {
+                    if (validators.map(function (e) { return e.blockchainAddress; }).indexOf(nodeListCopy[indexesToAdd[i]].blockchainAddress) == -1) {
+                        validators.push(nodeListCopy[indexesToAdd[i]]);
+                    }
+                }
+            }
+        
+            console.log(validators)
+        
+            return validators;
         }
-
-        this.validators = validators.validators;
-        this.forger = validators.forger;
-
-        return validators;
 
     }
 
