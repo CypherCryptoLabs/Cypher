@@ -114,6 +114,14 @@ class Consensus {
 
     }
 
+    async distributePoR(validators, por) {
+        let packet = this.netInstance.createPacket(10, por)
+        
+        for(var i = 0; i < validators.length; i++) {
+            if (validators[i].publicKey != this.bcrypto.getPubKey(true)) this.netInstance.sendPacket(packet, validators[i].ipAddress, validators[i].port);
+        }
+    }
+
     async voteOnBlock(forger, currentVotingSlot, validators, transactionQueue) {
         var blockToVoteOnData = await this.netInstance.sendPacket(this.netInstance.createPacket(3, { type: "request" }), forger.ipAddress, forger.port);
         if (blockToVoteOnData == undefined)

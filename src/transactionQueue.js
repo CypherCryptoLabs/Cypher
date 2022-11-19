@@ -60,7 +60,10 @@ class transactionQueue {
 
          // if this node is a validator for the current votingslot, send PoR to other validators
          if(validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
-            console.log(networkingInstance.consensus.pickBestPoR(nextVoteSlotTimestamp));
+            let porHash = networkingInstance.consensus.pickBestPoR(nextVoteSlotTimestamp);
+            let por = networkingInstance.consensus.por[porHash]
+
+            networkingInstance.consensus.distributePoR(validators, por)
          }
 
          var timeToWait = nextVoteSlotTimestamp - Date.now();
