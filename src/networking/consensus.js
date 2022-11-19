@@ -22,8 +22,6 @@ class Consensus {
             } else {
                 this.por = JSON.parse(fs.readFileSync("./por_store.json").toString("utf-8"))
             }
-
-            console.log(this.por)
         } catch(error) {
             console.log("Could not create PoR store: " + error)
             process.exit();
@@ -175,6 +173,36 @@ class Consensus {
             }
         }
     }
+
+    pickBestPoR(nextVotingSlot) {
+        // find closest PoR to Seed
+        // the seed is the SHA265 Hash of lastBlockHash+nextVotingSlot
+  
+        let porSeed = new BigNumber(this.bcrypto.hash(this.bcrypto.hash(this.netInstance.blockchain.getNewestBlock(true)) + nextVotingSlot), 16);
+        let porList = Object.keys(this.por).sort();
+        var bestFittingPoR;
+        
+        porList.push(porSeed.toString(16));
+        let porSeedIndex = porList.sort().indexOf(porSeed.toString(16));
+        
+        // find best matching PoR
+        if(porSeedIndex == 0) {
+           bestFittingPoR = porList[1]
+        } else if( porSeedIndex == porList.length - 1) {
+           bestFittingPoR = porList[porList.length - 2]
+        } else {
+           let previousIndexDeviation = porSeed.minus(new BigNumber(porList[porSeedIndex - 1], 16))
+           let nextIndexDeviation = porSeed.minus(new BigNumber(porList[porSeedIndex + 1], 16)).negated()
+  
+           if(previousIndexDeviation.isLessThanOrEqualTo(nextIndexDeviation)) {
+              bestFittingPoR = porList[porSeedIndex - 1];
+           } else {
+              bestFittingPoR = porList[porSeedIndex + 1];
+           }
+        }
+        return bestFittingPoR;
+  
+     }
 
     async updatePotentialBlock(potentialBlock) {
         this.potentialBlock = potentialBlock;

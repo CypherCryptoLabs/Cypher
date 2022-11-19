@@ -43,36 +43,48 @@ class transactionQueue {
 
    async worker(networkingInstance) {
       var _this = this;
+      let localNodeAddress = this.bcrypto.getFingerprint();
 
       while(true) {
          var now = Date.now();
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
+         var nextPoRDistributionSlot = now - (now % 60000) + 45000;
 
          let validators = networkingInstance.consensus.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
-         var timeToWait = nextVoteSlotTimestamp - Date.now();
 
-         let sleepPromise = new Promise((resolve) => {
+         var timeToWait = nextPoRDistributionSlot - Date.now();
+         let sleepPromiseDistribution = new Promise((resolve) => {
             setTimeout(resolve, timeToWait);
          });
-         await sleepPromise;
+         await sleepPromiseDistribution;
 
-         let localNodeAddress = this.bcrypto.getFingerprint();
-         if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
-            
-            let sleepPromise = new Promise((resolve) => {
-               setTimeout(resolve, 150);
-            });
-            await sleepPromise;
-            console.log("This node is a validator for the current epoch. Forger:", validators.forger.ipAddress, validators.forger.port)
-            networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
-         } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
-            console.log("This node is the forger for the current epoch.")
-            var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
-         } else {
-            console.log("This node is inactive during this epoch.")
-            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}, validators, networkingInstance.networkDiff.diff));
+         // if this node is a validator for the current votingslot, send PoR to other validators
+         if(validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
+            console.log(networkingInstance.consensus.pickBestPoR(nextVoteSlotTimestamp));
          }
+
+         var timeToWait = nextVoteSlotTimestamp - Date.now();
+         let sleepPromiseVoting = new Promise((resolve) => {
+            setTimeout(resolve, timeToWait);
+         });
+         await sleepPromiseVoting;
+
+         // if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
+            
+         //    let sleepPromise = new Promise((resolve) => {
+         //       setTimeout(resolve, 150);
+         //    });
+         //    await sleepPromise;
+         //    console.log("This node is a validator for the current epoch. Forger:", validators.forger.ipAddress, validators.forger.port)
+         //    networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
+         // } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
+         //    console.log("This node is the forger for the current epoch.")
+         //    var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
+         //    networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
+         // } else {
+         //    console.log("This node is inactive during this epoch.")
+         //    networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}, validators, networkingInstance.networkDiff.diff));
+         // }
       }
    }
 
