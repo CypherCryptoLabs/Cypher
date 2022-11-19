@@ -417,6 +417,9 @@ class networking {
                         payload: this.MessageStore.retrieveSpecific(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
                      }
 
+                     por.payload.blockchainReceiverAddress = this.bcrypto.getFingerprint(packet.publicKey);
+                     por.payload.blockchainReceiverPubKey = packet.publicKey;
+
                      this.consensus.storePor(por);
                      this.MessageStore.discardSpecific(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
 
