@@ -184,6 +184,8 @@ class Consensus {
         
         porList.push(porSeed.toString(16));
         let porSeedIndex = porList.sort().indexOf(porSeed.toString(16));
+
+        if(porList.length == 1) return;
         
         // find best matching PoR
         if(porSeedIndex == 0) {
