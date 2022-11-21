@@ -425,6 +425,9 @@ class networking {
                      this.MessageStore.discardSpecific(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
 
                      break;
+                  case 10:
+                     this.consensus.votingSlotPoRList.push(packet.payload);
+                     break;
                }
 
                if(!subroutineHandlesSocket) {
@@ -761,6 +764,8 @@ class networking {
                      return false;
                }
 
+               break;
+            case 10:
                break;
             default:
                return false;

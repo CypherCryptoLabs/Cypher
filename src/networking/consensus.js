@@ -12,6 +12,7 @@ class Consensus {
         this.netInstance = netInstance
         this.por;
         this.init();
+        this.votingSlotPoRList = [];
     }
 
     init() {
