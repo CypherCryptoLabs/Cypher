@@ -61,11 +61,14 @@ class transactionQueue {
          // if this node is a validator for the current votingslot, send PoR to other validators
          if(validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             let porHash = networkingInstance.consensus.pickBestPoR(nextVoteSlotTimestamp);
-            let por = networkingInstance.consensus.por[porHash]
+            var por = networkingInstance.consensus.por[porHash]
 
             if(por != undefined) {
+               por = JSON.parse(JSON.stringify(por))
+               por.hash = porHash
+
                networkingInstance.consensus.distributePoR(validators, por)
-               this.consensus.votingSlotPoRList.push(packet.payload);
+               networkingInstance.consensus.votingSlotPoRList.push(por);
             }
          }
 
@@ -76,7 +79,7 @@ class transactionQueue {
          await sleepPromiseVoting;
 
          try {
-            console.log(networkingInstance.consensus.votingSlotPoRList.sort((a, b) => b.por.localCompare(a.por)))
+            console.log(networkingInstance.consensus.votingSlotPoRList.sort((a, b) => {b.hash.localeCompare(a.hash)}))
          } catch(error) {
             console.log(error)
          }
