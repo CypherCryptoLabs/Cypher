@@ -64,7 +64,6 @@ class Consensus {
         var forgerAddressDifference = new BigNumber("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
         
         if(filteredNodeList.length < numOfValidators) {
-            console.log(filteredNodeList)
             return filteredNodeList;
         } else {
         
@@ -107,8 +106,6 @@ class Consensus {
                     }
                 }
             }
-        
-            console.log(validators)
         
             return validators;
         }

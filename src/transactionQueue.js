@@ -63,7 +63,10 @@ class transactionQueue {
             let porHash = networkingInstance.consensus.pickBestPoR(nextVoteSlotTimestamp);
             let por = networkingInstance.consensus.por[porHash]
 
-            networkingInstance.consensus.distributePoR(validators, por)
+            if(por != undefined) {
+               networkingInstance.consensus.distributePoR(validators, por)
+               this.consensus.votingSlotPoRList.push(packet.payload);
+            }
          }
 
          var timeToWait = nextVoteSlotTimestamp - Date.now();
@@ -71,6 +74,14 @@ class transactionQueue {
             setTimeout(resolve, timeToWait);
          });
          await sleepPromiseVoting;
+
+         try {
+            console.log(networkingInstance.consensus.votingSlotPoRList.sort((a, b) => b.por.localCompare(a.por)))
+         } catch(error) {
+            console.log(error)
+         }
+
+
 
          // if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             
