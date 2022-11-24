@@ -78,13 +78,9 @@ class transactionQueue {
          });
          await sleepPromiseVoting;
 
-         try {
-            console.log(networkingInstance.consensus.votingSlotPoRList.sort((a, b) => {b.hash.localeCompare(a.hash)}))
-         } catch(error) {
-            console.log(error)
-         }
-
-
+         let winnerPoR = networkingInstance.consensus.pickWinnerPoR(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
+         //console.log(winnerPoR);
+         networkingInstance.consensus.votingSlotPoRList = []
 
          // if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
             
