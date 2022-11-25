@@ -73,7 +73,6 @@ class Consensus {
             })
 
             let indexOfFakePoR = sortedPoRList.map(function (e) { return e.hash }).indexOf(seedAddress.toString(16));
-            console.log(sortedPoRList.map(function (e) { return e.hash }))
 
             if (indexOfFakePoR == 0) {
                 return sortedPoRList[1]
