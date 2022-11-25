@@ -49,6 +49,8 @@ class transactionQueue {
          var now = Date.now();
          var nextVoteSlotTimestamp = now - (now % 60000) + 60000;
          var nextPoRDistributionSlot = now - (now % 60000) + 45000;
+         var isValidator = false;
+         var isForger = false;
 
          let validators = networkingInstance.consensus.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
 
@@ -60,6 +62,7 @@ class transactionQueue {
 
          // if this node is a validator for the current votingslot, send PoR to other validators
          if(validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
+            isValidator = true
             let porHash = networkingInstance.consensus.pickBestPoR(nextVoteSlotTimestamp);
             var por = networkingInstance.consensus.por[porHash]
 
@@ -79,25 +82,39 @@ class transactionQueue {
          await sleepPromiseVoting;
 
          let winnerPoR = networkingInstance.consensus.pickWinnerPoR(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
-         //console.log(winnerPoR);
-         networkingInstance.consensus.votingSlotPoRList = []
+         
+         if(winnerPoR != undefined) {
+            let nodeListBlockchainAddresses = networkingInstance.nodeList.get().map(function(e) { return e.blockchainAddress; })
+            let validatorListBlockchainAddresses = validators.map(function(e) { return e.blockchainAddress; })
+            networkingInstance.consensus.forger = networkingInstance.nodeList.get(nodeListBlockchainAddresses.indexOf(winnerPoR.nodeBlockchainAddress))
+            let forgerIndex = validatorListBlockchainAddresses.indexOf(winnerPoR.nodeBlockchainAddress)
+            validators.splice(forgerIndex, 1);
+            networkingInstance.consensus.validators = validators;
 
-         // if(validators.validators.map(function(e) { return e.blockchainAddress; }).indexOf(localNodeAddress) != -1) {
+            console.log(networkingInstance.consensus.validators)
+            console.log(networkingInstance.consensus.forger)
             
-         //    let sleepPromise = new Promise((resolve) => {
-         //       setTimeout(resolve, 150);
-         //    });
-         //    await sleepPromise;
-         //    console.log("This node is a validator for the current epoch. Forger:", validators.forger.ipAddress, validators.forger.port)
-         //    networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
-         // } else if(validators.forger.blockchainAddress == localNodeAddress && _this.queue && _this.queue.length) {
-         //    console.log("This node is the forger for the current epoch.")
-         //    var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
-         //    networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
-         // } else {
-         //    console.log("This node is inactive during this epoch.")
-         //    networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}, validators, networkingInstance.networkDiff.diff));
-         // }
+         } else {
+            // fall back to alternate forger picker
+         }
+
+         if(isValidator && !isForger) {
+            let sleepPromise = new Promise((resolve) => {
+               setTimeout(resolve, 150);
+            });
+            await sleepPromise;
+            console.log("This node is a validator for the current epoch. Forger:", networkingInstance.consensus.forger.ipAddress, networkingInstance.consensus.forger.port)
+            networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
+         } else if(isForger && validators.length > 1 && _this.queue && _this.queue.length) {
+            console.log("This node is the forger for the current epoch.")
+            var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
+            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
+         } else if(validators.length > 1) {
+            console.log("This node is inactive during this epoch.")
+            networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}, validators, networkingInstance.networkDiff.diff));
+         }
+
+         networkingInstance.consensus.votingSlotPoRList = []
       }
    }
 
