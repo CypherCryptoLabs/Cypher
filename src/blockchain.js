@@ -151,8 +151,8 @@ class blockchain {
       }
 
       if(validators) {
-         for(var i = 0; i < validators.validators.length; i++) {
-            block.validators[validators.validators[i].blockchainAddress] = "";
+         for(var i = 0; i < validators.length; i++) {
+            block.validators[validators[i].blockchainAddress] = "";
          }
       }
 

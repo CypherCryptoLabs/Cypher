@@ -91,8 +91,9 @@ class transactionQueue {
             validators.splice(forgerIndex, 1);
             networkingInstance.consensus.validators = validators;
 
-            console.log(networkingInstance.consensus.validators)
-            console.log(networkingInstance.consensus.forger)
+            if(networkingInstance.consensus.forger.blockchainAddress == localNodeAddress) {
+               isForger = true;
+            }
             
          } else {
             // fall back to alternate forger picker
@@ -104,12 +105,12 @@ class transactionQueue {
             });
             await sleepPromise;
             console.log("This node is a validator for the current epoch. Forger:", networkingInstance.consensus.forger.ipAddress, networkingInstance.consensus.forger.port)
-            networkingInstance.consensus.voteOnBlock(validators.forger, nextVoteSlotTimestamp, validators.validators, this.queue);
+            networkingInstance.consensus.voteOnBlock(networkingInstance.consensus.forger, nextVoteSlotTimestamp, networkingInstance.consensus.validators, this.queue);
          } else if(isForger && validators.length > 1 && _this.queue && _this.queue.length) {
             console.log("This node is the forger for the current epoch.")
             var sortedQueue = this.queue.sort((a, b) => (a.payload.networkFee > b.payload.networkFee) ? 1 : (a.payload.networkFee === b.payload.networkFee) ? ((a.unixTimestamp > b.unixTimestamp) ? 1 : -1) : -1).slice(0, 100);
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock(sortedQueue, validators, networkingInstance.networkDiff.diff));
-         } else if(validators.length > 1) {
+         } else {
             console.log("This node is inactive during this epoch.")
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}, validators, networkingInstance.networkDiff.diff));
          }
