@@ -6,6 +6,7 @@ class messageStore {
     constructor(bcrypto) {
         this.bcrypto = bcrypto;
         this.init()
+        this.localNodeAddress = this.bcrypto.getFingerprint();
     }
 
     init() {
@@ -36,7 +37,8 @@ class messageStore {
     retrieveSpecific(messageHash, receiverAddress) {
         try {
             let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");
-            let message = JSON.parse(messageStoreForAddress)[messageHash];
+            var message = JSON.parse(messageStoreForAddress)[messageHash];
+            message.nodeBlockchainAddress = this.localNodeAddress;
 
             if (message != undefined)
                 return message;
@@ -65,10 +67,15 @@ class messageStore {
     retrieveAll(receiverAddress) {
         try {
             let messageStoreForAddress = fs.readFileSync("./message_store/" + receiverAddress + ".json").toString("utf-8");
-            let messages = JSON.parse(messageStoreForAddress);
+            var messages = JSON.parse(messageStoreForAddress);
+
+            Object.entries(messages).forEach(([key, value]) => {
+                messages[key].nodeBlockchainAddress = this.localNodeAddress;
+            });
 
             return messages;
         } catch(_) {
+            console.log(_)
             return undefined;
         }
     }
@@ -78,7 +85,8 @@ class messageStore {
             unixTimestamp: messagePacket.unixTimestamp,
             message: messagePacket.payload.message,
             sender: this.bcrypto.getFingerprint(messagePacket.publicKey),
-            signature: messagePacket.signature
+            signature: messagePacket.signature,
+            nodeBlockchainAddress: this.localNodeAddress
         }
         
         let messageHash = this.bcrypto.hash(JSON.stringify(message))
