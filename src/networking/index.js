@@ -770,16 +770,17 @@ class networking {
                   return false;
 
                if(typeof payload.unixTimestamp != "number") {
-                  console.log(1)
                   return false;
                }
+
+               if(payload.unixTimestamp <= Date.now() - 900000 || payload.unixTimestamp >= Date.now() + 10000)
+                  return false;
                
                if(
                   !/^[0-9a-f]{64}$/.test(payload.sender)||
                   !/^[0-9a-f]{64}$/.test(payload.nodeBlockchainAddress)||
                   !/^[0-9a-f]{64}$/.test(payload.blockchainReceiverAddress)
                ) {
-                  console.log(2)
                   return false
                }
 
@@ -794,7 +795,6 @@ class networking {
                let reconstructedMessageHash = this.bcrypto.hash(JSON.stringify(reconstructedMessage))
 
                if(!this.bcrypto.verrifySignature(payload.por, payload.blockchainReceiverPubKey, reconstructedMessageHash)) {
-                  console.log(3)
                   return false;
                }
                break;
