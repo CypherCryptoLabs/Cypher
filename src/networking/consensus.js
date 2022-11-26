@@ -95,6 +95,44 @@ class Consensus {
         }
     }
 
+    fallbackForgerPicker(latestBlockHash, nextVotingSlot, validators) {
+        var seedAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
+
+        if(validators.length > 1) {
+            var sortedValidatorAddresses = validators.map(function(e) { return e.blockchainAddress; });
+            sortedValidatorAddresses.push(seedAddress.toString(16));
+            sortedValidatorAddresses = sortedValidatorAddresses.sort((a, b) => {
+                let bigNumA = new BigNumber(a, 16)
+                let bigNumB = new BigNumber(b, 16)
+
+                if(bigNumA.isGreaterThanOrEqualTo(bigNumB)) {
+                    return 1;
+                } else {
+                    return -1
+                }
+            })
+            let seedAddressIndex = sortedValidatorAddresses.indexOf(seedAddress.toString(16));
+
+            if(seedAddress == 0) {
+                return validators[0]
+            } else if(seedAddress == sortedValidatorAddresses.length - 1) {
+                return validators[seedAddressIndex - 1]
+            } else {
+                var differenceSmallerHash = seedAddress.minus(sortedValidatorAddresses[seedAddressIndex - 1], 16);
+                var differenceBiggerHash = seedAddress.minus(sortedValidatorAddresses[seedAddressIndex + 1], 16).negated;
+
+                if(new BigNumber(differenceBiggerHash.toString(16), 16).lt(new BigNumber(differenceSmallerHash).toString(16), 16)) {
+                    return validators[seedAddressIndex]
+                } else {
+                    return validators[seedAddressIndex - 1]
+                }
+            }
+
+        } else {
+            return validators[0]
+        }
+    }
+
     pickValidators(latestBlockHash, nextVotingSlot) {
         var validators = [];
         var filteredNodeList = this.nodeList.list.filter(obj => obj.registrationTimestamp < nextVotingSlot - 120000).sort((a, b) => b.registrationTimestamp - a.registrationTimestamp)
