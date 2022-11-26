@@ -766,6 +766,37 @@ class networking {
 
                break;
             case 10:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["unixTimestamp","message","sender","signature","nodeBlockchainAddress","blockchainReceiverAddress","blockchainReceiverPubKey","por","hash"]))
+                  return false;
+
+               if(typeof payload.unixTimestamp != "number") {
+                  console.log(1)
+                  return false;
+               }
+               
+               if(
+                  !/^[0-9a-f]{64}$/.test(payload.sender)||
+                  !/^[0-9a-f]{64}$/.test(payload.nodeBlockchainAddress)||
+                  !/^[0-9a-f]{64}$/.test(payload.blockchainReceiverAddress)
+               ) {
+                  console.log(2)
+                  return false
+               }
+
+               let reconstructedMessage = {
+                  unixTimestamp: payload.unixTimestamp,
+                  message: payload.message,
+                  sender: payload.sender,
+                  signature: payload.signature,
+                  nodeBlockchainAddress: payload.nodeBlockchainAddress
+               }
+
+               let reconstructedMessageHash = this.bcrypto.hash(JSON.stringify(reconstructedMessage))
+
+               if(!this.bcrypto.verrifySignature(payload.por, payload.blockchainReceiverPubKey, reconstructedMessageHash)) {
+                  console.log(3)
+                  return false;
+               }
                break;
             default:
                return false;

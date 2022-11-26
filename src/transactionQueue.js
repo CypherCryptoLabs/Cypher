@@ -96,7 +96,6 @@ class transactionQueue {
          } else {
             // fall back to alternate forger picker
             let forger = networkingInstance.consensus.fallbackForgerPicker(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString(), validators);
-            console.log(forger)
             if(forger != undefined) {
                networkingInstance.consensus.forger = forger;
                isForger = (networkingInstance.consensus.forger.blockchainAddress == localNodeAddress)
