@@ -65,7 +65,7 @@ class Consensus {
                 let bigNumA = new BigNumber(a.hash, 16)
                 let bigNumB = new BigNumber(b.hash, 16)
 
-                if(bigNumA.isGreaterThanOrEqualTo(bigNumB)) {
+                if (bigNumA.isGreaterThanOrEqualTo(bigNumB)) {
                     return 1;
                 } else {
                     return -1
@@ -82,7 +82,7 @@ class Consensus {
                 var differenceSmallerHash = seedAddress.minus(sortedPoRList[indexOfFakePoR - 1].hash, 16);
                 var differenceBiggerHash = seedAddress.minus(sortedPoRList[indexOfFakePoR + 1].hash, 16).negated;
 
-                if(new BigNumber(differenceBiggerHash.toString(16), 16).lt(new BigNumber(differenceSmallerHash).toString(16), 16)) {
+                if (new BigNumber(differenceBiggerHash.toString(16), 16).lt(new BigNumber(differenceSmallerHash).toString(16), 16)) {
                     return sortedPoRList[indexOfFakePoR + 1]
                 } else {
                     return sortedPoRList[indexOfFakePoR - 1]
@@ -98,14 +98,14 @@ class Consensus {
     fallbackForgerPicker(latestBlockHash, nextVotingSlot, validators) {
         var seedAddress = new BigNumber(this.bcrypto.hash(latestBlockHash + nextVotingSlot), 16);
 
-        if(validators.length > 1) {
-            var sortedValidatorAddresses = validators.map(function(e) { return e.blockchainAddress; });
+        if (validators.length > 1) {
+            var sortedValidatorAddresses = validators.map(function (e) { return e.blockchainAddress; });
             sortedValidatorAddresses.push(seedAddress.toString(16));
             sortedValidatorAddresses = sortedValidatorAddresses.sort((a, b) => {
                 let bigNumA = new BigNumber(a, 16)
                 let bigNumB = new BigNumber(b, 16)
 
-                if(bigNumA.isGreaterThanOrEqualTo(bigNumB)) {
+                if (bigNumA.isGreaterThanOrEqualTo(bigNumB)) {
                     return 1;
                 } else {
                     return -1
@@ -113,15 +113,15 @@ class Consensus {
             })
             let seedAddressIndex = sortedValidatorAddresses.indexOf(seedAddress.toString(16));
 
-            if(seedAddress == 0) {
+            if (seedAddress == 0) {
                 return validators[0]
-            } else if(seedAddress == sortedValidatorAddresses.length - 1) {
+            } else if (seedAddress == sortedValidatorAddresses.length - 1) {
                 return validators[seedAddressIndex - 1]
             } else {
                 var differenceSmallerHash = seedAddress.minus(sortedValidatorAddresses[seedAddressIndex - 1], 16);
                 var differenceBiggerHash = seedAddress.minus(sortedValidatorAddresses[seedAddressIndex + 1], 16).negated;
 
-                if(new BigNumber(differenceBiggerHash.toString(16), 16).lt(new BigNumber(differenceSmallerHash).toString(16), 16)) {
+                if (new BigNumber(differenceBiggerHash.toString(16), 16).lt(new BigNumber(differenceSmallerHash).toString(16), 16)) {
                     return validators[seedAddressIndex]
                 } else {
                     return validators[seedAddressIndex - 1]
@@ -195,6 +195,22 @@ class Consensus {
 
         for (var i = 0; i < validators.length; i++) {
             if (validators[i].publicKey != this.bcrypto.getPubKey(true)) this.netInstance.sendPacket(packet, validators[i].ipAddress, validators[i].port);
+        }
+    }
+
+    clearOlfPoRs() {
+        Object.entries(this.por).forEach(([key, por]) => {
+            console.log(key, por);
+            if(por.unixTimestamp <= Date.now() - 900000) {
+                delete this.por[key];
+            }
+        })
+
+        try {
+            fs.writeFileSync("./por_store.json", JSON.stringify(this.por));
+        } catch (error) {
+            console.log("Could not write to PoR store: " + error)
+            process.exit();
         }
     }
 

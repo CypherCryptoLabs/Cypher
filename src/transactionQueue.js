@@ -126,7 +126,8 @@ class transactionQueue {
             networkingInstance.consensus.updatePotentialBlock(this.Blockchain.generateBlock({}, validators, networkingInstance.networkDiff.diff));
          }
 
-         networkingInstance.consensus.votingSlotPoRList = []
+         networkingInstance.consensus.votingSlotPoRList = [];
+         networkingInstance.consensus.clearOlfPoRs();
       }
    }
 
