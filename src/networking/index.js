@@ -428,6 +428,10 @@ class networking {
                   case 10:
                      this.consensus.votingSlotPoRList.push(packet.payload);
                      break;
+                  
+                  case 11:
+                     payload.nodeList = this.nodeList.get();
+                  break;
                }
 
                if(!subroutineHandlesSocket) {
@@ -797,6 +801,11 @@ class networking {
                if(!this.bcrypto.verrifySignature(payload.por, payload.blockchainReceiverPubKey, reconstructedMessageHash)) {
                   return false;
                }
+               break;
+               
+            case 11:
+               if(payload != {})
+                  return false;
                break;
             default:
                return false;
