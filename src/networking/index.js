@@ -804,7 +804,7 @@ class networking {
                break;
                
             case 11:
-               if(payload != {})
+               if(JSON.stringify(payload) != "{}")
                   return false;
                break;
             default:
