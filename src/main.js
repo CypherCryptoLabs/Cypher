@@ -22,6 +22,8 @@ try {
             fs.rmSync("cache.json")
         if(fs.existsSync("network_cache.json"))
             fs.rmSync("network_cache.json")
+        if(fs.existsSync("message_store")) 
+            fs.rmdirSync("message_store")
 
         if(fs.existsSync("docker/blockchain.json")) 
             fs.copyFileSync("docker/blockchain.json", "blockchain.json")

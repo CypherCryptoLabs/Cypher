@@ -1,3 +1,10 @@
+# About this branch
+This branch is an active development Branch, changes in here are not always tested, and might be unstable. This Branch is meant to develop a "Proof of Concept" for the live messenger protocol that will be implemented in Cypher. Once this P.o.C. is stable, it will be merged into the "test-network" branch.
+
+To use features that are developed in this Branch, you will need the Cypher Wallet, as the messenger functionality will be developed for the Wallet in parallel.
+
+We are currently aiming for a stable P.o.C. for the end of 2022, but this date is subject to change.
+
 # Table of contents
 
 - [Cypher](#cypher)

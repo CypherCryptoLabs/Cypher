@@ -6,6 +6,8 @@ const fs = require("fs");
 const NodeList = require("./nodeList")
 const Consensus = require("./consensus")
 const NetworkDiff = require("./networkDiff")
+const MessageStore = require("../messageStore");
+const { type } = require('os');
 
 class networking {
 
@@ -17,6 +19,7 @@ class networking {
       this.nodeList = new NodeList(bcrypto, this)
       this.consensus = new Consensus(bcrypto, this.nodeList, this)
       this.networkDiff = new NetworkDiff(this)
+      this.MessageStore = new MessageStore(bcrypto)
       this.stableNode = stableNode;
       this.stableNodePort = stableNodePort;
       this.stableNodePubKey = stableNodePubKey;
@@ -394,6 +397,41 @@ class networking {
 
                      payload.queue = queue;
                      break;
+
+                  case 8:
+                     if(packet.payload.type == "send") {
+                        payload.status = this.MessageStore.store(packet);
+                     } else if(packet.payload.type == "retrieve") {
+                        payload = this.MessageStore.retrieveAll(this.bcrypto.getFingerprint(packet.publicKey))
+                     }
+                     break;
+                  
+                  case 9:
+                     let messageHash = Object.keys(packet.payload)[0]
+                     this.MessageStore.checkIfExists(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+
+                     payload.status = this.MessageStore.checkIfExists(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+
+                     let por = {
+                        hash: messageHash,
+                        payload: this.MessageStore.retrieveSpecific(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+                     }
+
+                     por.payload.blockchainReceiverAddress = this.bcrypto.getFingerprint(packet.publicKey);
+                     por.payload.blockchainReceiverPubKey = packet.publicKey;
+                     por.payload.por = packet.payload[messageHash]
+
+                     this.consensus.storePor(por);
+                     this.MessageStore.discardSpecific(messageHash, this.bcrypto.getFingerprint(packet.publicKey))
+
+                     break;
+                  case 10:
+                     this.consensus.votingSlotPoRList.push(packet.payload);
+                     break;
+                  
+                  case 11:
+                     payload.nodeList = this.nodeList.get();
+                  break;
                }
 
                if(!subroutineHandlesSocket) {
@@ -614,9 +652,9 @@ class networking {
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["block"]))
                   return false;
 
-               let validatorsAndForger = this.consensus.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
+               //let validatorsAndForger = this.consensus.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
 
-               let blockValidityValue = this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), validatorsAndForger.validators, validatorsAndForger.forger, this.transactionQueue.getQueue(), this.networkDiff.diff)
+               let blockValidityValue = this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.consensus.validators, this.consensus.forger, this.transactionQueue.getQueue(), this.networkDiff.diff)
                if(blockValidityValue != 0) {
                   console.log("(Block announcement) Block invalid, validity value is ", blockValidityValue)
                   return false;
@@ -693,6 +731,81 @@ class networking {
                break;
             case -7:
                // no checks needed since each received transaction will be chacked later on anyways
+               break;
+            case 8:
+               if(!payload.hasOwnProperty("type"))
+                  return false;
+
+               if(payload.type == "send") {
+                  if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type","blockchainReceiverAddress","message"]))
+                     return false;
+
+                  if(
+                     typeof payload.type != "string" ||
+                     typeof payload.blockchainReceiverAddress != "string" ||
+                     typeof payload.message != "string"
+                  ) return false;
+
+                  if(!/^[0-9a-f]{64}$/.test(payload.blockchainReceiverAddress))
+                  return false;
+
+               } else if(payload.type == "retrieve") {
+                  if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type"]))
+                     return false;
+               } else {
+                  return false;
+               }
+               
+               break;
+            case 9:
+               let messageHashes = Object.keys(payload);
+
+               for(var i = 0; i < messageHashes.length; i++) {
+                  if(!/^[0-9a-f]{64}$/.test(messageHashes[i]))
+                     return false;
+
+                  if(!this.bcrypto.verrifySignature(payload[messageHashes[i]], packet.publicKey, messageHashes[i]))
+                     return false;
+               }
+
+               break;
+            case 10:
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["unixTimestamp","message","sender","signature","nodeBlockchainAddress","blockchainReceiverAddress","blockchainReceiverPubKey","por","hash"]))
+                  return false;
+
+               if(typeof payload.unixTimestamp != "number") {
+                  return false;
+               }
+
+               if(payload.unixTimestamp <= Date.now() - 900000 || payload.unixTimestamp >= Date.now() + 10000)
+                  return false;
+               
+               if(
+                  !/^[0-9a-f]{64}$/.test(payload.sender)||
+                  !/^[0-9a-f]{64}$/.test(payload.nodeBlockchainAddress)||
+                  !/^[0-9a-f]{64}$/.test(payload.blockchainReceiverAddress)
+               ) {
+                  return false
+               }
+
+               let reconstructedMessage = {
+                  unixTimestamp: payload.unixTimestamp,
+                  message: payload.message,
+                  sender: payload.sender,
+                  signature: payload.signature,
+                  nodeBlockchainAddress: payload.nodeBlockchainAddress
+               }
+
+               let reconstructedMessageHash = this.bcrypto.hash(JSON.stringify(reconstructedMessage))
+
+               if(!this.bcrypto.verrifySignature(payload.por, payload.blockchainReceiverPubKey, reconstructedMessageHash)) {
+                  return false;
+               }
+               break;
+               
+            case 11:
+               if(JSON.stringify(payload) != "{}")
+                  return false;
                break;
             default:
                return false;
