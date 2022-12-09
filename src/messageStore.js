@@ -75,7 +75,6 @@ class messageStore {
 
             return messages;
         } catch(_) {
-            console.log(_)
             return undefined;
         }
     }

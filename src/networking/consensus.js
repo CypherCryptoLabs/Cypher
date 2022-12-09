@@ -200,7 +200,6 @@ class Consensus {
 
     clearOlfPoRs() {
         Object.entries(this.por).forEach(([key, por]) => {
-            console.log(key, por);
             if(por.unixTimestamp <= Date.now() - 900000) {
                 delete this.por[key];
             }
