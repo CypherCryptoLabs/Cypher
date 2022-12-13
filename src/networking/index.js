@@ -437,7 +437,10 @@ class networking {
                if(!subroutineHandlesSocket) {
                   var answer = this.createPacket(packet.queryID * -1, payload);
                   socket.setTimeout(3000);
-                  socket.write(answer + Buffer.from([0x00]).toString("utf8"));
+                  socket.write(answer + Buffer.from([0x00]).toString("utf8"), () => {
+                     socket.end();
+                     socket.destroy();
+                  });
 
                   socket.on('timeout', () => {
                      socket.end();
@@ -447,11 +450,6 @@ class networking {
             
             } else {
                console.log(data.toString())
-            }
-            
-            if(!subroutineHandlesSocket) {
-               socket.end();
-               socket.destroy();
             }
          });
 
@@ -473,7 +471,10 @@ class networking {
 
       var answer = this.createPacket(packet.queryID * -1, payload);
       socket.setTimeout(3000);
-      socket.write(answer + Buffer.from([0x00]).toString("utf8"));
+      socket.write(answer + Buffer.from([0x00]).toString("utf8"), () => {
+         socket.end();
+         socket.destroy();
+      });
 
       socket.on('timeout', () => {
          socket.end();
@@ -504,7 +505,10 @@ class networking {
 
       var answer = this.createPacket(packet.queryID * -1, payload);
       socket.setTimeout(3000);
-      socket.write(answer + Buffer.from([0x00]).toString("utf8"));
+      socket.write(answer + Buffer.from([0x00]).toString("utf8"), () => {
+         socket.end();
+         socket.destroy();
+      });
 
       socket.on('timeout', () => {
          socket.end();
