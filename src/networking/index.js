@@ -660,7 +660,11 @@ class networking {
 
                //let validatorsAndForger = this.consensus.pickValidators(this.bcrypto.hash(this.blockchain.getNewestBlock(true)), Date.now() - (Date.now() % 60000));
 
-               let blockValidityValue = this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.consensus.validators, this.consensus.forger, this.transactionQueue.getQueue(), this.networkDiff.diff)
+               var blockValidityValue = this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.consensus.validators, this.consensus.forger, this.transactionQueue.getQueue(), this.networkDiff.diff)
+               
+               if (blockValidityValue != 0)
+                  blockValidityValue = this.blockchain.validateBlock(JSON.stringify(packet.payload.block), Date.now() - (Date.now() % 60000), this.consensus.prevValidators, this.consensus.prevForger, this.transactionQueue.getQueue(), this.networkDiff.diff)
+
                if(blockValidityValue != 0) {
                   console.log("(Block announcement) Block invalid, validity value is ", blockValidityValue)
                   return false;

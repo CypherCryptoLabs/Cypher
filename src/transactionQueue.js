@@ -51,6 +51,9 @@ class transactionQueue {
          var nextPoRDistributionSlot = now - (now % 60000) + 45000;
          var isValidator = false;
          var isForger = false;
+         
+         networkingInstance.consensus.prevValidators = networkingInstance.consensus.validators;
+         networkingInstance.consensus.prevForger = networkingInstance.consensus.forger;
 
          let validators = networkingInstance.consensus.pickValidators(this.bcrypto.hash(this.Blockchain.getNewestBlock(true)), nextVoteSlotTimestamp.toString());
 

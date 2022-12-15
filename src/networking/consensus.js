@@ -5,7 +5,9 @@ class Consensus {
     constructor(bcrypto, nodeList, netInstance) {
         this.potentialBlock;
         this.forger;
+        this.prevForger;
         this._validators;
+        this.prevValidators;
         this._signatures = {};
         this.bcrypto = bcrypto
         this.nodeList = nodeList
