@@ -256,8 +256,9 @@ class networking {
    async isReachable(address, port) {
       let receivedPacket = await this.sendPacket(this.createPacket(6, {}), address, port)
       if(receivedPacket != undefined) {
-         var timestamp = JSON.parse(receivedPacket).payload.timestamp;
-         if(timestamp <= Date.now() && timestamp >= Date.now() - 60000) {
+         var timestamp = JSON.parse(receivedPacket).unixTimestamp;
+         var blockHash = JSON.parse(receivedPacket).payload.blockHash;
+         if((timestamp <= Date.now() && timestamp >= Date.now() - 60000) && (blockHash == this.bcrypto.hash(this.blockchain.getNewestBlock(true)))) {
             return true;
          }
 
@@ -366,7 +367,7 @@ class networking {
                      break;
                   case 6:
                      if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["type"])) {
-                        payload.timestamp = Date.now();
+                        payload.blockHash = this.bcrypto.hash(this.blockchain.getNewestBlock(true));
                      } else {
                         /*if(!this.isReachableByPublicKey(payload.publicKey)) {
                            this.nodeList.remove(payload.publicKey);
@@ -729,7 +730,7 @@ class networking {
                   return false;
                break;
             case -6:
-               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["timestamp"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]))
+               if(JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["blockHash"]) && JSON.stringify(Object.getOwnPropertyNames(payload)) != JSON.stringify(["status"]))
                   return false;
 
                if(JSON.stringify(Object.getOwnPropertyNames(payload)) == JSON.stringify(["timestamp"]) && typeof payload.timestamp != "number")
