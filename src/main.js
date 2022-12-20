@@ -25,8 +25,8 @@ try {
         if(fs.existsSync("message_store")) 
             fs.rmdirSync("message_store")
 
-        if(fs.existsSync("docker/blockchain.json")) 
-            fs.copyFileSync("docker/blockchain.json", "blockchain.json")
+        /*if(fs.existsSync("docker/blockchain.json")) 
+            fs.copyFileSync("docker/blockchain.json", "blockchain.json")*/
     }
 } catch(error) {
     console.log("Could not determine git branch, presuming \"master\"...")

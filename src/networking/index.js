@@ -31,10 +31,13 @@ class networking {
    async checkReachabilityForRandomNodes() {
       while(true) {
 
+         let now = Date.now()
+         let nextExecutionWaitTime = now - (now % 60000)
+
          var sleep = new Promise((resolve) => {
             setTimeout(() => {
                resolve();
-            }, 60000);
+            }, nextExecutionWaitTime);
          })
 
          await sleep;
