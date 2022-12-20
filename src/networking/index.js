@@ -32,7 +32,7 @@ class networking {
       while(true) {
 
          let now = Date.now()
-         let nextExecutionWaitTime = now - (now % 60000)
+         let nextExecutionWaitTime = now - (now % 60000) + 60000
 
          var sleep = new Promise((resolve) => {
             setTimeout(() => {
